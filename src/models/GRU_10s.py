@@ -1,0 +1,538 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader, ConcatDataset
+from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+import glob
+import random
+
+# Set random seeds for reproducibility
+SEED = 42
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+torch.cuda.manual_seed(SEED)
+torch.cuda.manual_seed_all(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+# Testing different dropout rates
+configs = [
+    {"hidden_size": 128, "num_layers": 5, "max_epochs": 300, "dropout": 0.0},
+    {"hidden_size": 128, "num_layers": 5, "max_epochs": 300, "dropout": 0.1},
+    {"hidden_size": 128, "num_layers": 5, "max_epochs": 300, "dropout": 0.2},
+    {"hidden_size": 128, "num_layers": 5, "max_epochs": 300, "dropout": 0.3},
+    {"hidden_size": 128, "num_layers": 5, "max_epochs": 300, "dropout": 0.4},
+]
+
+
+# === Dataset class - Modified to accept DataFrame ===
+class ThermalDataset(Dataset):
+    def __init__(self, csv_file_or_df, scaler=None, file_name=None):
+        # Support both file path and DataFrame
+        if isinstance(csv_file_or_df, str):
+            self.file_name = os.path.basename(csv_file_or_df)
+            df = pd.read_csv(csv_file_or_df)
+        else:
+            self.file_name = file_name if file_name else "unknown"
+            df = csv_file_or_df.copy()
+
+        df["FileName"] = self.file_name
+        columns_for_scaling = ['Time (s)',
+                               'T_outer (C)', 'T_inner (C)', 'T_avg (C)', 'Input Temperature (C)'
+                               ]
+        rename_map = {
+            "T_ave (C)": "T_avg (C)",
+        }
+        df.rename(columns=rename_map, inplace=True)
+        if scaler is None:
+            self.scaler = MinMaxScaler()
+            self.scaler.fit(df[columns_for_scaling])
+        else:
+            self.scaler = scaler
+        df[columns_for_scaling] = self.scaler.transform(df[columns_for_scaling])
+
+        # === Add derived delta features ===
+        df["dT_outer (C)"] = df["T_outer (C)"].diff().fillna(0)
+        df["dT_avg (C)"] = df["T_avg (C)"].diff().fillna(0)
+        df["dInput Temperature (C)"] = df["Input Temperature (C)"].diff().fillna(0)
+
+        grouped = df.groupby("FileName")
+        self.X, self.Y, self.time_values = [], [], []
+        self.full_time, self.full_t_min, self.full_t_max, self.full_t_ave = [], [], [], []
+
+        for _, group in grouped:
+            # Input: Time, T_outer, Input Temperature, T_avg
+            X_seq = group[["Time (s)",
+                           "T_outer (C)", "Input Temperature (C)", "T_avg (C)",
+                           "dT_outer (C)", "dInput Temperature (C)", "dT_avg (C)"]].values[:-1]
+            # Output: T_inner, T_outer, T_avg
+            Y_seq = group[["T_inner (C)", "T_outer (C)", "T_avg (C)"]].values[1:]
+            time_vals = group["Time (s)"].values[1:]
+            self.X.append(X_seq)
+            self.Y.append(Y_seq)
+            self.time_values.append(time_vals)
+            self.full_time.append(group["Time (s)"].values)
+            self.full_t_min.append(group["T_outer (C)"].values)
+            self.full_t_max.append(group["T_inner (C)"].values)
+            self.full_t_ave.append(group["T_avg (C)"].values)
+
+        self.X = torch.tensor(np.array(self.X), dtype=torch.float32)
+        self.Y = torch.tensor(np.array(self.Y), dtype=torch.float32)
+        self.time_values = np.array(self.time_values)
+        self.full_time = np.array(self.full_time)
+        self.full_t_min = np.array(self.full_t_min)
+        self.full_t_max = np.array(self.full_t_max)
+        self.full_t_ave = np.array(self.full_t_ave)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return (
+            self.X[idx], self.Y[idx], self.time_values[idx],
+            self.full_time[idx],
+            self.full_t_min[idx], self.full_t_max[idx], self.full_t_ave[idx]
+        )
+
+
+# === Model definition ===
+class ThermalGRU(nn.Module):
+    def __init__(self, input_size=7, hidden_size=128, output_size=3, num_layers=5, dropout=0.1):
+        super(ThermalGRU, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, dropout=dropout,
+                          batch_first=True)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x, hidden):
+        out, hidden = self.gru(x, hidden)
+        out = self.fc(out)
+        return out, hidden
+
+    def init_hidden(self, batch_size):
+        device = next(self.parameters()).device
+        return torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
+
+
+# === Weighted loss ===
+def weighted_loss(predictions, targets, weights=torch.tensor([1.0, 1.0, 1.0]), time_weights=None):
+    weights = weights.to(predictions.device)
+    loss = torch.abs(predictions - targets) * weights
+    if time_weights is not None:
+        time_weights = time_weights.to(predictions.device)
+        loss = loss * time_weights.unsqueeze(-1)
+    return torch.mean(loss)
+
+
+# === OPTIMIZED: Load all data once ===
+def load_all_data():
+    """Pre-load all data files once to avoid repeated I/O"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    possible_data_dirs = [
+        os.path.join(script_dir, "..", "..", "data"),
+        os.path.join(script_dir, "data"),
+        "data"
+    ]
+
+    data_dir = None
+    for dir_path in possible_data_dirs:
+        if os.path.exists(dir_path):
+            data_dir = dir_path
+            break
+
+    if not data_dir:
+        print("Data directory not found")
+        return None, None, None, None, None
+
+    train_dir = os.path.join(data_dir, "data_in_10s")
+    test_dir = os.path.join(data_dir, "test_in_10s")
+
+    train_paths = sorted(glob.glob(os.path.join(train_dir, "**", "*.csv"), recursive=True))
+    test_paths = sorted(glob.glob(os.path.join(test_dir, "*.csv")))
+
+    print(f"Found training files: {len(train_paths)}")
+    print(f"Found test files: {len(test_paths)}")
+
+    if not train_paths:
+        print("No training files found")
+        return None, None, None, None, None
+
+    # === Split out validation set (5%) ===
+    val_split = int(0.05 * len(train_paths))
+    val_paths = train_paths[:val_split]
+    actual_train_paths = train_paths[val_split:]
+
+    # === Load all DataFrames once ===
+    print("Loading training data...")
+    train_dfs = [(pd.read_csv(f), os.path.basename(f)) for f in actual_train_paths]
+    print("Loading validation data...")
+    val_dfs = [(pd.read_csv(f), os.path.basename(f)) for f in val_paths]
+    print("Loading test data...")
+    test_dfs = [(pd.read_csv(f), os.path.basename(f)) for f in test_paths]
+
+    # === Fit a unified scaler on training data ===
+    print("Fitting scaler...")
+    scaler = MinMaxScaler()
+    all_train_data = pd.concat([df for df, _ in train_dfs])
+    scaler.fit(all_train_data[["Time (s)", "T_outer (C)", "T_inner (C)", "T_avg (C)", "Input Temperature (C)"]])
+
+    return train_dfs, val_dfs, test_dfs, scaler, test_paths
+
+
+# === Training function - Now uses pre-loaded data ===
+def train_model(train_dfs, val_dfs, test_dfs, scaler, test_paths,
+                max_epochs=300, hidden_size=128, num_layers=5, dropout=0.1):
+    """
+    train_dfs, val_dfs, test_dfs: List of (DataFrame, filename) tuples
+    scaler: Pre-fitted MinMaxScaler
+    test_paths: List of test file paths (for compatibility)
+    """
+
+    # === Create datasets from pre-loaded DataFrames ===
+    print("Creating datasets from pre-loaded data...")
+    train_datasets = [ThermalDataset(df, scaler=scaler, file_name=fname)
+                      for df, fname in train_dfs]
+    val_datasets = [ThermalDataset(df, scaler=scaler, file_name=fname)
+                    for df, fname in val_dfs]
+    test_datasets = [ThermalDataset(df, scaler=scaler, file_name=fname)
+                     for df, fname in test_dfs]
+
+    train_loader = DataLoader(ConcatDataset(train_datasets), batch_size=16, shuffle=True)
+    val_loader = DataLoader(ConcatDataset(val_datasets), batch_size=16)
+
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+        print("Using CPU")
+
+    model = ThermalGRU(
+        input_size=7,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        dropout=dropout,
+    ).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=50)
+
+    best_val_loss, early_stop_counter = float('inf'), 0
+    patience, burn_in_steps = 300, 30
+
+    # Lists to store loss history
+    train_loss_history = []
+    val_loss_history = []
+
+    for epoch in range(max_epochs):
+        model.train()
+        total_train_loss = 0
+
+        for batch in train_loader:
+            inputs, targets, *_ = [b.to(device) if torch.is_tensor(b) else b for b in batch]
+            batch_size, seq_len, _ = inputs.shape
+
+            hidden = model.init_hidden(batch_size)
+            optimizer.zero_grad()
+
+            if burn_in_steps > 0:
+                burn_inputs = inputs[:, :burn_in_steps, :]
+                with torch.no_grad():
+                    _, hidden = model(burn_inputs, hidden)
+
+            main_inputs = inputs[:, burn_in_steps:, :]
+            main_targets = targets[:, burn_in_steps:, :]
+
+            predictions, hidden = model(main_inputs, hidden)
+            loss = weighted_loss(predictions, main_targets)
+            loss.backward()
+            optimizer.step()
+
+            total_train_loss += loss.item()
+
+        avg_train_loss = total_train_loss / len(train_loader)
+        train_loss_history.append(avg_train_loss)
+
+        # Validation
+        model.eval()
+        total_val_loss = 0
+        with torch.no_grad():
+            for batch in val_loader:
+                inputs, targets, *_ = [b.to(device) if torch.is_tensor(b) else b for b in batch]
+                batch_size, seq_len, _ = inputs.shape
+
+                hidden = model.init_hidden(batch_size)
+
+                if burn_in_steps > 0:
+                    burn_inputs = inputs[:, :burn_in_steps, :]
+                    _, hidden = model(burn_inputs, hidden)
+
+                main_inputs = inputs[:, burn_in_steps:, :]
+                main_targets = targets[:, burn_in_steps:, :]
+
+                predictions, hidden = model(main_inputs, hidden)
+                loss = weighted_loss(predictions, main_targets)
+                total_val_loss += loss.item()
+
+        avg_val_loss = total_val_loss / len(val_loader) if len(val_loader) > 0 else float('inf')
+        val_loss_history.append(avg_val_loss)
+
+        scheduler.step(avg_val_loss)
+
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            early_stop_counter = 0
+        else:
+            early_stop_counter += 1
+
+        if (epoch + 1) % 10 == 0:
+            print(f"Epoch {epoch + 1}/{max_epochs} | Train Loss: {avg_train_loss:.6f} | Val Loss: {avg_val_loss:.6f}")
+
+        if early_stop_counter >= patience:
+            print(f"Early stopping at epoch {epoch + 1}")
+            break
+
+    return model, test_datasets, best_val_loss, train_loss_history, val_loss_history
+
+
+# === Test model function ===
+def test_model(model, test_datasets):
+    device = next(model.parameters()).device
+    model.eval()
+    burn_in_steps = 30
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, "plot_GRU_10s_with_burn_in")
+    os.makedirs(output_dir, exist_ok=True)
+
+    for idx, dataset in enumerate(test_datasets):
+        file = os.path.basename(dataset.file_name)
+        x, _, _, ft, ft_min, ft_max, ft_ave = dataset[0]
+        x = x.to(device)
+        seq_len = x.shape[0]
+
+        hidden = model.init_hidden(1)
+        if burn_in_steps > 0:
+            burn_inputs = x[:burn_in_steps].unsqueeze(0)
+            _, hidden = model(burn_inputs, hidden)
+
+        start_t = burn_in_steps
+
+        current_t_min = x[start_t, 1]
+        current_input_temp = x[start_t, 2]
+        current_t_ave = x[start_t, 3]
+
+        preds = []
+
+        for t in range(start_t, seq_len):
+            input_t = torch.tensor([[
+                x[t, 0],
+                current_t_min,
+                current_input_temp,
+                current_t_ave,
+                x[t, 4],
+                x[t, 5],
+                x[t, 6],
+            ]], dtype=torch.float32).unsqueeze(0).to(device)
+
+            with torch.no_grad():
+                delta, hidden = model(input_t, hidden)
+                output = delta[0, 0]
+
+                pred = output.cpu().numpy()
+                preds.append(pred)
+                if t < x.shape[0] - 1:
+                    current_t_min = pred[1]
+                    current_input_temp = x[t + 1, 2]
+                    current_t_ave = pred[2]
+
+        pred_seq = np.array(preds)
+
+        dummy_actual = np.zeros((len(pred_seq), 5))
+        dummy_actual[:, 0] = ft[start_t:start_t + len(pred_seq)]
+        dummy_actual[:, 1] = ft_min[start_t:start_t + len(pred_seq)]
+        dummy_actual[:, 2] = ft_max[start_t:start_t + len(pred_seq)]
+        dummy_actual[:, 3] = ft_ave[start_t:start_t + len(pred_seq)]
+        dummy_actual[:, 4] = x[:, 2].cpu().numpy()[start_t:start_t + len(preds)]
+
+        dummy_pred = np.zeros((len(pred_seq), 5))
+        dummy_pred[:, 0] = ft[start_t:start_t + len(pred_seq)]
+        dummy_pred[:, 1] = pred_seq[:, 1]
+        dummy_pred[:, 2] = pred_seq[:, 0]
+        dummy_pred[:, 3] = pred_seq[:, 2]
+        dummy_pred[:, 4] = x[:, 2].cpu().numpy()[start_t:start_t + len(preds)]
+
+        inv_pred = dataset.scaler.inverse_transform(dummy_pred)
+        inv_actual = dataset.scaler.inverse_transform(dummy_actual)
+
+        mae_inner = np.mean(np.abs(inv_actual[:, 2] - inv_pred[:, 2]))
+        mae_outer = np.mean(np.abs(inv_actual[:, 1] - inv_pred[:, 1]))
+        mae_avg = np.mean(np.abs(inv_actual[:, 3] - inv_pred[:, 3]))
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(inv_actual[:, 0], inv_actual[:, 1], label="T_outer Actual", color="blue")
+        plt.plot(inv_pred[:, 0], inv_pred[:, 1], "--", label="T_outer Pred", color="blue")
+        plt.plot(inv_actual[:, 0], inv_actual[:, 3], label="T_avg Actual", color="green")
+        plt.plot(inv_pred[:, 0], inv_pred[:, 3], "--", label="T_avg Pred", color="green")
+        plt.plot(inv_actual[:, 0], inv_actual[:, 2], label="T_inner Actual", color="red")
+        plt.plot(inv_pred[:, 0], inv_pred[:, 2], "--", label="T_inner Pred", color="red")
+        plt.xlabel("Time (s)")
+        plt.ylabel("Temperature (C)")
+        plt.title(f"Prediction - {file}")
+        plt.legend()
+
+        mae_text = f"MAE: T_inner={mae_inner:.3f}°C, T_outer={mae_outer:.3f}°C, T_avg={mae_avg:.3f}°C"
+        plt.text(0.02, 0.98, mae_text, transform=plt.gca().transAxes,
+                 verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
+                 fontsize=9)
+        plt.tight_layout()
+
+        output_path = os.path.join(output_dir, f"plot_{file}.png")
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        plt.close()
+
+    print(f"\nAll plots saved to: {output_dir}")
+
+
+# === Main entry ===
+if __name__ == "__main__":
+    # === OPTIMIZED: Load all data once at the beginning ===
+    print("=" * 60)
+    print("LOADING ALL DATA (ONE TIME ONLY)")
+    print("=" * 60)
+    train_dfs, val_dfs, test_dfs, scaler, test_paths = load_all_data()
+
+    if train_dfs is None:
+        print("Failed to load data. Exiting.")
+        exit(1)
+
+    print(f"\nData loaded successfully!")
+    print(f"Training samples: {len(train_dfs)}")
+    print(f"Validation samples: {len(val_dfs)}")
+    print(f"Test samples: {len(test_dfs)}")
+    print("=" * 60)
+
+    best_val_loss = float("inf")
+    best_model = None
+    best_test_sets = None
+    best_config = None
+
+    # Store all results
+    all_results = []
+
+    for cfg in configs:
+        print(f"\n{'=' * 60}")
+        print(f"Running Config: {cfg}")
+        print(f"{'=' * 60}")
+
+        # === Pass pre-loaded data to training ===
+        model, test_sets, val_mae, train_history, val_history = train_model(
+            train_dfs, val_dfs, test_dfs, scaler, test_paths,
+            max_epochs=cfg["max_epochs"],
+            hidden_size=cfg["hidden_size"],
+            num_layers=cfg["num_layers"],
+            dropout=cfg["dropout"]
+        )
+
+        # Store results
+        all_results.append({
+            'config': cfg,
+            'train_loss': train_history,
+            'val_loss': val_history,
+            'final_val_loss': val_mae
+        })
+
+        if val_mae < best_val_loss:
+            best_val_loss = val_mae
+            best_config = cfg
+            best_model = model
+            best_test_sets = test_sets
+
+        print(f"Validation MAE for this configuration: {val_mae:.4f}")
+
+    print(f"\n{'=' * 60}")
+    print(f"Best Config: {best_config}")
+    print(f"Best MAE: {best_val_loss:.4f}")
+    print(f"{'=' * 60}")
+
+    # Plot loss curves for different dropout rates
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Plot training and validation loss
+    plt.figure(figsize=(14, 6))
+
+    plt.subplot(1, 2, 1)
+    for result in all_results:
+        dropout = result['config']['dropout']
+        plt.plot(result['train_loss'], label=f'Dropout={dropout}', linewidth=2)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('Training Loss', fontsize=12)
+    plt.title('Training Loss vs Dropout Rate', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+
+    plt.subplot(1, 2, 2)
+    for result in all_results:
+        dropout = result['config']['dropout']
+        plt.plot(result['val_loss'], label=f'Dropout={dropout}', linewidth=2)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('Validation Loss', fontsize=12)
+    plt.title('Validation Loss vs Dropout Rate', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    loss_curves_path = os.path.join(script_dir, 'dropout_comparison.png')
+    plt.savefig(loss_curves_path, dpi=150, bbox_inches='tight')
+    print(f"\nLoss curves saved to: {loss_curves_path}")
+    plt.close()
+
+    # Plot final validation loss bar chart
+    plt.figure(figsize=(10, 6))
+    dropouts = [r['config']['dropout'] for r in all_results]
+    final_losses = [r['final_val_loss'] for r in all_results]
+    colors = plt.cm.viridis(np.linspace(0, 1, len(dropouts)))
+    bars = plt.bar(range(len(dropouts)), final_losses, color=colors, edgecolor='black', linewidth=1.5)
+    plt.xticks(range(len(dropouts)), [f'{d}' for d in dropouts], fontsize=11)
+    plt.xlabel('Dropout Rate', fontsize=12)
+    plt.ylabel('Final Validation Loss', fontsize=12)
+    plt.title('Final Validation Loss for Different Dropout Rates', fontsize=14, fontweight='bold')
+    plt.grid(True, alpha=0.3, axis='y')
+
+    # Add value labels on bars
+    for i, (loss, bar) in enumerate(zip(final_losses, bars)):
+        plt.text(i, loss + 0.001, f'{loss:.4f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+    # Highlight best config
+    best_idx = final_losses.index(min(final_losses))
+    bars[best_idx].set_edgecolor('red')
+    bars[best_idx].set_linewidth(3)
+
+    plt.tight_layout()
+    bar_chart_path = os.path.join(script_dir, 'dropout_final_loss.png')
+    plt.savefig(bar_chart_path, dpi=150, bbox_inches='tight')
+    print(f"Final loss comparison saved to: {bar_chart_path}")
+    plt.close()
+
+    # Print summary table
+    print(f"\n{'=' * 60}")
+    print("Summary of Results:")
+    print(f"{'=' * 60}")
+    print(f"{'Dropout':<12} {'Final Val Loss':<20} {'Epochs Run':<15}")
+    print(f"{'-' * 60}")
+    for result in all_results:
+        dropout = result['config']['dropout']
+        final_loss = result['final_val_loss']
+        epochs = len(result['val_loss'])
+        marker = " <-- BEST" if dropout == best_config['dropout'] else ""
+        print(f"{dropout:<12.2f} {final_loss:<20.6f} {epochs:<15}{marker}")
+    print(f"{'=' * 60}\n")
+
+    # Test the best model
+    print("Testing best model...")
+    test_model(best_model, best_test_sets)
