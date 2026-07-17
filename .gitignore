@@ -1,0 +1,14 @@
+# Python bytecode caches (auto-regenerated on every run)
+__pycache__/
+*.pyc
+*.pyo
+
+# Experiment outputs — run dirs hold checkpoints/plots/predictions and can be
+# gigabytes; results are exchanged as folders, not through git.
+src/models/GRU/runs/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

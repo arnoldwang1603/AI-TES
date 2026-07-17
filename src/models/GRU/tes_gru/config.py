@@ -36,13 +36,23 @@ LATEST_PARAMS = dict(
     num_layers=5,
     dropout=0.3,
     lr=0.0025,
-    # Per Arnold (2026-05-20): train for the full 1200 epochs without
-    # early stopping. Best-val checkpoint is still saved during training
-    # and restored before testing, so we report the best-epoch model
-    # rather than the final-epoch one.
-    max_epochs=1200,
+    # 2026-07-16: epoch budget cut 1200 -> 800 and early stopping enabled,
+    # based on ALL full-length (1200-ep) runs to date: across 36 completed
+    # runs (8 variants x 4 seeds zero-pad baseline + abs_sliding x 4 seeds
+    # init-pad), the best-val epoch NEVER exceeded 631 (abs_sliding
+    # median ~460; most variants < 500). The final ~600 epochs of a
+    # 1200-ep run have never produced a best checkpoint. Best-val
+    # checkpointing is unchanged (still restored before testing), so
+    # results stay comparable with the earlier 1200-ep runs.
+    # (Arnold's earlier 2026-05-20 instruction was full 1200 ep / no early
+    # stop -- that was before this best-epoch evidence existed.)
+    max_epochs=800,
     batch_size=16,
-    early_stop_patience=10**9,   # effectively disabled
+    # Stop after this many consecutive epochs without a val improvement.
+    # 150 > 2 full ReduceLROnPlateau cycles (patience=50), so training
+    # survives two LR halvings before giving up. Largest observed gap
+    # from stagnation to a new best was well under this.
+    early_stop_patience=150,
     sched_patience=50,
     sched_factor=0.5,
 )
@@ -108,10 +118,14 @@ LR_WARMUP_EPOCHS = 60
 #                cold-system signal that drifts h0 and produces the ~9 C t=0
 #                undershoot. Rejected at the review (Yiming); kept only to
 #                reproduce the 2026-05-25 seqsliding run exactly.
-# Overridable via the SLIDING_PAD_MODE env var so one launch can sweep both
-# "init" and "variable" without editing this file; RUN_NAME_BASE below folds
-# the mode into the run-dir name.
-SLIDING_PAD_MODE = os.environ.get("SLIDING_PAD_MODE", "init")   # "variable" | "init" | "zero"
+# Overridable via the SLIDING_PAD_MODE env var; RUN_NAME_BASE below folds the
+# mode into the run-dir name.
+# 2026-07-16: default flipped "init" -> "variable". The init sweep is DONE
+# (inconclusive; see EXPERIMENT_LOG). The variable sweep is this round's
+# deciding run, so a plain `python GRU_input_ablation.py` with NO env var now
+# runs it -- last round the variable pass was skipped, likely because the env
+# var was never set.
+SLIDING_PAD_MODE = os.environ.get("SLIDING_PAD_MODE", "variable")   # "variable" | "init" | "zero"
 assert SLIDING_PAD_MODE in ("variable", "init", "zero"), \
     f"SLIDING_PAD_MODE must be variable/init/zero, got {SLIDING_PAD_MODE!r}"
 
@@ -270,7 +284,10 @@ INPUT_DIMS = {
 # RUN_NAME_BASE between invocations -- each (seed, variant) tracks its
 # own resume/done state. To start a fresh experiment, change RUN_NAME_BASE.
 # Convention: prefix with the date (YYYY-MM-DD) so chronology is obvious.
-RUN_NAME_BASE = f"2026-06-28_abs_sliding_1200ep_P0_{SLIDING_PAD_MODE}"   # <-- pad mode folded in; set via SLIDING_PAD_MODE env var
+RUN_NAME_BASE = (f"2026-07-16_abs_sliding_{LATEST_PARAMS['max_epochs']}ep"
+                 f"_ES{LATEST_PARAMS['early_stop_patience']}_P0_{SLIDING_PAD_MODE}")
+# ^ epoch budget, early-stop patience, and pad mode all folded into the run
+#   dir name; pad mode set via the SLIDING_PAD_MODE env var.
 RUN_NAME = RUN_NAME_BASE                       # mutated per-seed at runtime in main loop
 RUNS_ROOT_DIR = "runs"                         # parent folder under src/
 
@@ -301,8 +318,11 @@ CHECKPOINT_EVERY_N_EPOCHS = 1      # save resume_state.pt every N epochs
 #
 # Set TRAIN_SUBDIR / TEST_SUBDIR to switch between burn-in / no-burn-in
 # variants without touching the loader.
-TRAIN_SUBDIR = "10s"           # or "10s_with_burn_in" / "150s" / etc.
-TEST_SUBDIR = "test_in_10s"    # or "test_in_10s_with_burn_in" / etc.
+# 2026-07-16: aligned with the protocol every comparable run actually used
+# (see run_config.json of the 2026-05-21 zero baseline AND the init sweep):
+# train on the Latest Database, test on the fixed 70-case set.
+TRAIN_SUBDIR = "Latest Database (Use this for training)"
+TEST_SUBDIR = "70_cases"       # fixed 70-case test set (baseline protocol)
 
 # Explicit data-root candidates, tried in order. The first existing path wins.
 NEW_DATA_ROOT_CANDIDATES = [
@@ -365,8 +385,12 @@ LEGACY_TEST_REL = os.path.join("data", "test_in_10s")
 #
 # All 4 variants receive the IDENTICAL split (same train/val/test file lists)
 # because shuffling uses SPLIT_SEED, applied once at load time.
-MANUAL_SPLIT_ENABLED = True
-OUTER_TEST_FRAC = 0.20   # 80/20 train+val / test  (Arnold confirmed)
+# 2026-07-16: False = folder-as-given (fixed 70-case test set, no supplement).
+# This is what the zero baseline AND the init sweep actually ran with
+# (their run_config.json all say manual_split_enabled: false). True would
+# re-pool train+test and top the test set up to 76 cases -- NOT comparable.
+MANUAL_SPLIT_ENABLED = False
+OUTER_TEST_FRAC = 0.20   # 80/20 train+val / test  (Arnold confirmed; used only when manual split is on)
 INNER_VAL_FRAC = 0.05    # 95/5  train     / val   (existing convention since GRU V1)
 SPLIT_SEED = 42
 

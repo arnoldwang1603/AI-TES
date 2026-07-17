@@ -14,8 +14,8 @@ Lab notebook for the GRU input-feature ablation pipeline
 | `RUN_NAME_BASE` | pad mode | variants × seeds | status |
 |---|---|---|---|
 | `2026-05-25_8var_1200ep_P0_seqsliding` | `zero` | 8 × 4 = 32 runs | `[DONE]` ~116 GPU-h (rejected baseline) |
-| `2026-06-28_abs_sliding_1200ep_P0_init` | `init` | `abs_sliding` × 4 = 4 | `[CODE]` pending |
-| `2026-06-28_abs_sliding_1200ep_P0_variable` | `variable` | `abs_sliding` × 4 = 4 | `[CODE]` pending |
+| `2026-06-28_abs_sliding_1200ep_P0_init` | `init` | `abs_sliding` × 4 = 4 | `[DONE]` see 2026-07-16 results |
+| `2026-07-16_abs_sliding_800ep_ES150_P0_variable` | `variable` | `abs_sliding` × 4 = 4 | `[CODE]` pending |
 
 The open question (report Future Work) is which `t=0` fix wins on the **forward
 sliding variant** (`abs_sliding`): **`init`** — pad the pre-history with the `t=0`
@@ -27,12 +27,75 @@ review (it caused the ~9 °C `t=0` undershoot); its data already exists
 the full seed set `{7, 21, 42, 123}`; every non-sliding variant is untouched, so
 its `2026-05-25` numbers still stand.
 
-Shared protocol (unchanged across the entries below): stacked GRU
-`hidden=128, layers=5, dropout=0.3`, `lr=0.0025`, `batch=16`, `1200` epochs,
-best-val checkpoint; P0 stability provisions (grad-clip `1.0`, orthogonal
-recurrent init, `60`-epoch LR warmup); learned `InitStateEncoder` (h0);
-teacher forcing `0.5 → 0` over `100` epochs; `WINDOW_SIZE=10`; seeds
-`{7, 21, 42, 123}`; 8 variants (forward + inverse × delta/abs/abs+delta/sliding).
+Shared protocol: stacked GRU `hidden=128, layers=5, dropout=0.3`, `lr=0.0025`,
+`batch=16`, best-val checkpoint; P0 stability provisions (grad-clip `1.0`,
+orthogonal recurrent init, `60`-epoch LR warmup); learned `InitStateEncoder`
+(h0); teacher forcing `0.5 → 0` over `100` epochs; `WINDOW_SIZE=10`; seeds
+`{7, 21, 42, 123}`; fixed 70-case test set (`MANUAL_SPLIT_ENABLED=False`).
+Epoch budget: runs through 2026-06-28 used `1200` epochs / no early stop;
+**since 2026-07-16 (Change C): `800` epochs + early stop (patience `150`)** —
+best-val checkpointing is unchanged, so results remain comparable.
+
+---
+
+## 2026-07-16
+
+### Results — `init` sweep `[DONE]` (4/4 seeds complete, fixed 70-case test set)
+
+| seed | overall MAE (zero → init) | EarlyMAE T_inner (zero → init) |
+|---|---|---|
+| 7 | 2.36 → 2.00 | 2.32 → 1.64 |
+| 21 | 1.75 → 1.68 | 1.58 → 2.04 |
+| 42 | 1.80 → 1.79 | 2.01 → **5.06** |
+| 123 | 1.82 → 2.18 | 2.25 → 2.16 |
+| **mean** | **1.93 ± 0.29 → 1.91 ± 0.22** | **2.04 → 2.73** |
+
+Split verified identical to the baseline (`manual_split=false`, `70_cases`).
+**Verdict: inconclusive.** Overall MAE is a wash; the early-window error did
+NOT reliably improve — it is seed-noisy, with a seed-42 early-window blow-up
+(5.06 °C; needs a per-case look) masking a clear seed-7 improvement. The
+`init` pad alone does not settle the `t=0` question; the `variable` sweep is
+now the deciding run. Best epochs: 327 / 555 / 631 / 386.
+
+### Change C — Epoch budget 1200 → 800 + early stopping (patience 150); split pinned `[CODE]`
+
+**Evidence.** Across all 36 completed full-length runs (zero baseline 8×4 +
+init 4), the best-val epoch never exceeded **631** (abs_sliding median ~460;
+most other variants < 500). The second half of every 1200-epoch run has never
+produced a best checkpoint — pure waste (~40–50% of each run's GPU time).
+At the final review Yiming also noted the late-phase val curve is flat and
+safe to cut. Best-val checkpointing is unchanged, so results stay comparable
+with all earlier runs.
+
+**Config delta (all in `tes_gru/config.py` — the only file that changed):**
+- `max_epochs: 1200 → 800` (headroom ≥ 27% over the worst observed best epoch)
+- `early_stop_patience: 10⁹ (off) → 150` (= 3× the LR-scheduler patience, so
+  training survives two LR halvings before stopping)
+- `TRAIN_SUBDIR/TEST_SUBDIR/MANUAL_SPLIT_ENABLED` pinned to the baseline
+  protocol (`Latest Database` / `70_cases` / `False`) — previously the repo
+  copy still carried `test_in_10s`/`True` and would have silently reverted
+  the runner's local fix.
+- `RUN_NAME_BASE` now folds epochs + ES into the name:
+  `2026-07-16_abs_sliding_800ep_ES150_P0_{pad_mode}`.
+- **Default pad mode flipped `init` → `variable`** — the variable sweep is this
+  round's deciding run; a plain `python GRU_input_ablation.py` now runs it
+  (last round the variable pass was skipped, likely because the env var was
+  never set). `init`/`zero` remain reachable via the env var.
+- **Provenance fix:** `run_config.json`'s `seed` field used to record the
+  frozen legacy constant `SEED = SEEDS[0]` (=7) in *every* seed's folder
+  (pre-existing monolith bug — the 2026-05-21 baseline snapshots show it too).
+  The main loop now rebinds `config.SEED = current_seed` and the snapshot
+  reads the live value, so each folder records its true seed. Training was
+  never affected (`set_seed(current_seed)` was always correct); the directory
+  suffix `_seed<N>` was and remains the authoritative label for old runs.
+
+### Next steps
+1. Run the `variable` sweep under the new budget — just
+   `python GRU_input_ablation.py` (variable is now the default mode). `[ ]`
+2. Three-way comparison zero / init / variable on t=0 undershoot, early/late
+   MAE, overall MAE, seed spread; investigate the init seed-42 early-window
+   anomaly (per-case plots). `[ ]`
+3. Window-size sweep `W ∈ {5,10,20,40}` (Yiming). `[ ]`
 
 ---
 
@@ -130,8 +193,8 @@ Marginal overall-MAE change; variant ranking unchanged. Baseline —
   step); train-time (batch) and test-time (single-case) rollouts agree exactly
   (maxdiff 0). Bad `SLIDING_PAD_MODE` fails fast (assert).
 
-### Next steps
-1. Run both sweeps — `init` and `variable`, `abs_sliding` × 4 seeds each. `[ ]`
+### Next steps *(superseded by the 2026-07-16 entry)*
+1. Run both sweeps — `init` and `variable`, `abs_sliding` × 4 seeds each. `[x init / see above for variable]`
 2. Compare `init` vs `variable` (and both vs the existing `zero` baseline): `t=0`
    undershoot, early/late-window MAE, overall MAE, per-seed spread. Pick the
    winner; update this entry to `[DONE]` with numbers. `[ ]`

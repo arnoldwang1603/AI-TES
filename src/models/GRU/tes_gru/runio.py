@@ -53,7 +53,9 @@ def save_run_config_snapshot():
     cfg = {
         'run_name': config.RUN_NAME,
         'started_or_resumed_at': time.strftime('%Y-%m-%d %H:%M:%S'),
-        'seed': SEED,
+        # Read the LIVE value (main loop rebinds config.SEED per seed). A bare
+        # star-imported SEED would be the frozen import-time constant (7).
+        'seed': config.SEED,
         'window_size': WINDOW_SIZE,
         'sliding_pad_mode': SLIDING_PAD_MODE,
         'variants': VARIANTS,

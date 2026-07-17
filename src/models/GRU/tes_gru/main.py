@@ -53,6 +53,10 @@ def main():
     # ========================================================
     for seed_idx, current_seed in enumerate(SEEDS):
         config.RUN_NAME = f"{RUN_NAME_BASE}_seed{current_seed}"
+        # Keep the live config.SEED in sync so run_config.json records the
+        # seed actually being run (it used to freeze the legacy SEED=SEEDS[0]
+        # constant, stamping "seed": 7 into every seed's snapshot).
+        config.SEED = current_seed
         print()
         print("#" * 70)
         print(f"# SEED {seed_idx + 1}/{len(SEEDS)}  seed={current_seed}  "
