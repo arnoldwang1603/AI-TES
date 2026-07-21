@@ -27,9 +27,21 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # single `python GRU_input_ablation.py` produces 4 seeds x 8 variants = 32
 # runs. Each (seed, variant) gets its own resume / done flag so a crash
 # mid-experiment can pick up exactly where it left off.
-SEEDS = [7, 21, 42, 123]
+# Env-overridable (comma-separated) so sweep drivers can run a 2-seed
+# screening pass (e.g. SEEDS="7,42") without editing this file. Default is
+# the full 4-seed protocol. Paired design: use the SAME seed list for every
+# configuration being compared so per-seed differences cancel seed effects.
+SEEDS = [int(s) for s in os.environ.get("SEEDS", "7,21,42,123").split(",") if s.strip()]
+assert SEEDS, "SEEDS parsed to an empty list"
 SEED = SEEDS[0]                 # legacy: kept for any code referencing it as a single-seed default
-WINDOW_SIZE = 10                # steps used by abs_window's WindowInitStateEncoder
+# Sliding-window length W (steps the GRU sees per rollout iteration in the
+# sliding variants; also abs_window's WindowInitStateEncoder length).
+# 2026-07-20: env-overridable for the window-size sweep (W in {5,10,20,50},
+# per Yiming at the final review). One W per PROCESS -- W is baked into
+# default args and star-import snapshots at import time, so it must never be
+# mutated at runtime. Use run_window_sweep.py to sweep all values.
+WINDOW_SIZE = int(os.environ.get("WINDOW_SIZE", "10"))
+assert 1 <= WINDOW_SIZE <= 200, f"unreasonable WINDOW_SIZE={WINDOW_SIZE}"
 
 LATEST_PARAMS = dict(
     hidden_size=128,
@@ -46,7 +58,11 @@ LATEST_PARAMS = dict(
     # results stay comparable with the earlier 1200-ep runs.
     # (Arnold's earlier 2026-05-20 instruction was full 1200 ep / no early
     # stop -- that was before this best-epoch evidence existed.)
-    max_epochs=800,
+    # 2026-07-20: cap raised 800 -> 1000. The variable-pad run showed slower
+    # convergence than the 1200-ep evidence base predicted (seed7 best at
+    # epoch 748 hit the 800 wall); 1000 restores headroom while still saving
+    # ~2x vs the old 1200-ep/no-ES protocol.
+    max_epochs=1000,
     batch_size=16,
     # Stop after this many consecutive epochs without a val improvement.
     # 150 > 2 full ReduceLROnPlateau cycles (patience=50), so training
@@ -284,10 +300,12 @@ INPUT_DIMS = {
 # RUN_NAME_BASE between invocations -- each (seed, variant) tracks its
 # own resume/done state. To start a fresh experiment, change RUN_NAME_BASE.
 # Convention: prefix with the date (YYYY-MM-DD) so chronology is obvious.
-RUN_NAME_BASE = (f"2026-07-16_abs_sliding_{LATEST_PARAMS['max_epochs']}ep"
+RUN_NAME_BASE = (f"2026-07-20_abs_sliding_W{WINDOW_SIZE}"
+                 f"_{LATEST_PARAMS['max_epochs']}ep"
                  f"_ES{LATEST_PARAMS['early_stop_patience']}_P0_{SLIDING_PAD_MODE}")
-# ^ epoch budget, early-stop patience, and pad mode all folded into the run
-#   dir name; pad mode set via the SLIDING_PAD_MODE env var.
+# ^ window size, epoch budget, early-stop patience, and pad mode all folded
+#   into the run dir name; W and pad mode come from the WINDOW_SIZE /
+#   SLIDING_PAD_MODE env vars (see run_window_sweep.py).
 RUN_NAME = RUN_NAME_BASE                       # mutated per-seed at runtime in main loop
 RUNS_ROOT_DIR = "runs"                         # parent folder under src/
 
