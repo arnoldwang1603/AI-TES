@@ -58,6 +58,7 @@ def save_run_config_snapshot():
         'seed': config.SEED,
         'window_size': WINDOW_SIZE,
         'sliding_pad_mode': SLIDING_PAD_MODE,
+        'tinner_mode': TINNER_MODE,
         'variants': VARIANTS,
         'input_dims': INPUT_DIMS,
         'latest_params': LATEST_PARAMS,

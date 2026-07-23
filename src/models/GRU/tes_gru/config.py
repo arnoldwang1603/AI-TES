@@ -146,6 +146,37 @@ assert SLIDING_PAD_MODE in ("variable", "init", "zero"), \
     f"SLIDING_PAD_MODE must be variable/init/zero, got {SLIDING_PAD_MODE!r}"
 
 
+# ------------------------------------------------------------
+# T_inner handling in the forward sliding variant (Arnold 2026-07)
+# ------------------------------------------------------------
+# Context: T_inner tracks Input_T within ~1 C in the data (gap mean 0.6 C,
+# identical at t=0), yet the model's early-window T_inner error (1.9-2.7 C)
+# is 5-8x WORSE than a zero-parameter "copy Input_T" baseline (0.34 C) --
+# the model leans on its own AR-fed T_inner input instead of the clean
+# exogenous Input_T, so small h0-transient errors copy themselves forward.
+# Applies to the FORWARD `abs_sliding` variant only. One mode per PROCESS
+# (baked into input dims / dataset columns at import time).
+#   "arfed"       current 5-input recipe: T_inner is an input and its own
+#                 predictions feed back (status quo / control arm).
+#   "anchor"      inputs unchanged (5-d), but the T_inner head predicts a
+#                 z-scored residual delta = T_inner(t+1) - Input_T(t); the
+#                 rollout reconstructs T_inner = Input_T + delta. Hard-wires
+#                 the tracking relationship; feedback error resets at every
+#                 step from the GT anchor. (Same principle as the ODE anchor
+#                 in Sid's LSTM.) NOTE: this is a cross-channel physical
+#                 offset predicted at the OUTPUT -- not the (failed) delta
+#                 time-difference INPUT features of the 8-variant ablation.
+#   "output_only" v22-style: T_inner removed from the input (4-d:
+#                 [Time, T_outer, T_avg, Input_T]); still predicted, never
+#                 fed back. The clean A/B that removes the crutch.
+# 2026-07-22: default flipped "arfed" -> "anchor" after Arnold's GO ("safe to
+# just implement the anchor and go from there"). A bare launcher run now lands
+# on the approved arm; the arfed control already exists (2026-07-16 run).
+TINNER_MODE = os.environ.get("TINNER_MODE", "anchor")   # "arfed" | "anchor" | "output_only"
+assert TINNER_MODE in ("arfed", "anchor", "output_only"), \
+    f"TINNER_MODE must be arfed/anchor/output_only, got {TINNER_MODE!r}"
+
+
 def warmup_lr(epoch, base_lr, warmup_epochs=None):
     """Return the LR to use at this epoch during the warmup phase.
 
@@ -255,7 +286,9 @@ INPUT_DIMS = {
     # 5-d per step; the W-step sliding window is in the TIME dimension (the
     # GRU input becomes (B, W, 5) instead of (B, 1, 5+3*W)). See
     # _rollout_sliding for the new semantics.
-    'abs_sliding': 5,
+    # Under TINNER_MODE == "output_only" (v22-style A/B) T_inner is removed
+    # from the input -> 4-d [Time, T_outer, T_avg, Input_T].
+    'abs_sliding': 4 if TINNER_MODE == "output_only" else 5,
     # ---- Inverse variants (Arnold 2026-05-21) ----
     # Only Time + T_avg (and dT_avg / window of T_avg for delta / sliding flavors).
     # T_avg is GT exogenous (always observable at deployment), so there is no
@@ -300,12 +333,14 @@ INPUT_DIMS = {
 # RUN_NAME_BASE between invocations -- each (seed, variant) tracks its
 # own resume/done state. To start a fresh experiment, change RUN_NAME_BASE.
 # Convention: prefix with the date (YYYY-MM-DD) so chronology is obvious.
-RUN_NAME_BASE = (f"2026-07-20_abs_sliding_W{WINDOW_SIZE}"
+RUN_NAME_BASE = (f"2026-07-21_abs_sliding_W{WINDOW_SIZE}"
                  f"_{LATEST_PARAMS['max_epochs']}ep"
-                 f"_ES{LATEST_PARAMS['early_stop_patience']}_P0_{SLIDING_PAD_MODE}")
-# ^ window size, epoch budget, early-stop patience, and pad mode all folded
-#   into the run dir name; W and pad mode come from the WINDOW_SIZE /
-#   SLIDING_PAD_MODE env vars (see run_window_sweep.py).
+                 f"_ES{LATEST_PARAMS['early_stop_patience']}"
+                 f"_P0_{SLIDING_PAD_MODE}_Tin-{TINNER_MODE}")
+# ^ window size, epoch budget, early-stop patience, pad mode, and T_inner
+#   mode all folded into the run dir name; set via the WINDOW_SIZE /
+#   SLIDING_PAD_MODE / TINNER_MODE env vars (see run_tinner_ablation.py and
+#   run_window_sweep.py).
 RUN_NAME = RUN_NAME_BASE                       # mutated per-seed at runtime in main loop
 RUNS_ROOT_DIR = "runs"                         # parent folder under src/
 

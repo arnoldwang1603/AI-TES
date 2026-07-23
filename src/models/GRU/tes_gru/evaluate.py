@@ -135,9 +135,19 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             # Zero-pad k < 0. Hidden state carries over. Last-step output =
             # prediction for t+1. Test time: tf_prob = 0 (no teacher forcing).
             W = WINDOW_SIZE
+            # Column layout mirrors data.py / _rollout_sliding:
+            #   arfed/anchor: [Time, T_outer, T_inner, T_avg, Input_T] (5-d)
+            #   output_only : [Time, T_outer, T_avg, Input_T]          (4-d)
+            out_only = (TINNER_MODE == "output_only")
+            if out_only:
+                IDX_AVG, IDX_INP = 2, 3
+            else:
+                IDX_AVG, IDX_INP = 3, 4
+            feat_dim = x.shape[1]
             outer_hist = [float(x[0, 1].item())]   # k=0: GT initial
-            inner_hist = [float(x[0, 2].item())]
-            avg_hist = [float(x[0, 3].item())]
+            inner_hist = None if out_only else [float(x[0, 2].item())]
+            avg_hist = [float(x[0, IDX_AVG].item())]
+            anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
 
             preds = []
             cur_h = hidden
@@ -149,36 +159,45 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                         if SLIDING_PAD_MODE == "variable":
                             continue
                         elif SLIDING_PAD_MODE == "zero":
-                            window_steps.append([0.0, 0.0, 0.0, 0.0, 0.0])
+                            window_steps.append([0.0] * feat_dim)
                         else:  # "init": repeat the t=0 steady-state row
-                            window_steps.append([
-                                x[0, 0].item(),   # Time(0)         GT
-                                outer_hist[0],    # T_outer(0)      GT initial
-                                inner_hist[0],    # T_inner(0)      GT initial
-                                avg_hist[0],      # T_avg(0)        GT initial
-                                x[0, 4].item(),   # Input_T(0)      GT exogenous
-                            ])
+                            window_steps.append(
+                                [x[0, j].item() for j in range(feat_dim)])
                     else:
-                        window_steps.append([
-                            x[k, 0].item(),     # Time(k)         GT
-                            outer_hist[k],      # T_outer(k)      AR
-                            inner_hist[k],      # T_inner(k)      AR
-                            avg_hist[k],        # T_avg(k)        AR
-                            x[k, 4].item(),     # Input_T(k)      GT exogenous
-                        ])
+                        if out_only:
+                            window_steps.append([
+                                x[k, 0].item(),     # Time(k)      GT
+                                outer_hist[k],      # T_outer(k)   AR
+                                avg_hist[k],        # T_avg(k)     AR
+                                x[k, IDX_INP].item(),  # Input_T(k) GT
+                            ])
+                        else:
+                            window_steps.append([
+                                x[k, 0].item(),     # Time(k)      GT
+                                outer_hist[k],      # T_outer(k)   AR
+                                inner_hist[k],      # T_inner(k)   AR
+                                avg_hist[k],        # T_avg(k)     AR
+                                x[k, IDX_INP].item(),  # Input_T(k) GT
+                            ])
                 window = torch.tensor(
                     window_steps, dtype=torch.float32
-                ).unsqueeze(0).to(DEVICE)   # (1, W, 5)
+                ).unsqueeze(0).to(DEVICE)   # (1, W, feat_dim)
 
                 with torch.no_grad():
                     out, cur_h = model(window, cur_h)
-                pred = out[0, -1].cpu().numpy()   # last step's output
+                pred = out[0, -1].cpu().numpy().copy()   # last step's output
+                if anchor is not None:
+                    # Reconstruct T_inner from the z-scored residual head,
+                    # anchored on GT Input_T(t) -- mirrors _rollout_sliding.
+                    ka, kb, kc = anchor
+                    pred[0] = ka * float(x[t, IDX_INP].item()) + kb + kc * pred[0]
                 preds.append(pred)
 
                 # pred channels (per VARIANT_OUTPUT_CHANNELS) = [T_inner, T_outer, T_avg]
                 outer_hist.append(float(pred[1]))
-                inner_hist.append(float(pred[0]))
                 avg_hist.append(float(pred[2]))
+                if inner_hist is not None:
+                    inner_hist.append(float(pred[0]))
             pred_seq = np.array(preds)
         else:
             # Unified per-step rollout for delta / abs+delta / abs / abs_window.

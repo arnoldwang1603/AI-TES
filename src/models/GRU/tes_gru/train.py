@@ -57,6 +57,42 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         print(f"[{variant}] orthogonal init applied to main GRU "
               f"(and window encoder if present)")
 
+    # ---- T_inner anchor reparameterization (TINNER_MODE == "anchor") ----
+    # The head's channel 0 predicts a z-scored residual
+    #     delta(t+1) = T_inner_raw(t+1) - Input_T_raw(t)
+    # and the rollout reconstructs, in T_inner's MinMax-scaled space,
+    #     T_inner_s(t+1) = KA * InputT_s(t) + KB + KC * z .
+    # KA/KB map Input_T's scaled space into T_inner's scaled space; KC folds
+    # in the train-set delta std so the head trains on O(1) values (a raw
+    # ~0.6 C delta is only ~0.0015 MinMax units -- too small for the loss).
+    # Recomputed on every train_model call, so resume is unaffected.
+    if variant == 'abs_sliding' and TINNER_MODE == 'anchor':
+        deltas = []
+        for df, _ in train_dfs:
+            d = df.copy()
+            d.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
+            if "Input Temperature (C)" not in d.columns:
+                d["Input Temperature (C)"] = d["T_inner (C)"]
+            tin = d["T_inner (C)"].values
+            inp = d["Input Temperature (C)"].values
+            deltas.append(tin[1:] - inp[:-1])
+        deltas = np.concatenate(deltas)
+        d_mean = float(deltas.mean())
+        # Floor the std: with the Input_T:=T_inner fallback data the delta
+        # degenerates to ~0 and would kill the head's gradient.
+        d_std = float(max(deltas.std(), 0.05))
+        i_tin = ThermalDataset.BASE_COLS.index("T_inner (C)")
+        i_inp = ThermalDataset.BASE_COLS.index("Input Temperature (C)")
+        # sklearn MinMaxScaler: scaled = raw * scale_ + min_
+        s_tin, m_tin = float(scaler.scale_[i_tin]), float(scaler.min_[i_tin])
+        s_inp, m_inp = float(scaler.scale_[i_inp]), float(scaler.min_[i_inp])
+        ka = s_tin / s_inp
+        kb = -ka * m_inp + s_tin * d_mean + m_tin
+        kc = s_tin * d_std
+        model.tinner_anchor = (ka, kb, kc)
+        print(f"[{variant}] T_inner anchor on Input_T: delta mean={d_mean:+.3f} C "
+              f"std={d_std:.3f} C  ->  KA={ka:.5f} KB={kb:+.5f} KC={kc:.6f}")
+
     # ---- Trainable parameter counts (broken down) ----
     def _count(module):
         return sum(p.numel() for p in module.parameters() if p.requires_grad)

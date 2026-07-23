@@ -75,6 +75,7 @@ def main():
         print(f"  Variants: {VARIANTS}")
         print(f"  Window size (abs_window only): {WINDOW_SIZE}")
         print(f"  Sliding pad mode: {SLIDING_PAD_MODE}")
+        print(f"  T_inner mode: {TINNER_MODE}")
         print(f"  Run name: {config.RUN_NAME}")
         print(f"  All artifacts will be written under: {run_dir()}")
         print("#" * 60)
@@ -298,6 +299,7 @@ def main():
                         'input_dims': INPUT_DIMS,
                         'window_size': WINDOW_SIZE,
                         'sliding_pad_mode': SLIDING_PAD_MODE,
+                        'tinner_mode': TINNER_MODE,
                         'latest_params': LATEST_PARAMS,
                         'manual_split_enabled': MANUAL_SPLIT_ENABLED,
                         'outer_test_frac': OUTER_TEST_FRAC,

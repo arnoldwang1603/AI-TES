@@ -100,6 +100,14 @@ class ThermalDataset(Dataset):
             # W-length T_avg lookback window is built at rollout time
             # directly from inputs (T_avg is GT exogenous, no AR feedback).
             feat_cols = ["Time (s)", "T_avg (C)"]
+        elif variant == 'abs_sliding' and TINNER_MODE == 'output_only':
+            # v22-style A/B: T_inner is predicted (targets unchanged) but is
+            # NOT an input, so its own predictions never feed back.
+            #   idx 0 = Time, 1 = T_outer, 2 = T_avg, 3 = Input_T
+            feat_cols = [
+                "Time (s)",
+                "T_outer (C)", "T_avg (C)", "Input Temperature (C)",
+            ]
         else:  # abs / abs_window / abs_sliding
             feat_cols = [
                 "Time (s)",

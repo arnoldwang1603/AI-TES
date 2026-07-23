@@ -16,7 +16,8 @@ Lab notebook for the GRU input-feature ablation pipeline
 | `2026-05-25_8var_1200ep_P0_seqsliding` | `zero` | 8 × 4 = 32 runs | `[DONE]` ~116 GPU-h (rejected baseline) |
 | `2026-06-28_abs_sliding_1200ep_P0_init` | `init` | `abs_sliding` × 4 = 4 | `[DONE]` see 2026-07-16 results |
 | `2026-07-16_abs_sliding_800ep_ES150_P0_variable` | `variable` | `abs_sliding` × 4 = 4 | `[DONE]` **t=0 winner** — see results |
-| `2026-07-20_abs_sliding_W{5,10,20,50}_1000ep_ES150_P0_variable` | `variable` | 4 W × **2 seeds {7,42}** = 8 (screening) | `[CODE]` pending — `run_window_sweep_2gpu.py` (2×4090) / `run_window_sweep.py` (1 GPU) |
+| `2026-07-20_abs_sliding_W{5,10,20,50}_1000ep_ES150_P0_variable` | `variable` | 4 W × 2 seeds = 8 (screening) | **`[POSTPONED]`** — T_inner ablation takes priority (Arnold 2026-07); lab box is single-GPU, use `run_window_sweep.py` when resumed |
+| `2026-07-21_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-{anchor,output_only}` | `variable` | 2 modes × **2 seeds {7,42}** = 4 | `[CODE]` pending — `python run_tinner_ablation.py` (single GPU) |
 
 The open question (report Future Work) is which `t=0` fix wins on the **forward
 sliding variant** (`abs_sliding`): **`init`** — pad the pre-history with the `t=0`
@@ -36,6 +37,98 @@ orthogonal recurrent init, `60`-epoch LR warmup); learned `InitStateEncoder`
 Epoch budget: runs through 2026-06-28 used `1200` epochs / no early stop;
 **since 2026-07-16 (Change C): `800` epochs + early stop (patience `150`)** —
 best-val checkpointing is unchanged, so results remain comparable.
+
+---
+
+## 2026-07-21
+
+### Change E — T_inner ablation: `TINNER_MODE` = arfed / **anchor** / output_only `[CODE]`
+
+**Trigger (Arnold, email).** "T_inner essentially follows Input_T (gap ≤ 1 °C)
+— there is no way the model cannot predict this accurately. Focus on fixing
+the T_inner prediction."
+
+**Diagnosis confirmed on data.** |T_inner − Input_T| gap: mean 0.6 °C in the
+early window, 0.75 °C late, identical at t=0. A zero-parameter
+"copy Input_T" baseline scores **0.34 °C** early-window MAE — our trained
+model scores **1.9–2.7 °C** there (5–8× worse than free). The model leans on
+its AR-fed T_inner input (which is GT during teacher forcing, hence learned)
+instead of the clean exogenous Input_T; at inference that slot carries its
+own h₀-transient error and copies it forward. v22 (4-input) had no such slot
+→ smooth starts. The early spike is T_inner-specific in every configuration
+(early/late ≈ 2.2–2.6 vs 0.5–0.8 for the other channels), and the pad fix
+did not move it — all consistent.
+
+**Two fixes, one flag (`TINNER_MODE`, env-overridable, abs_sliding only):**
+- **`anchor`** *(priority arm)* — inputs unchanged; the T_inner head predicts
+  a z-scored residual `δ(t+1) = T_inner(t+1) − Input_T(t)` and the rollout
+  reconstructs `T_inner = KA·InputT_s + KB + KC·z` (affine constants from the
+  train-set δ stats + scaler, computed in `train_model`, attached to the
+  model). Hard-wires the tracking relation; the fed-back T_inner is
+  GT-anchor-dominated so feedback error resets each step. Same principle as
+  the ODE anchor in Sid's LSTM. **Distinct from the failed `delta` INPUT
+  features**: that was a time-difference input replacing the absolute anchor
+  (integrates errors); this is a cross-channel offset at the OUTPUT anchored
+  on GT (resets errors). z-scoring keeps the head O(1) — a raw 0.6 °C δ is
+  ~0.0015 MinMax units, untrainable without it (δ std floored at 0.05 °C).
+- **`output_only`** — v22-style A/B: T_inner removed from the input (4-d
+  `[Time, T_outer, T_avg, Input_T]`), still predicted, never fed back.
+
+Control arm = the 2026-07-16 variable run (Tin-arfed, 800-ep-cap caveat).
+
+**Touchpoints.** `config.py` (flag, dynamic `INPUT_DIMS`, run-name tag),
+`data.py` (4-col features under output_only), `train.py` (anchor constants),
+`rollout.py` + `evaluate.py` (mode-aware windows, reconstruction, no inner
+history under output_only), provenance (`run_config.json` / aggregate /
+banner), new driver **`run_tinner_ablation.py`** (single GPU — lab box
+confirmed 1×4090; anchor first, then output_only; 2-seed screening {7,42};
+resumable; logs → `sweep_logs/Tin-<mode>.log`).
+
+**Verification (all exact unless noted).** `arfed` is bitwise-identical to
+the pre-change rollout from git HEAD at tf=0 AND seeded tf=0.5 (RNG
+consumption order preserved — existing results unaffected). `anchor`
+reconstruction matches the closed form (maxdiff 0) and the raw-space
+round-trip `T_inner = Input_T + μ + σz` checks to 1e-13 °C through the
+scaler affine. `output_only` windows are 4-d everywhere with correct output
+shapes. Train rollout == hand-rolled test mirror for both new modes
+(0 / 3e-8). Bad mode value fails fast at import.
+
+**Decision (Arnold, email, 2026-07-22): GO on anchor.** "I think right now
+it's safe to just implement the anchor to eliminate the early errors and go
+from there." He also endorsed the gate concept as part of the long-term
+framework (branch models selected by input-condition scenario: temperature
+vs fluid, solid-only vs solid+fluid).
+
+**Physics clarification from Arnold (corrects our mental model).** The
+current temperature-input cases are **solid-only conduction — no fluid is
+simulated at all.** T_input is the inner surface temperature of the embedded
+heat-exchanger pipe; T_inner is the inner surface of the storage media; the
+small gap is conduction across the pipe wall (< 0.5 in). Consequence: the
+T_inner~T_input tracking in THIS dataset is structural (thin-wall
+conduction), not flow-dependent — the pump-stop/standby decoupling scenarios
+we worried about cannot occur inside this data family, so the anchor's
+assumption is even safer here than we estimated.
+
+**Known upcoming issue — convection data (flagged by Arnold).** In the
+convection datasets (training "soon"), some cases start with
+T_inner/T_outer/T_avg at ~100 °C while T_input starts at ~200 °C to emulate
+hot fluid arriving → **δ ≈ −100 °C at t=0**, decaying over the transient.
+That breaks the current narrow-band z-scoring (train-set σ would jump from
+~0.8 °C to tens of °C). Arnold still wants a delta formulation there ("the
+temperature gradient is always the one that drives heat transfer" — i.e., δ
+becomes a physically meaningful driving-force signal, not noise), details to
+be discussed when convection training starts. Do NOT reuse the current
+anchor constants on convection data without revisiting the normalization.
+
+**W sweep postponed** until this ablation lands (it decides the formulation
+the sweep should run under).
+
+### Next steps
+1. `python run_tinner_ablation.py` on the lab 4090 (~24 h total: 2 modes ×
+   2 seeds × ~6 h). `[ ]`
+2. Judge on early-window T_inner MAE + t=0 first-step error vs the arfed
+   control and the 0.34 °C copy-baseline floor; report back to Arnold. `[ ]`
+3. Resume the W sweep under the winning `TINNER_MODE`. `[ ]`
 
 ---
 

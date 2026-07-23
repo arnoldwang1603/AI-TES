@@ -195,37 +195,45 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
     seq_len = inputs.size(1)
     device = inputs.device
 
+    # Column layout of `inputs` depends on TINNER_MODE (see data.py):
+    #   arfed / anchor : [Time, T_outer, T_inner, T_avg, Input_T]   (5-d)
+    #   output_only    : [Time, T_outer, T_avg, Input_T]            (4-d, v22)
+    out_only = (TINNER_MODE == "output_only")
+    if out_only:
+        IDX_AVG, IDX_INP, FEAT_DIM = 2, 3, 4
+    else:
+        IDX_AVG, IDX_INP, FEAT_DIM = 3, 4, 5
+
     # AR history per step k = 0 .. seq_len (one extra slot for the final
     # prediction we never use). Initialised from the GT t=0 row.
+    # output_only keeps NO inner history: T_inner is predicted but its
+    # values are never consumed anywhere.
     outer_hist = [inputs[:, 0, 1]]   # k=0: T_outer GT initial
-    inner_hist = [inputs[:, 0, 2]]
-    avg_hist = [inputs[:, 0, 3]]
+    inner_hist = None if out_only else [inputs[:, 0, 2]]
+    avg_hist = [inputs[:, 0, IDX_AVG]]
+
+    # "anchor": head channel 0 is a z-scored residual; reconstruct
+    # T_inner_s = KA * InputT_s(t) + KB + KC * z (constants from train_model;
+    # AttributeError here means train_model never attached them -- fail loud).
+    anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
 
     preds = []
     cur_h = hidden
 
     for t in range(seq_len):
-        # Pull the current step's AR values (set by the previous iteration
-        # or by the t=0 init above).
-        cur_outer = outer_hist[t]
-        cur_inner = inner_hist[t]
-        cur_avg = avg_hist[t]
-
         # Teacher-forcing gate (t > 0). Replace the t-step AR values with
         # GT for the masked batch elements. This is what gets written to
-        # history AND used in this iteration's window.
+        # history AND used in this iteration's window. (In output_only mode
+        # there is no inner history to force.)
         if t > 0 and tf_prob > 0.0:
             tf_mask = (torch.rand(batch_size, device=device) < tf_prob)
             gt_inner = targets[:, t - 1, 0]
             gt_outer = targets[:, t - 1, 1]
             gt_avg = targets[:, t - 1, 2]
-            cur_outer = torch.where(tf_mask, gt_outer, cur_outer)
-            cur_inner = torch.where(tf_mask, gt_inner, cur_inner)
-            cur_avg = torch.where(tf_mask, gt_avg, cur_avg)
-            # Update history so future windows see the TF-modified value.
-            outer_hist[t] = cur_outer.detach()
-            inner_hist[t] = cur_inner.detach()
-            avg_hist[t] = cur_avg.detach()
+            outer_hist[t] = torch.where(tf_mask, gt_outer, outer_hist[t]).detach()
+            avg_hist[t] = torch.where(tf_mask, gt_avg, avg_hist[t]).detach()
+            if inner_hist is not None:
+                inner_hist[t] = torch.where(tf_mask, gt_inner, inner_hist[t]).detach()
 
         # Build the W-step window: steps [t-W+1, t-W+2, ..., t].
         # Steps with k < 0 are zero-padded.
@@ -242,34 +250,55 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
                 if SLIDING_PAD_MODE == "variable":
                     continue
                 elif SLIDING_PAD_MODE == "zero":
-                    window_steps.append(torch.zeros(batch_size, 5, device=device))
+                    window_steps.append(
+                        torch.zeros(batch_size, FEAT_DIM, device=device))
                 else:  # "init"
-                    window_steps.append(inputs[:, 0, :5])
+                    window_steps.append(inputs[:, 0, :FEAT_DIM])
             else:
                 # AR slots at step k come from history (detached, so the
                 # window does NOT backprop through the AR chain -- mirrors
                 # forward `abs` semantics).
-                step_5d = torch.stack([
-                    inputs[:, k, 0],          # Time(k)        GT
-                    outer_hist[k].detach(),   # T_outer(k)     AR (or GT-via-TF)
-                    inner_hist[k].detach(),   # T_inner(k)     AR
-                    avg_hist[k].detach(),     # T_avg(k)       AR
-                    inputs[:, k, 4],          # Input_T(k)     GT exogenous
-                ], dim=1)
-                window_steps.append(step_5d)
-        window = torch.stack(window_steps, dim=1)   # (B, W, 5)
+                if out_only:
+                    step_feats = torch.stack([
+                        inputs[:, k, 0],          # Time(k)        GT
+                        outer_hist[k].detach(),   # T_outer(k)     AR
+                        avg_hist[k].detach(),     # T_avg(k)       AR
+                        inputs[:, k, IDX_INP],    # Input_T(k)     GT exogenous
+                    ], dim=1)
+                else:
+                    step_feats = torch.stack([
+                        inputs[:, k, 0],          # Time(k)        GT
+                        outer_hist[k].detach(),   # T_outer(k)     AR (or GT-via-TF)
+                        inner_hist[k].detach(),   # T_inner(k)     AR
+                        avg_hist[k].detach(),     # T_avg(k)       AR
+                        inputs[:, k, IDX_INP],    # Input_T(k)     GT exogenous
+                    ], dim=1)
+                window_steps.append(step_feats)
+        window = torch.stack(window_steps, dim=1)   # (B, W, FEAT_DIM)
 
         # GRU forward over the W-step window. Hidden state advances W
         # steps and carries to the next rollout iteration.
         out, cur_h = model(window, cur_h)
         # Last step's output is the prediction for step t+1.
         pred_t = out[:, -1, :]                       # (B, 3) = (T_inner, T_outer, T_avg)
+
+        if anchor is not None:
+            # Reconstruct T_inner in its scaled space from the z-scored
+            # residual head, anchored on the GT Input_T at step t. Gradients
+            # flow through KC * z; the anchor term is constant w.r.t. params.
+            ka, kb, kc = anchor
+            tin_s = ka * inputs[:, t, IDX_INP] + kb + kc * pred_t[:, 0]
+            pred_t = torch.cat([tin_s.unsqueeze(1), pred_t[:, 1:]], dim=1)
+
         preds.append(pred_t)
 
-        # Save prediction as AR value at step t+1.
+        # Save prediction as AR value at step t+1. (In anchor mode the
+        # fed-back T_inner is the RECONSTRUCTED value -- GT-anchor dominated,
+        # so feedback error resets every step instead of compounding.)
         outer_hist.append(pred_t[:, 1])
-        inner_hist.append(pred_t[:, 0])
         avg_hist.append(pred_t[:, 2])
+        if inner_hist is not None:
+            inner_hist.append(pred_t[:, 0])
 
     return torch.stack(preds, dim=1)
 
