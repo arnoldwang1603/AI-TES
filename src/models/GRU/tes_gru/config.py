@@ -176,6 +176,65 @@ TINNER_MODE = os.environ.get("TINNER_MODE", "anchor")   # "arfed" | "anchor" | "
 assert TINNER_MODE in ("arfed", "anchor", "output_only"), \
     f"TINNER_MODE must be arfed/anchor/output_only, got {TINNER_MODE!r}"
 
+# ------------------------------------------------------------
+# Anchor lead (2026-07-23)
+# ------------------------------------------------------------
+# The anchor predicts T_inner(t+1). ANCHOR_LEAD=1 anchors it on Input_T(t+1),
+# =0 on Input_T(t). Input_T is EXOGENOUS -- the whole curve is a given boundary
+# condition known before the rollout starts -- so t+1 is equally causal and
+# strictly better: the residual the head must learn drops from max 37.5 C /
+# std 1.00 to max 8.5 C / std 0.49, because Input_T(t) is stale whenever the
+# inlet jumps between steps (Case 40: inlet 217->263 in one step, giving a
+# -37 C first-step error under lead=0).
+ANCHOR_LEAD = int(os.environ.get("ANCHOR_LEAD", "1"))
+assert ANCHOR_LEAD in (0, 1)
+
+# ------------------------------------------------------------
+# Loss shaping (2026-07-23) -- borrowed from the LSTM team's recipe
+# ------------------------------------------------------------
+# Per-channel loss weights in OUTPUT order (T_inner, T_outer, T_avg).
+# Uniform [1,1,1] under-serves the hard channels: with T_inner anchored its
+# error is ~0.38 C while T_avg sits at 2.62 C, of which 2.52 C is a pure
+# level offset -- the model has little gradient incentive left to fix it.
+# The LSTM line uses Ti x1 + To x6 + Ta x3 and reports far better T_outer /
+# T_avg, so we adopt the same emphasis. Set "1,1,1" to restore the old
+# behaviour.
+LOSS_WEIGHTS = [float(x) for x in
+                os.environ.get("LOSS_WEIGHTS", "1,6,3").split(",")]
+assert len(LOSS_WEIGHTS) == 3, "LOSS_WEIGHTS needs 3 comma-separated values"
+
+# Physics bound penalty (also from the LSTM recipe): T_avg must lie between
+# T_inner and T_outer. Verified on our data: holds at 98.76% of all timesteps
+# (T_avg sits ~0.41 of the way from T_outer to T_inner). The penalty is a
+# hinge on violations, applied in RAW temperature space (the MinMax scaling
+# is per-channel, so the ordering is not preserved in scaled space).
+# 0.0 disables it.
+PHYSICS_BOUND_WEIGHT = float(os.environ.get("PHYSICS_BOUND_WEIGHT", "1.0"))
+
+# ------------------------------------------------------------
+# T_outer / T_avg output parameterization (Arnold's request, 2026-07-23 mtg)
+# ------------------------------------------------------------
+# Arnold: "the error only happens for average and outer... I'm guessing it is
+# because you're using delta for inner -- then yes, just do the same thing for
+# outer and average."
+#   "abs"         predict T_outer(t+1) / T_avg(t+1) directly (status quo).
+#   "persistence" predict the per-step CHANGE and add it to the previous
+#                 value: T(t+1) = T_AR(t) + delta, with delta z-scored on the
+#                 train set.
+# NOTE this is NOT the same mechanism as the T_inner anchor. T_inner is
+# anchored on GROUND-TRUTH exogenous Input_T, so its error resets every step.
+# T_outer / T_avg have no such external reference (they sit 78 C / 58 C away
+# from Input_T with large variance), so the only available delta is against
+# their OWN previous prediction -- which makes the rollout an integrator with
+# no reset: a per-step bias of just 0.001 C compounds to 1.4 C over the 1440
+# steps, and the true per-step change is only 0.071 / 0.091 C. It also cannot
+# by itself remove a level offset (the current failure mode) because there is
+# no absolute reference to pull the level back. Kept as an experimental arm
+# so the question is settled by measurement rather than argument.
+OTHER_CH_MODE = os.environ.get("OTHER_CH_MODE", "abs")   # "abs" | "persistence"
+assert OTHER_CH_MODE in ("abs", "persistence"), \
+    f"OTHER_CH_MODE must be abs/persistence, got {OTHER_CH_MODE!r}"
+
 
 def warmup_lr(epoch, base_lr, warmup_epochs=None):
     """Return the LR to use at this epoch during the warmup phase.
@@ -333,10 +392,13 @@ INPUT_DIMS = {
 # RUN_NAME_BASE between invocations -- each (seed, variant) tracks its
 # own resume/done state. To start a fresh experiment, change RUN_NAME_BASE.
 # Convention: prefix with the date (YYYY-MM-DD) so chronology is obvious.
-RUN_NAME_BASE = (f"2026-07-21_abs_sliding_W{WINDOW_SIZE}"
+_LW = "-".join(f"{w:g}" for w in LOSS_WEIGHTS)
+RUN_NAME_BASE = (f"2026-07-23_abs_sliding_W{WINDOW_SIZE}"
                  f"_{LATEST_PARAMS['max_epochs']}ep"
                  f"_ES{LATEST_PARAMS['early_stop_patience']}"
-                 f"_P0_{SLIDING_PAD_MODE}_Tin-{TINNER_MODE}")
+                 f"_P0_{SLIDING_PAD_MODE}_Tin-{TINNER_MODE}"
+                 f"_lead{ANCHOR_LEAD}_w{_LW}_pb{PHYSICS_BOUND_WEIGHT:g}"
+                 f"_oth-{OTHER_CH_MODE}")
 # ^ window size, epoch budget, early-stop patience, pad mode, and T_inner
 #   mode all folded into the run dir name; set via the WINDOW_SIZE /
 #   SLIDING_PAD_MODE / TINNER_MODE env vars (see run_tinner_ablation.py and

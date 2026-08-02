@@ -66,6 +66,43 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
     # in the train-set delta std so the head trains on O(1) values (a raw
     # ~0.6 C delta is only ~0.0015 MinMax units -- too small for the loss).
     # Recomputed on every train_model call, so resume is unaffected.
+    # ---- Raw-space affine constants for the T_avg physics bound ----
+    # (scaled = raw * scale_ + min_, per channel). Order matches the model's
+    # output channels: T_inner, T_outer, T_avg.
+    if PHYSICS_BOUND_WEIGHT > 0.0 and not is_inverse(variant):
+        _i = {c: ThermalDataset.BASE_COLS.index(c) for c in
+              ("T_inner (C)", "T_outer (C)", "T_avg (C)")}
+        model.raw_affine = tuple(
+            (float(scaler.scale_[_i[c]]), float(scaler.min_[_i[c]]))
+            for c in ("T_inner (C)", "T_outer (C)", "T_avg (C)"))
+        print(f"[{variant}] physics bound ON (w={PHYSICS_BOUND_WEIGHT}): "
+              f"T_avg constrained to [min(T_inner,T_outer), max(...)]")
+    else:
+        model.raw_affine = None
+    print(f"[{variant}] loss weights (T_inner,T_outer,T_avg) = {LOSS_WEIGHTS}")
+
+    # ---- T_outer / T_avg persistence parameterization (Arnold 2026-07-23) ----
+    # Head predicts a z-scored per-step change; the rollout adds it to the
+    # channel's own previous (AR) value:  T(t+1) = T_AR(t) + mu + sigma*z,
+    # expressed in scaled space as  T_s(t+1) = T_s_AR(t) + KB + KC*z.
+    if variant == 'abs_sliding' and OTHER_CH_MODE == 'persistence':
+        step_stats = {}
+        for name, col in (("T_outer", "T_outer (C)"), ("T_avg", "T_avg (C)")):
+            d = []
+            for df, _ in train_dfs:
+                dd = df.copy()
+                dd.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
+                d.append(np.diff(dd[col].values))
+            d = np.concatenate(d)
+            mu, sd = float(d.mean()), float(max(d.std(), 1e-3))
+            s = float(scaler.scale_[ThermalDataset.BASE_COLS.index(col)])
+            step_stats[name] = (s * mu, s * sd)   # (KB, KC) in scaled space
+            print(f"[{variant}] {name} persistence: step mean={mu:+.4f} C "
+                  f"std={sd:.4f} C -> KB={s*mu:+.6f} KC={s*sd:.6f}")
+        model.step_anchor = (step_stats["T_outer"], step_stats["T_avg"])
+    else:
+        model.step_anchor = None
+
     if variant == 'abs_sliding' and TINNER_MODE == 'anchor':
         deltas = []
         for df, _ in train_dfs:
@@ -75,7 +112,8 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                 d["Input Temperature (C)"] = d["T_inner (C)"]
             tin = d["T_inner (C)"].values
             inp = d["Input Temperature (C)"].values
-            deltas.append(tin[1:] - inp[:-1])
+            # ANCHOR_LEAD=1 -> residual vs Input_T(t+1); =0 -> vs Input_T(t)
+            deltas.append(tin[1:] - (inp[1:] if ANCHOR_LEAD else inp[:-1]))
         deltas = np.concatenate(deltas)
         d_mean = float(deltas.mean())
         # Floor the std: with the Input_T:=T_inner fallback data the delta
@@ -190,7 +228,7 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
             preds = run_rollout_train(model, variant, inputs, targets,
                                        init_conds, win_obs,
                                        tf_prob=tf_prob_train)
-            loss = weighted_loss(preds, targets)
+            loss = weighted_loss(preds, targets, raw_affine=getattr(model, 'raw_affine', None))
             loss.backward()
             # ---- Gradient clipping (Pascanu 2013) ----
             if GRADIENT_CLIP_NORM is not None and GRADIENT_CLIP_NORM > 0:
@@ -214,7 +252,8 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                 preds = run_rollout_train(model, variant, inputs, targets,
                                           init_conds, win_obs,
                                           tf_prob=0.0)
-                vloss += weighted_loss(preds, targets).item()
+                vloss += weighted_loss(preds, targets,
+                                       raw_affine=getattr(model, 'raw_affine', None)).item()
         avg_val = vloss / max(1, len(val_loader))
         val_hist.append(avg_val)
 

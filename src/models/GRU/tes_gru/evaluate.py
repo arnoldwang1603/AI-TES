@@ -148,6 +148,8 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             inner_hist = None if out_only else [float(x[0, 2].item())]
             avg_hist = [float(x[0, IDX_AVG].item())]
             anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
+            step_anchor = getattr(model, 'step_anchor', None) \
+                if OTHER_CH_MODE == "persistence" else None
 
             preds = []
             cur_h = hidden
@@ -186,11 +188,16 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                 with torch.no_grad():
                     out, cur_h = model(window, cur_h)
                 pred = out[0, -1].cpu().numpy().copy()   # last step's output
+                if step_anchor is not None:
+                    (kb_o, kc_o), (kb_a, kc_a) = step_anchor
+                    pred[1] = outer_hist[t] + kb_o + kc_o * pred[1]
+                    pred[2] = avg_hist[t] + kb_a + kc_a * pred[2]
                 if anchor is not None:
                     # Reconstruct T_inner from the z-scored residual head,
                     # anchored on GT Input_T(t) -- mirrors _rollout_sliding.
                     ka, kb, kc = anchor
-                    pred[0] = ka * float(x[t, IDX_INP].item()) + kb + kc * pred[0]
+                    t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+                    pred[0] = ka * float(x[t_a, IDX_INP].item()) + kb + kc * pred[0]
                 preds.append(pred)
 
                 # pred channels (per VARIANT_OUTPUT_CHANNELS) = [T_inner, T_outer, T_avg]
@@ -367,13 +374,23 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             'T_avg':   'green',   'Input_T': 'purple',
         }
         plt.figure(figsize=(12, 6))
-        time_plot = inv_actual[:, 0]
+        # Prepend the t=0 row (Arnold 2026-07-23): predictions cover t=1..n,
+        # so plotting from t=1 hid the shared starting point and made a
+        # one-step-lagged prediction look like it started somewhere else.
+        # t=0 is the GIVEN initial condition, identical for actual and pred.
+        # Plot-only -- inv_actual / inv_pred (and every metric) are untouched.
+        row0 = ds.scaler.inverse_transform(np.column_stack([
+            ft[:1], ft_out[:1], ft_in[:1], ft_avg[:1], ft_inp[:1],
+        ]).astype(np.float64))
+        plot_actual = np.vstack([row0, inv_actual])
+        plot_pred = np.vstack([row0, inv_pred])
+        time_plot = plot_actual[:, 0]
         for ch_name in channel_names:
             col = SCALER_COL[ch_name]
             c = CH_COLOR.get(ch_name, 'black')
-            plt.plot(time_plot, inv_actual[:, col],
+            plt.plot(time_plot, plot_actual[:, col],
                      label=f"{ch_name} Actual", color=c)
-            plt.plot(time_plot, inv_pred[:, col], '--',
+            plt.plot(time_plot, plot_pred[:, col], '--',
                      label=f"{ch_name} Pred", color=c)
         plt.xlabel("Time (s)")
         plt.ylabel("Temperature (C)")

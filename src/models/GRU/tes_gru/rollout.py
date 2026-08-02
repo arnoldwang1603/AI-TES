@@ -216,6 +216,8 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
     # T_inner_s = KA * InputT_s(t) + KB + KC * z (constants from train_model;
     # AttributeError here means train_model never attached them -- fail loud).
     anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
+    step_anchor = getattr(model, 'step_anchor', None) \
+        if OTHER_CH_MODE == "persistence" else None
 
     preds = []
     cur_h = hidden
@@ -282,12 +284,23 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
         # Last step's output is the prediction for step t+1.
         pred_t = out[:, -1, :]                       # (B, 3) = (T_inner, T_outer, T_avg)
 
+        if step_anchor is not None:
+            # T_outer(t+1) = T_outer_AR(t) + KB + KC*z ; same for T_avg.
+            (kb_o, kc_o), (kb_a, kc_a) = step_anchor
+            t_out_s = outer_hist[t].detach() + kb_o + kc_o * pred_t[:, 1]
+            t_avg_s = avg_hist[t].detach() + kb_a + kc_a * pred_t[:, 2]
+            pred_t = torch.stack(
+                [pred_t[:, 0], t_out_s, t_avg_s], dim=1)
+
         if anchor is not None:
             # Reconstruct T_inner in its scaled space from the z-scored
             # residual head, anchored on the GT Input_T at step t. Gradients
             # flow through KC * z; the anchor term is constant w.r.t. params.
             ka, kb, kc = anchor
-            tin_s = ka * inputs[:, t, IDX_INP] + kb + kc * pred_t[:, 0]
+            # ANCHOR_LEAD=1 uses Input_T(t+1) (exogenous, known in advance);
+            # falls back to Input_T(t) at the last step.
+            t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+            tin_s = ka * inputs[:, t_a, IDX_INP] + kb + kc * pred_t[:, 0]
             pred_t = torch.cat([tin_s.unsqueeze(1), pred_t[:, 1:]], dim=1)
 
         preds.append(pred_t)

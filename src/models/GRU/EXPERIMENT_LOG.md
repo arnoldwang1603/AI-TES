@@ -17,7 +17,7 @@ Lab notebook for the GRU input-feature ablation pipeline
 | `2026-06-28_abs_sliding_1200ep_P0_init` | `init` | `abs_sliding` × 4 = 4 | `[DONE]` see 2026-07-16 results |
 | `2026-07-16_abs_sliding_800ep_ES150_P0_variable` | `variable` | `abs_sliding` × 4 = 4 | `[DONE]` **t=0 winner** — see results |
 | `2026-07-20_abs_sliding_W{5,10,20,50}_1000ep_ES150_P0_variable` | `variable` | 4 W × 2 seeds = 8 (screening) | **`[POSTPONED]`** — T_inner ablation takes priority (Arnold 2026-07); lab box is single-GPU, use `run_window_sweep.py` when resumed |
-| `2026-07-21_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-{anchor,output_only}` | `variable` | 2 modes × **2 seeds {7,42}** = 4 | `[CODE]` pending — `python run_tinner_ablation.py` (single GPU) |
+| `2026-07-21_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-{anchor,output_only}` | `variable` | 2 modes × 2 seeds {7,42} = 4 | `[DONE]` **anchor wins** — overall 1.39 °C, early T_inner 0.37 °C |
 
 The open question (report Future Work) is which `t=0` fix wins on the **forward
 sliding variant** (`abs_sliding`): **`init`** — pad the pre-history with the `t=0`
@@ -37,6 +37,190 @@ orthogonal recurrent init, `60`-epoch LR warmup); learned `InitStateEncoder`
 Epoch budget: runs through 2026-06-28 used `1200` epochs / no early stop;
 **since 2026-07-16 (Change C): `800` epochs + early stop (patience `150`)** —
 best-val checkpointing is unchanged, so results remain comparable.
+
+---
+
+## 2026-07-23
+
+### Results — T_inner ablation `[DONE]` → **anchor wins decisively; adopt it**
+
+4/4 runs complete (2 modes × seeds {7,42}), W=10, variable pad, fixed 70-case
+set. Control = the 2026-07-16 arfed run on the same seeds.
+
+| metric (mean of seeds 7,42) | arfed (ctrl) | **anchor** | output_only |
+|---|---|---|---|
+| **Early-window MAE T_inner** | 1.78 | **0.37** | 1.84 |
+| MAE T_inner (whole rollout) | 1.08 | **0.38** | 1.58 |
+| MaxErr T_inner | 10.73 | **2.22** | 9.01 |
+| t=0 first-step err (T_inner) | 4.31 | **1.73** | 3.52 |
+| **Overall MAE** | 1.93 | **1.39** | 2.17 |
+| MAE T_outer | 2.35 | **1.19** | 1.45 |
+| MAE T_avg | **2.35** | 2.62 | 3.48 |
+| R² overall | 0.9963 | **0.9965** | 0.9954 |
+
+**Headline.** Early-window T_inner error drops **1.78 → 0.37 °C (4.8×)**,
+essentially reaching the 0.34 °C zero-parameter copy floor — i.e. the model
+now exploits the T_inner~T_input relationship as well as it possibly can.
+The early instability Arnold flagged is resolved. Overall MAE **1.39 °C**
+also beats the previous project best (v22, 1.53 °C single-seed), on both
+seeds (1.29 / 1.50) and on a larger test set.
+
+**Unexpected bonus.** T_outer improved almost as much (2.35 → 1.19) even
+though nothing about it changed — its rollout consumed the polluted T_inner
+feedback, so cleaning that channel improved the whole state vector. T_avg is
+marginally worse (2.35 → 2.62), the only regression.
+
+**output_only is not competitive** (2.17 overall, early T_inner 1.84 ≈
+unchanged). Removing the crutch does not by itself make the model use
+T_input; it has to be forced structurally. This is a useful negative result:
+v22's smooth starts were not caused by the 4-input formulation alone.
+
+**Predicted failure mode confirmed and quantified.** As anticipated, the
+anchor's advantage is conditional on the tracking assumption:
+`|T_inner − T_input|` < 1 °C → anchor 0.28 vs arfed 1.18 (4× better);
+gap ≥ 2 °C → anchor 3.03 vs arfed 2.88 (slightly *worse*). Those moments are
+~1.8 % of all timesteps, so the aggregate is dominated by the win. Per case:
+anchor beats the control on **67/70** cases; the 3 losses are all Type-9
+(+0.17…+0.41 °C). Biggest wins are exactly the cases that used to have the
+worst starts (Case 40: 4.26 → 0.42; Case 36: 2.95 → 0.29; Case 24:
+2.52 → 0.26). Median per-case T_inner MAE 0.83 → **0.20**.
+
+**Convection caveat stands.** The gap≥2 °C degradation is the same mechanism
+that will bite on convection data (δ ≈ −100 °C at t=0). Do not port these
+anchor constants; the normalization must be redesigned there (Arnold's
+"temperature gradient drives heat transfer" framing + the gate).
+
+### Plot review — two real problems the aggregate metrics hid `[OPEN]`
+
+Visual inspection of the per-case plots (not the summary numbers) surfaced
+two issues. Both are confirmed quantitatively.
+
+**(a) REGRESSION: T_avg acquires a permanent upward offset.** Signed bias by
+rollout decile (70 cases, both seeds, °C):
+
+| | 0-10% | 20-30% | 40-50% | 60-70% | 80-90% | 90-100% |
+|---|---|---|---|---|---|---|
+| arfed T_avg | +0.98 | +1.00 | +0.37 | −0.08 | −0.25 | −0.49 |
+| **anchor T_avg** | +0.97 | **+2.20** | **+2.53** | **+2.39** | **+2.60** | **+2.70** |
+| arfed T_outer | −0.98 | −1.40 | −2.40 | −2.43 | −2.34 | −2.38 |
+| **anchor T_outer** | −1.14 | −0.61 | −0.53 | −0.28 | +0.02 | **+0.11** |
+
+arfed's T_avg bias self-corrects toward zero; anchor's climbs to ~+2.5 within
+the first 30 % and **locks in for the rest of the rollout** — this is the
+"late drift" visible on cases 1-4, 8-10, 19, 23, 27, 58-70. Note the
+trade: anchor drove T_outer's bias from −2.4 to ~0 while T_avg went from ~0
+to +2.5. Working hypothesis (unproven): the model carries a systematic
+stored-energy bias, and whichever channel is least constrained absorbs it —
+pinning T_inner (and thereby improving T_outer) pushed it into T_avg. Net
+MAE still improves, but a locked-in offset is worse for a surrogate than
+noise of the same magnitude, and T_avg is the primary reported quantity.
+
+**(b) DESIGN FLAW: the anchor lags one step.** It uses `Input_T(t)` to
+predict `T_inner(t+1)`, a choice made purely to make the causality argument
+airtight. But Input_T is exogenous — the whole curve is a given boundary
+condition — so `Input_T(t+1)` is equally legitimate and strictly better.
+Oracle comparison of the residual the head must learn:
+
+| residual definition | mean \|δ\| | std | max | \|δ\| at t=0 (mean / max) |
+|---|---|---|---|---|
+| `T_inner(t+1) − Input_T(t)` (current) | 0.756 | 1.00 | **37.5** | 1.81 / **37.5** |
+| `T_inner(t+1) − Input_T(t+1)` (fix) | 0.733 | **0.49** | **8.5** | **0.35** / 8.5 |
+
+The tail shrinks 4.4× and the std halves. This explains the Case-40 start
+the plots show: at t=0 all four channels sit at 217.2 °C, then Input_T jumps
+to 263.2 and T_inner follows to 254.7 in one step — anchored on the stale
+217.2 the model predicts 217.3, a −37 °C first-step error (Case 54 is the
+same, −34 °C). Under the fix the anchor would sit at 263.2 and the residual
+becomes the physically real 8.5 °C lag. This also shrinks the large-gap
+weakness (gap ≥ 2 °C is largely this one-step lag) and makes the whole
+scheme more robust for convection data.
+
+**(c) Not a problem: the "odd" initial values on cases 41-45, 48-51.** Those
+cases start isothermal — T_inner = T_outer = T_avg = Input_T at t=0 (e.g.
+355.0 across the board) — which is how the simulations are initialized, so
+all four curves start from one point in the plots. Model first-step errors
+there are ±1 °C. No action.
+
+**Verdict revision:** anchor is still the right direction (T_inner early
+error 1.78 → 0.37, 67/70 cases improved), but it should NOT go into the
+report or become production until (b) is implemented and (a) is understood.
+
+### Change F — three fixes for the T_outer / T_avg weakness `[CODE]`
+
+Diagnosis first. T_avg's error is **not** driven by case complexity
+(correlation with number of inlet direction-changes: **+0.01**); it is a
+broad systematic level offset — median per-case T_avg MAE 2.61, >3 °C on
+15/70 cases, and 70 % of the error is pure bias. Two of the three fixes are
+taken from the LSTM line's configuration, which reports much better T_outer /
+T_avg with the same data.
+
+1. **`ANCHOR_LEAD=1`** — anchor on `Input_T(t+1)` instead of `Input_T(t)`.
+   Input_T is exogenous (whole curve known up front), so this is equally
+   causal and strictly better: residual max 37.5 → 8.5 °C, std 1.00 → 0.49.
+   Fixes the Case-40 / Case-54 first-step blowups (−37 / −34 °C).
+2. **`LOSS_WEIGHTS=1,6,3`** — per-channel loss weights (T_inner, T_outer,
+   T_avg), matching the LSTM line's `Ti×1 + To×6 + Ta×3`. Our loss was
+   uniform `[1,1,1]`; with T_inner anchored to ~0.38 °C, most of the
+   remaining gradient budget was being spent on the channel that is already
+   solved.
+3. **`PHYSICS_BOUND_WEIGHT=1`** — hinge penalty when predicted T_avg leaves
+   `[min(T_inner,T_outer), max(T_inner,T_outer)]`, applied in RAW temperature
+   space (per-channel MinMax scaling does not preserve the ordering).
+   Verified on our data: the bound holds at **98.76 %** of all timesteps and
+   T_avg sits ~0.41 of the way from T_outer to T_inner. The bounds are
+   **detached** in the penalty so it can only pull T_avg back inside — never
+   widen the bracket by distorting the (now accurate) T_inner.
+
+All three are env-overridable and folded into the run name
+(`..._lead{0,1}_w1-6-3_pb1`). New driver `run_fix_ablation.py` runs them
+cumulatively (A = lead only, B = +weights, C = +physics bound) so each
+effect is attributable; `--only C` runs just the full stack.
+
+**Verification.** Anchor-lead reconstruction matches the `Input_T(t+1)` form
+exactly and differs from the old one; per-channel weights produce exactly the
+expected loss values; the hinge is zero inside the bracket, linear outside,
+disabled when `PHYSICS_BOUND_WEIGHT=0`, its gradient pushes T_avg back inside,
+and — after the detach fix — leaves T_inner/T_outer gradients at exactly 0.
+Env overrides and run naming confirmed.
+
+### Meeting 2026-07-23 (Arnold) — asks, and what each maps to
+
+1. **"Do you have a theory why some cases still start badly?"** — **SOLVED, with
+   a clean mechanism.** The first-step error is entirely the anchor lag: it
+   equals the one-step jump in Input_T, because the head was anchored on
+   `Input_T(t)` while the truth follows `Input_T(t+1)`.
+   **Correlation between first-step error and the Input_T jump: +0.999**, and
+   **all 11** cases with >2 °C first-step error have a matching Input_T jump
+   (Case 40: err −37.3 vs jump −46.0; Case 54: −34.0 vs −42.0). This also
+   answers his puzzle about "nearly identical cases behaving differently" —
+   it depends only on whether that case's inlet ramps instantly at t=0, not on
+   the case's overall shape. Already fixed by `ANCHOR_LEAD=1` (Change F).
+2. **"All your plots are missing t=0"** — confirmed: the plot slice was
+   `[1:n+1]`, so the shared starting point was cut and a one-step-lagged
+   prediction looked like it began somewhere else. **Fixed**: the t=0 row (the
+   given initial condition) is now prepended for plotting only; `inv_actual` /
+   `inv_pred` and every metric are untouched.
+3. **"Just do the same thing (delta) for outer and average"** — implemented as
+   `OTHER_CH_MODE=persistence` and added as **arm D**. It is deliberately
+   flagged as a different mechanism from the T_inner anchor (see the config
+   comment): T_inner anchors on GT exogenous Input_T so errors reset each step,
+   whereas T_outer / T_avg can only anchor on their own previous prediction,
+   making the rollout an integrator with no reset. Prediction to be tested: a
+   per-step bias of 0.001 °C compounds to 1.4 °C over 1440 steps, and a level
+   offset (the current failure mode) has no absolute reference to pull it back.
+   Measurement will settle it.
+4. **Email summarizing the input features** (old delta variants vs the current
+   anchor) — Arnold explicitly asked for this in writing; he is not yet clear
+   on what changed. `[ ]`
+
+### Next steps
+1. Run `python run_fix_ablation.py` (arms A→B→C→D, ~24 h; `--only C` for the
+   recommended stack in ~6 h, `--only D` for Arnold's variant). `[ ]`
+2. Judge: does T_avg's +2.5 °C locked-in offset collapse, do the Case-40 / 54
+   starts come good (expect the first-step error to fall from ~37 °C to ≤8.5),
+   and does D beat or drift versus C? `[ ]`
+3. Send Arnold the input-feature summary email. `[ ]`
+4. Then resume the window-size sweep under the winning configuration. `[ ]`
 
 ---
 

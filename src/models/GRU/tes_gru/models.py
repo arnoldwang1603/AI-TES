@@ -108,13 +108,43 @@ class ThermalGRU(nn.Module):
 # ============================================================
 # 5. Loss
 # ============================================================
-_DEFAULT_WEIGHTS = torch.tensor([1.0, 1.0, 1.0])
+# Channel order is (T_inner, T_outer, T_avg) -- see VARIANT_OUTPUT_CHANNELS.
+# Weights come from config (default 1/6/3, mirroring the LSTM line's recipe).
+_DEFAULT_WEIGHTS = torch.tensor(LOSS_WEIGHTS)
 
 
-def weighted_loss(predictions, targets, weights=None):
+def weighted_loss(predictions, targets, weights=None, raw_affine=None):
+    """Per-channel weighted L1 + optional T_avg physics-bound hinge.
+
+    predictions / targets are in the MinMax-SCALED space.
+
+    raw_affine: optional ((s_in, m_in), (s_out, m_out), (s_avg, m_avg)) from
+    the fitted scaler (scaled = raw * s + m). When given together with a
+    non-zero PHYSICS_BOUND_WEIGHT, a hinge penalty is added for predictions
+    that put T_avg outside [min(T_inner, T_outer), max(T_inner, T_outer)].
+    The check MUST be done in raw temperature space: MinMax scaling is
+    per-channel, so channel ordering is not preserved after scaling.
+    """
     if weights is None:
         weights = _DEFAULT_WEIGHTS
     weights = weights.to(predictions.device)
-    return torch.mean(torch.abs(predictions - targets) * weights)
+    loss = torch.mean(torch.abs(predictions - targets) * weights)
+
+    if raw_affine is not None and PHYSICS_BOUND_WEIGHT > 0.0:
+        (s_in, m_in), (s_out, m_out), (s_avg, m_avg) = raw_affine
+        t_in = (predictions[..., 0] - m_in) / s_in
+        t_out = (predictions[..., 1] - m_out) / s_out
+        t_avg = (predictions[..., 2] - m_avg) / s_avg
+        # Bounds are DETACHED: the penalty must pull T_avg back inside the
+        # bracket, never widen the bracket by distorting T_inner / T_outer
+        # (T_inner in particular is anchored and accurate -- letting the
+        # hinge push it outward would corrupt the channel we just fixed).
+        lo = torch.minimum(t_in, t_out).detach()
+        hi = torch.maximum(t_in, t_out).detach()
+        # Hinge in raw degrees, rescaled by the T_avg scale so it is
+        # commensurate with the scaled-space L1 term above.
+        viol = torch.relu(t_avg - hi) + torch.relu(lo - t_avg)
+        loss = loss + PHYSICS_BOUND_WEIGHT * torch.mean(viol) * s_avg
+    return loss
 
 

@@ -75,7 +75,10 @@ def main():
         print(f"  Variants: {VARIANTS}")
         print(f"  Window size (abs_window only): {WINDOW_SIZE}")
         print(f"  Sliding pad mode: {SLIDING_PAD_MODE}")
-        print(f"  T_inner mode: {TINNER_MODE}")
+        print(f"  T_inner mode: {TINNER_MODE}  (anchor_lead={ANCHOR_LEAD})")
+        print(f"  Loss weights (Ti,To,Ta): {LOSS_WEIGHTS}   "
+              f"physics bound w={PHYSICS_BOUND_WEIGHT}")
+        print(f"  T_outer/T_avg mode: {OTHER_CH_MODE}")
         print(f"  Run name: {config.RUN_NAME}")
         print(f"  All artifacts will be written under: {run_dir()}")
         print("#" * 60)
