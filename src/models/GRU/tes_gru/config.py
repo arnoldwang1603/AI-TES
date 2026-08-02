@@ -292,9 +292,10 @@ def teacher_forcing_prob(epoch):
 # the FORWARD sliding-window variant ONLY (abs_sliding -- the production-valid
 # headline config). Seeds are kept at the full [7,21,42,123]. Restore the
 # commented full list below to re-run the complete 8-variant ablation.
-VARIANTS = [
-    'abs_sliding',            # forward sliding (production-valid; the headline config)
-]
+# 2026-07-24: env-overridable so drivers can select the variant per arm
+# (run_fix_ablation.py arm E runs 'forward_direct'). Default unchanged.
+VARIANTS = [v.strip() for v in
+            os.environ.get("VARIANTS", "abs_sliding").split(",") if v.strip()]
 # Full 8-variant ablation (uncomment to run everything):
 # VARIANTS = [
 #     'delta', 'abs+delta', 'abs', 'abs_sliding',
@@ -312,6 +313,15 @@ VARIANT_OUTPUT_CHANNELS = {
     'abs':                ['T_inner', 'T_outer', 'T_avg'],
     'abs_window':         ['T_inner', 'T_outer', 'T_avg'],
     'abs_sliding':        ['T_inner', 'T_outer', 'T_avg'],
+    # forward_direct (2026-07-24): seq2seq formulation test. Inputs are ONLY
+    # the exogenous [Time, Input_T]; ALL state channels predicted in ONE
+    # forward pass, no AR feedback anywhere. Mirrors the LSTM line's problem
+    # setup (minus bidirectionality) so the formulation-vs-cell question is
+    # answered inside our own multi-seed harness. Legitimate for the offline
+    # surrogate use case: the full Input_T curve is the given boundary
+    # condition. Structurally immune to error accumulation; single-pass
+    # inference (~4 ms, like the non-sliding inverse variants).
+    'forward_direct':     ['T_inner', 'T_outer', 'T_avg'],
     # Inverse variants -- output is (Input_T, T_inner, T_outer) at t+1.
     'inverse_delta':       ['Input_T', 'T_inner', 'T_outer'],
     'inverse_abs+delta':   ['Input_T', 'T_inner', 'T_outer'],
@@ -358,6 +368,8 @@ INPUT_DIMS = {
     'inverse_abs+delta':   3,                   # Time + T_avg + dT_avg
     'inverse_abs':         2,                   # Time + T_avg
     'inverse_abs_sliding': 2,                   # Time + T_avg per step, W-step sequence input
+    # forward_direct: exogenous-only [Time, Input_T]; single pass, no AR.
+    'forward_direct': 2,
 }
 
 # ------------------------------------------------------------
@@ -393,7 +405,8 @@ INPUT_DIMS = {
 # own resume/done state. To start a fresh experiment, change RUN_NAME_BASE.
 # Convention: prefix with the date (YYYY-MM-DD) so chronology is obvious.
 _LW = "-".join(f"{w:g}" for w in LOSS_WEIGHTS)
-RUN_NAME_BASE = (f"2026-07-23_abs_sliding_W{WINDOW_SIZE}"
+_VTAG = "-".join(VARIANTS)
+RUN_NAME_BASE = (f"2026-07-23_{_VTAG}_W{WINDOW_SIZE}"
                  f"_{LATEST_PARAMS['max_epochs']}ep"
                  f"_ES{LATEST_PARAMS['early_stop_patience']}"
                  f"_P0_{SLIDING_PAD_MODE}_Tin-{TINNER_MODE}"

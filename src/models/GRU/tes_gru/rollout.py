@@ -88,6 +88,14 @@ def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
     else:
         hidden = model.init_hidden(batch_size, x_window=win_obs)
 
+    if variant == 'forward_direct':
+        # Exogenous-only seq2seq: inputs are [Time, Input_T] (all GT given
+        # boundary conditions), one forward pass over the whole sequence.
+        # No AR feedback exists, so the TF gate is a no-op. h0 still comes
+        # from the InitStateEncoder (initial state is given).
+        out, _ = model(inputs, hidden)
+        return out
+
     if variant == 'abs_sliding':
         return _rollout_sliding(model, inputs, targets, hidden, batch_size,
                                 tf_prob=tf_prob)

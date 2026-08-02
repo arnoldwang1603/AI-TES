@@ -17,6 +17,11 @@ Three fixes, run cumulatively so each one's effect is attributable:
   C  full        + PHYSICS_BOUND_WEIGHT=1  (hinge keeping T_avg inside
                     [T_inner, T_outer]; holds on 98.76% of our data)
                  -> isolates the physics constraint vs B.
+  E  direct      forward_direct variant: exogenous-only [Time, Input_T]
+                 seq2seq, one forward pass, zero AR feedback (the LSTM
+                 line's formulation inside our GRU harness). Same loss
+                 shaping as C -> formulation is the only variable vs C.
+                 Cheapest arm by far (no rollout loop).
 
 Usage:
     python run_fix_ablation.py            # A, B, C in order (~18 h)
@@ -43,6 +48,15 @@ ARMS = {
     # predicted as per-step changes off their own previous value.
     "D": dict(ANCHOR_LEAD="1", LOSS_WEIGHTS="1,6,3", PHYSICS_BOUND_WEIGHT="1",
               OTHER_CH_MODE="persistence"),
+    # E = formulation test: forward_direct variant -- exogenous-only
+    # [Time, Input_T] inputs, ALL state channels predicted in one forward
+    # pass, no AR feedback anywhere (the LSTM line's problem setup, minus
+    # bidirectionality, inside our GRU + multi-seed harness). Loss shaping
+    # kept identical to C so the FORMULATION is the only variable vs C.
+    # Anchor/persistence knobs are abs_sliding-only and inert here. Much
+    # cheaper than the other arms: single-pass training, no rollout loop.
+    "E": dict(VARIANTS="forward_direct",
+              LOSS_WEIGHTS="1,6,3", PHYSICS_BOUND_WEIGHT="1"),
 }
 DEFAULT_SEEDS = "7,42"
 
@@ -57,7 +71,7 @@ def main():
         arms = [sys.argv[sys.argv.index("--only") + 1].upper()]
     else:
         arms = [a.strip().upper() for a in
-                os.environ.get("ARMS", "A,B,C,D").split(",") if a.strip()]
+                os.environ.get("ARMS", "A,B,C,D,E").split(",") if a.strip()]
     for a in arms:
         if a not in ARMS:
             sys.exit(f"unknown arm {a!r}; pick from {list(ARMS)}")

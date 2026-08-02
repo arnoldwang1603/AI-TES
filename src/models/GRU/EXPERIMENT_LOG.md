@@ -213,9 +213,37 @@ Env overrides and run naming confirmed.
    anchor) — Arnold explicitly asked for this in writing; he is not yet clear
    on what changed. `[ ]`
 
+### Change G — arm E: `forward_direct` (formulation test) `[CODE]`
+
+Comparing our numbers against the LSTM line conflates three things: the cell
+(LSTM vs GRU — near-irrelevant), the **problem formulation** (their seq2seq
+over exogenous inputs vs our 1450-step causal AR rollout — the big one), and
+extras (bidirectional/attention/ODE features). Their formulation is
+structurally immune to error accumulation and is legitimate for the offline
+surrogate use case (the full Input_T curve IS the given boundary condition —
+even MPC evaluates full candidate curves). Our 8-variant ablation never
+tested a non-AR forward variant — a genuine blind spot.
+
+New variant **`forward_direct`**: inputs = exogenous `[Time, Input_T]` only
+(2-d), all three state channels predicted in ONE forward pass, zero AR
+feedback, h0 still from the InitStateEncoder. `VARIANTS` is now
+env-overridable; run name folds the variant tag. Added as **arm E** with
+loss shaping identical to C, so formulation is the only variable vs C.
+Single-pass training (no rollout loop) makes it the cheapest arm by far;
+inference should be ~4 ms (like the non-sliding inverse variants) vs
+~500 ms.
+
+Interpretation guide: if E ≈/> C, the LSTM line's edge is the formulation,
+not the cell — adopt seq2seq for the offline surrogate (with our multi-seed
+error bars), keep AR+anchor as the causal branch for future closed-loop /
+streaming scenarios in Arnold's framework. Verified: dataset (N,2)/(N,3)
+shapes, one forward call per rollout (spy), TF no-op, default config
+unchanged, runner dry-run correct.
+
 ### Next steps
-1. Run `python run_fix_ablation.py` (arms A→B→C→D, ~24 h; `--only C` for the
-   recommended stack in ~6 h, `--only D` for Arnold's variant). `[ ]`
+1. Run `python run_fix_ablation.py` (arms A→B→C→D→E, ~24-26 h; `--only C`
+   ~6 h, `--only D` for Arnold's variant, `--only E` ~1-2 h for the
+   formulation test). `[ ]`
 2. Judge: does T_avg's +2.5 °C locked-in offset collapse, do the Case-40 / 54
    starts come good (expect the first-step error to fall from ~37 °C to ≤8.5),
    and does D beat or drift versus C? `[ ]`

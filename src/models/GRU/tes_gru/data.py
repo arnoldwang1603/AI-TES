@@ -100,6 +100,11 @@ class ThermalDataset(Dataset):
             # W-length T_avg lookback window is built at rollout time
             # directly from inputs (T_avg is GT exogenous, no AR feedback).
             feat_cols = ["Time (s)", "T_avg (C)"]
+        elif variant == 'forward_direct':
+            # Exogenous-only seq2seq (2026-07-24): the model sees ONLY the
+            # given boundary condition; all state channels are outputs, none
+            # feed back. idx 0 = Time, 1 = Input_T.
+            feat_cols = ["Time (s)", "Input Temperature (C)"]
         elif variant == 'abs_sliding' and TINNER_MODE == 'output_only':
             # v22-style A/B: T_inner is predicted (targets unchanged) but is
             # NOT an input, so its own predictions never feed back.

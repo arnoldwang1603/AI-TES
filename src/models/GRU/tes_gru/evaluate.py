@@ -83,7 +83,14 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
 
         seq_len = x.shape[0]
 
-        if is_inverse(variant):
+        if variant == 'forward_direct':
+            # Exogenous-only seq2seq: inputs [Time, Input_T] are the given
+            # boundary condition; one forward pass, no AR (mirrors
+            # run_rollout_train's forward_direct branch).
+            with torch.no_grad():
+                out, _ = model(x.unsqueeze(0), hidden)
+            pred_seq = out[0].cpu().numpy()
+        elif is_inverse(variant):
             # Inverse rollout (single-case mirror of _rollout_inverse).
             # All inputs are GT exogenous (no AR); single forward pass for
             # non-sliding inverse variants, per-step window build for
