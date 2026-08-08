@@ -6,6 +6,10 @@ __pycache__/
 # Experiment outputs — run dirs hold checkpoints/plots/predictions and can be
 # gigabytes; results are exchanged as folders, not through git.
 src/models/GRU/runs/
+src/models/GRU/sweep_logs/
+# any model's run output, wherever it lands
+**/runs/
+
 
 # Editor / OS noise
 .vscode/

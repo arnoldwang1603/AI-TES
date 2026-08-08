@@ -40,6 +40,218 @@ best-val checkpointing is unchanged, so results remain comparable.
 
 ---
 
+## 2026-08-06 — meeting follow-ups (Arnold)
+
+### Verified: the "weird jumps" Arnold saw are caused by the ANCHOR, not by dropping AR
+
+He compared plots of arm B (AR) against arm G (anchored, no AR), saw spurious
+step discontinuities in G that B didn't have, and concluded B looked better
+case-by-case. The observation is real, but the attribution needs correcting —
+the right comparison is B against **E** (plain forward_direct, no anchor).
+Counting cases with a single-step jump in the prediction larger than the
+truth's own step by >2 °C, seed 42:
+
+| arm | cases with spurious jump >2 °C | >5 °C | worst |
+|---|---|---|---|
+| B (AR) | 8 | 3 | 9.3 °C |
+| **E (direct, no anchor)** | **7** | **0** | **3.9 °C** |
+| G (direct + T_avg anchor) | **43** | 3 | 10.1 °C |
+
+So removing autoregression does **not** introduce jumps — E is the cleanest of
+the three. The jumps come from the T_avg blend anchor, and they land exactly
+where the mechanism predicts: in G they appear in **T_avg (39 cases) and
+T_outer (40 cases)** while T_inner is unaffected (4 cases, same as E). T_avg
+is reconstructed from T_outer, so any step artifact in T_outer is copied
+straight into T_avg. This is more evidence that the anchored arms are not
+ready, independent of the seed instability.
+
+### Confirmed: the T_avg physics constraint is physically WRONG, not just weak
+
+Arnold: "you shouldn't apply that, because for some cases, for some period,
+it's actually above both surfaces." Checked on the 70-case test set: T_avg
+exceeds **both** surface temperatures at **1.24 %** of timesteps, across
+**21/70 cases**, by up to **13.2 °C** (Case 36). It never falls below both.
+So the earlier finding that the hinge "fires on only 3.3 % of steps and hurt
+performance" was understating the problem — a fraction of those firings were
+penalising physically correct predictions. The constraint stays off, and
+should not be revisited for the convection data either without re-checking
+this first.
+
+### Change I — Round-4 sweep set up (`run_round4.py`) `[CODE]`
+
+One driver covers every open ask, exploiting forward_direct's ~4 min/seed
+(planned ~18 h of the ~3-day budget; SEEDS env widens any stage):
+
+- **S1 stability** — E/F/G/H × 12 seeds: replaces the 2-seed coin flips on
+  the anchor bimodality with real distributions.
+- **S2 lookahead** — new `INPUT_LOOKAHEAD=k`: forward_direct gains k extra
+  input columns carrying Input_T(t+1..t+k) (legal — the curve is a given
+  boundary condition; tail-held). The targeted Case-40 fix: the model can
+  finally SEE the inlet jump coming and predict the physical lag. k ∈ {1,3}
+  × 12 seeds.
+- **S3 weights** — Arnold's ask: T_avg emphasis grid w ∈ {1-6-5, 1-6-6,
+  1-4-4, 1-3-3} + one interaction config (la1 + 1-6-6), × 6 seeds.
+- **S4 arch** — `HIDDEN_SIZE`/`NUM_LAYERS`/`DROPOUT` now env-overridable;
+  grid h ∈ {64,128,256} × L ∈ {2,3,5} × 4 seeds (control h128×5 = S1's E).
+  The 5×128 recipe was tuned for AR; the direct formulation may want less.
+- **S5 AR baseline** — arm B × seeds {21,123}, completing its 4-seed number.
+
+All stages run with post-meeting defaults: physics bound OFF everywhere
+(Arnold: the constraint is physically wrong), TINNER anchor + lead 1.
+Run-name scheme rebuilt (short tags, varying knobs only) — the old scheme
+plus new tags was approaching the Windows 260-char path limit (now worst
+case 229). Verified: lookahead columns match shifted Input_T exactly, arch
+overrides fold into names, end-to-end forward passes with la=1 + h64×2.
+
+### Open asks from the meeting
+
+1. **Raise the T_avg loss weight.** Arnold raised it twice: the current
+   Ti/To/Ta = 1/6/3 came from the LSTM line, and he suspects the ratio is not
+   optimal for us — T_avg is our weakest channel and is weighted below T_outer.
+   Worth a small sweep (e.g. Ta = 3 → 5/6) once the seed question is settled. `[ ]`
+2. **Case 40's residual error is consistent across seeds** — he expects it to
+   persist with more seeds, so it needs a targeted fix rather than more
+   averaging. (Current state: first-step error +8.4 °C, which is the physical
+   T_inner lag ceiling; going below it would require feeding the inlet's
+   near-future, which is available but not currently used.) `[ ]`
+3. **More seeds for F/G/H** before drawing any conclusion (our own plan; he
+   agreed but pushed to look case-by-case rather than at averages). `[ ]`
+4. **The 0.29/0.71 blend coefficient is geometry-specific.** He flagged that
+   all 311 training cases share one system geometry and size, so the fitted
+   relationship will not transfer to a different geometry — a new one has to be
+   refitted per scenario. Noted as a hard constraint on the anchor approach; the
+   planned gate/branch structure is where this would be handled. `[ ]`
+
+---
+
+## 2026-07-25
+
+### Results — 5-arm fix ablation `[DONE]` → **arm B wins; new project best 1.27 °C**
+
+10/10 runs complete (5 arms × seeds {7,42}), all configs verified, fixed
+70-case set. Means over the two seeds:
+
+| metric | arfed (07-16) | anchor (07-21) | **A** lead | **B** +wts | **C** +bound | **D** persist | **E** direct |
+|---|---|---|---|---|---|---|---|
+| **Overall MAE** | 1.93 | 1.39 | 1.70 | **1.27** | 1.44 | 2.51 | 2.10 |
+| MAE T_inner | 1.08 | 0.38 | 0.23 | 0.25 | 0.27 | 0.20 | 2.33\* |
+| MAE T_outer | 2.35 | 1.19 | 1.35 | **0.77** | 0.83 | 1.94 | 1.11 |
+| MAE T_avg | 2.35 | 2.62 | 3.53 | 2.79 | 3.21 | 5.40 | 2.87 |
+| MaxErr T_inner | 10.73 | 2.22 | 0.92 | 0.95 | 0.98 | 0.80 | 10.07\* |
+| R² overall | 0.9963 | 0.9965 | 0.9954 | **0.9970** | 0.9958 | 0.9916 | 0.9931 |
+| infer ms/case | ~560 | ~560 | 583 | 582 | 578 | 590 | **4.0** |
+| train h/seed | ~5 | ~3 | 3.7 | 4.2 | 4.2 | 2.2 | **0.1** |
+
+\* E lacked the anchor — see the confound note below.
+
+**1. The `ANCHOR_LEAD` fix worked exactly as predicted.** Case 40's first-step
+error went **−37.3 → +8.5 °C**, Case 54 **−34.0 → +7.7 °C** — landing right on
+the predicted residual (the physical T_inner-lag ceiling is 8.5 °C, so the
+anchor cannot do better without also seeing the inlet's future). MaxErr
+T_inner across all cases: 2.22 → 0.92. This closes Arnold's "why do some cases
+start badly" question end-to-end: cause identified (r = 0.999 with the inlet
+jump), fix implemented, magnitude predicted, result matches.
+
+**2. Loss re-weighting is the single biggest win** (A → B: 1.70 → 1.27).
+T_outer improved 3× versus the pre-fix baseline (2.35 → 0.77). Confirms the
+diagnosis that a uniform loss was spending a third of its gradient budget on
+the already-solved T_inner channel. Adopting the LSTM line's 1/6/3 was right.
+
+**3. The physics bound is HARMFUL — default flipped to OFF.** Arm C scored
+1.44 vs B's 1.27, and T_avg (the channel it targeted) got *worse* (2.79 →
+3.21; late bias +3.01 → +3.31). Mechanism: the bracket |T_inner − T_outer|
+averages 79 °C while the bias is ~2.5 °C, so the hinge fires on only 3.3 % of
+steps — a rare spiky gradient that perturbs optimization without ever touching
+the in-bracket level offset. `PHYSICS_BOUND_WEIGHT` now defaults to 0 (kept
+available for convection data, where near-isothermal starts make the bracket
+genuinely tight).
+
+**4. Arnold's persistence suggestion is empirically refuted (arm D).** Overall
+2.51 (worst arm), T_avg 5.40, and the T_avg bias balloons to +5.17 mid-rollout.
+Training plateaued almost immediately (best epoch 85–94 vs ~330–430 elsewhere).
+This matches the predicted mechanism exactly: anchoring on the channel's *own*
+previous prediction makes the rollout an integrator with no reset, so per-step
+errors compound and a level offset can never be pulled back.
+
+**5. T_avg's systematic offset is STILL UNSOLVED.** Every arm retains a late
+bias of roughly +2.8 to +3.3 °C (B: +1.47 → +3.01 across the rollout). Neither
+loss weighting nor the physics bound removed it. This is now the top open
+problem — and notably, arm E (no AR feedback at all) has the *flattest* profile
+and beats B on T_avg in **38/70** cases, which points at the AR feedback loop
+as the offset's origin rather than at loss shaping.
+
+**6. Arm E was confounded — my design error, now fixed.** The anchor was
+implemented as `abs_sliding`-only, so `forward_direct` ran without it: its
+T_inner (2.33) and Case-40 start (−35.8, i.e. unfixed) measured *the missing
+anchor*, not the formulation. What the arm still shows, cleanly, is that on the
+channels it could compete on, the seq2seq formulation holds up — T_outer 1.11,
+T_avg 2.87 (better than C, and the best T_avg bias profile of any arm) — at
+**4.0 ms/case inference (145× faster) and 0.1 h/seed training (40× faster)**.
+The anchor now applies to `forward_direct` too (verified: reconstruction exact,
+still a single forward pass, gated by `TINNER_MODE`), so a re-run gives the
+fair formulation test. Seed variance is high (1.53 vs 2.68) and needs the extra
+seeds before any conclusion.
+
+### Results — arm E re-run WITH the anchor `[DONE]` → **seq2seq wins outright**
+
+The fair formulation test (anchor now applies to `forward_direct`, same loss
+shaping as B/C, same 70-case set, same seeds):
+
+| | **B** (best AR) | **E** (seq2seq + anchor) |
+|---|---|---|
+| **Overall MAE** | 1.27 | **1.14** |
+| T_inner | 0.25 | 0.26 |
+| T_outer | 0.77 | **0.75** |
+| **T_avg** | 2.79 | **2.40** |
+| R² | 0.9970 | 0.9967 |
+| per-seed spread | 1.35 / 1.19 (**0.16**) | 1.12 / 1.15 (**0.03**) |
+| inference | 582 ms/case | **13.3 ms** (44×) |
+| training | ~4.2 h/seed | **~4 min/seed** (60×) |
+
+**The formulation, not the cell, was the gap.** With the anchor restored, the
+exogenous-only single-pass model beats our best autoregressive configuration
+on overall MAE while being 44× faster at inference and 60× faster to train,
+and it is **5× more stable across seeds** (0.03 vs 0.16 spread). This is the
+clean answer to "is the LSTM line ahead because it's an LSTM?" — no: it is
+ahead because it does not feed its own predictions back.
+
+**It also cracked the T_avg offset** — the one problem no arm had solved. The
+late bias drops from +3.01 to +2.55 and the whole profile flattens (E is lower
+at every decile), and E beats B on T_avg in **60/70 cases**. This confirms the
+hypothesis from the 5-arm round: the offset originates in the AR feedback
+path, which is why more loss shaping could never remove it. It is reduced, not
+eliminated — T_avg remains the weakest channel and the next target.
+
+**What AR still owns:** nothing measurable on this dataset. Both formulations
+give the same Case 40 / 54 first-step residual (+8.4 / +7.6 — the physical
+lag ceiling) and the same t=0 error to within 0.3 °C. AR's remaining
+justification is scenario-based, not accuracy-based: closed-loop / streaming
+settings where the full Input_T curve is not known in advance (Arnold's
+solid+fluid coupling branch).
+
+**Note on the exit code.** The runner reported `FAILED (3221226505)` =
+`0xC0000409`, a Windows shutdown-time crash in CUDA teardown *after* both
+seeds finished and wrote `done.flag`. Results are complete and valid; only the
+process exit status is garbage. Worth a `--only` re-check of `done.flag` files
+rather than trusting the runner's summary line on Windows.
+
+### Next steps
+1. ~~Re-run arm E with the anchor~~ `[x]` — seq2seq wins; see above.
+2. Extend E to seeds {21,123} for a 4-seed number (~10 min) before reporting. `[ ]`
+3. Report to Arnold: recommend `forward_direct` as the production formulation
+   for the offline surrogate; keep AR+anchor as the causal branch. `[ ]`
+4. Re-run the window-size sweep? Note W is irrelevant for `forward_direct`
+   (no sliding window) — the sweep only matters if AR is retained. `[ ]`
+5. Remaining T_avg offset (+2.55 late) is now the top accuracy target. `[ ]`
+2. Adopt **B** as the working configuration (lead on, weights 1/6/3, bound
+   off) — now the defaults. `[ ]`
+3. Attack the remaining T_avg offset; arm E's flat profile suggests probing the
+   AR feedback path rather than more loss shaping. `[ ]`
+4. Extend the winner to seeds {21,123} for a 4-seed number before it goes in
+   the report / to Arnold. `[ ]`
+
+---
+
 ## 2026-07-23
 
 ### Results — T_inner ablation `[DONE]` → **anchor wins decisively; adopt it**

@@ -57,6 +57,24 @@ ARMS = {
     # cheaper than the other arms: single-pass training, no rollout loop.
     "E": dict(VARIANTS="forward_direct",
               LOSS_WEIGHTS="1,6,3", PHYSICS_BOUND_WEIGHT="1"),
+    # F = E plus fixed-reference anchors for the two remaining channels:
+    # T_outer on its GT initial value (residual std 115 -> 57 C) and T_avg on
+    # w*T_inner+(1-w)*T_outer with w fitted on the train set (residual std
+    # 107 -> 3.8 C). Targets the T_avg offset that survived every earlier arm.
+    "F": dict(VARIANTS="forward_direct", OTHER_CH_MODE="anchor",
+              LOSS_WEIGHTS="1,6,3", PHYSICS_BOUND_WEIGHT="1"),
+    # G = F minus the T_outer anchor, which measurement showed was the
+    # unstable half (seed7 T_outer 0.74 -> 2.14). Keeps only the T_avg blend
+    # anchor, the half that worked (seed42 T_avg 2.45 -> 1.76, overall 0.912).
+    "G": dict(VARIANTS="forward_direct", OTHER_CH_MODE="anchor_avg_grad",
+              LOSS_WEIGHTS="1,6,3", PHYSICS_BOUND_WEIGHT="1"),
+    # H = G with the blend's reference channels DETACHED, so T_avg's loss can
+    # no longer reshape the T_inner/T_outer heads. F and G were both bimodal
+    # across seeds (good/bad seed even swapped between them) with T_outer
+    # blowing up in the bad run -- gradient crosstalk through the blend, the
+    # same trap already fixed in the physics-bound hinge.
+    "H": dict(VARIANTS="forward_direct", OTHER_CH_MODE="anchor_avg",
+              LOSS_WEIGHTS="1,6,3", PHYSICS_BOUND_WEIGHT="1"),
 }
 DEFAULT_SEEDS = "7,42"
 
@@ -71,7 +89,7 @@ def main():
         arms = [sys.argv[sys.argv.index("--only") + 1].upper()]
     else:
         arms = [a.strip().upper() for a in
-                os.environ.get("ARMS", "A,B,C,D,E").split(",") if a.strip()]
+                os.environ.get("ARMS", "A,B,C,D,E,F,G,H").split(",") if a.strip()]
     for a in arms:
         if a not in ARMS:
             sys.exit(f"unknown arm {a!r}; pick from {list(ARMS)}")

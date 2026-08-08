@@ -10,6 +10,7 @@ from matplotlib.ticker import MultipleLocator
 
 from .config import *
 from .runio import *
+from .rollout import apply_other_anchor   # shared T_outer/T_avg reconstruction
 
 
 # ============================================================
@@ -86,9 +87,21 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         if variant == 'forward_direct':
             # Exogenous-only seq2seq: inputs [Time, Input_T] are the given
             # boundary condition; one forward pass, no AR (mirrors
-            # run_rollout_train's forward_direct branch).
+            # run_rollout_train's forward_direct branch, anchor included).
             with torch.no_grad():
                 out, _ = model(x.unsqueeze(0), hidden)
+            anc = getattr(model, 'tinner_anchor', None) \
+                if TINNER_MODE == "anchor" else None
+            if anc is not None:
+                ka, kb, kc = anc
+                inp_t = x[:, 1]
+                if ANCHOR_LEAD:
+                    inp_t = torch.cat([inp_t[1:], inp_t[-1:]])
+                out[0, :, 0] = ka * inp_t.to(out.device) + kb + kc * out[0, :, 0]
+            # T_outer / T_avg anchors (mirror of the train path). init_cond
+            # layout is [T_outer, T_inner, T_avg, Input_T] at t=0, scaled.
+            out = apply_other_anchor(
+                model, out, init_cond_b[:, :1].to(out.device))
             pred_seq = out[0].cpu().numpy()
         elif is_inverse(variant):
             # Inverse rollout (single-case mirror of _rollout_inverse).

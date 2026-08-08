@@ -104,7 +104,15 @@ class ThermalDataset(Dataset):
             # Exogenous-only seq2seq (2026-07-24): the model sees ONLY the
             # given boundary condition; all state channels are outputs, none
             # feed back. idx 0 = Time, 1 = Input_T.
+            # INPUT_LOOKAHEAD (2026-08-06): idx 2..1+k carry the inlet's next
+            # k values (legal: the full curve is a given boundary condition).
+            # Built AFTER scaling, so the lead columns share Input_T's scale;
+            # the tail holds the last value.
             feat_cols = ["Time (s)", "Input Temperature (C)"]
+            for _i in range(1, INPUT_LOOKAHEAD + 1):
+                lead = f"InputT_lead{_i}"
+                df[lead] = df["Input Temperature (C)"].shift(-_i).ffill()
+                feat_cols.append(lead)
         elif variant == 'abs_sliding' and TINNER_MODE == 'output_only':
             # v22-style A/B: T_inner is predicted (targets unchanged) but is
             # NOT an input, so its own predictions never feed back.
@@ -230,8 +238,18 @@ def load_all_data():
     new_root = _resolve_new_data_root(script_dir)
     data_root = None
     if new_root is not None:
-        train_dir = os.path.join(new_root, "training_data", TRAIN_SUBDIR)
-        test_dir = os.path.join(new_root, "tests", TEST_SUBDIR)
+        # Two layouts are supported (2026-08-06): the repo-local flat layout
+        #     <root>/<TRAIN_SUBDIR>            <root>/<TEST_SUBDIR>
+        # and the older nested one
+        #     <root>/training_data/<TRAIN>     <root>/tests/<TEST>
+        # Flat is tried first since that is how AI-TES/data/ is organised.
+        flat_train = os.path.join(new_root, TRAIN_SUBDIR)
+        flat_test = os.path.join(new_root, TEST_SUBDIR)
+        if os.path.isdir(flat_train) and os.path.isdir(flat_test):
+            train_dir, test_dir = flat_train, flat_test
+        else:
+            train_dir = os.path.join(new_root, "training_data", TRAIN_SUBDIR)
+            test_dir = os.path.join(new_root, "tests", TEST_SUBDIR)
         if not os.path.isdir(train_dir) or not os.path.isdir(test_dir):
             print(f"WARNING: new dataset root resolved to:\n    {new_root}")
             print(f"  but TRAIN_SUBDIR='{TRAIN_SUBDIR}' or TEST_SUBDIR='{TEST_SUBDIR}'")

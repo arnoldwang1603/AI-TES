@@ -103,7 +103,52 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
     else:
         model.step_anchor = None
 
-    if variant == 'abs_sliding' and TINNER_MODE == 'anchor':
+    # ---- T_outer / T_avg fixed-reference anchors (OTHER_CH_MODE='anchor') ----
+    # Reconstruction, in MinMax-scaled space:
+    #   T_outer_s(t) = T_outer0_s + KBo + KCo*z_o        (T_outer(0) is GT)
+    #   T_avg_s(t)   = s_a*( w*(T_in_s-m_i)/s_i + (1-w)*(T_out_s-m_o)/s_o
+    #                        + mu_a ) + m_a + KCa*z_a
+    # Constants fitted on the train set here (same pattern as the T_inner
+    # anchor), so resume is unaffected.
+    if variant in ('abs_sliding', 'forward_direct') and OTHER_CH_MODE.startswith('anchor'):
+        d_out, num, den, parts = [], 0.0, 0.0, []
+        for df, _ in train_dfs:
+            d = df.copy()
+            d.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
+            ti = d["T_inner (C)"].values
+            to = d["T_outer (C)"].values
+            ta = d["T_avg (C)"].values
+            d_out.append(to - to[0])
+            x = ti - to
+            num += float((x * (ta - to)).sum())
+            den += float((x * x).sum())
+            parts.append((ti, to, ta))
+        w = num / den if den > 1e-9 else 0.5
+        d_out = np.concatenate(d_out)
+        d_avg = np.concatenate([ta - (w * ti + (1 - w) * to) for ti, to, ta in parts])
+        mo, so = float(d_out.mean()), float(max(d_out.std(), 1e-3))
+        ma, sa_ = float(d_avg.mean()), float(max(d_avg.std(), 1e-3))
+        idx = {c: ThermalDataset.BASE_COLS.index(c) for c in
+               ("T_inner (C)", "T_outer (C)", "T_avg (C)")}
+        aff = {k: (float(scaler.scale_[i]), float(scaler.min_[i])) for k, i in idx.items()}
+        model.other_anchor = {
+            'w': w,
+            'out': (aff["T_outer (C)"][0] * mo, aff["T_outer (C)"][0] * so),
+            'avg': (ma, aff["T_avg (C)"][0] * sa_),
+            'aff': (aff["T_inner (C)"], aff["T_outer (C)"], aff["T_avg (C)"]),
+        }
+        print(f"[{variant}] T_outer anchored on T_outer(0): delta mean={mo:+.2f} std={so:.2f} C")
+        print(f"[{variant}] T_avg anchored on {w:.3f}*T_inner+{1-w:.3f}*T_outer: "
+              f"delta mean={ma:+.2f} std={sa_:.2f} C")
+    else:
+        model.other_anchor = None
+
+    # forward_direct also gets the anchor: its inputs carry the exogenous
+    # Input_T at every step, so the same reconstruction applies. Without this
+    # the E-arm comparison was confounded -- E lost BOTH the AR feedback and
+    # the anchor, so its T_inner (2.33) measured the missing anchor, not the
+    # formulation.
+    if variant in ('abs_sliding', 'forward_direct') and TINNER_MODE == 'anchor':
         deltas = []
         for df, _ in train_dfs:
             d = df.copy()

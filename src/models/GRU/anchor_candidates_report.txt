@@ -1,0 +1,25 @@
+train cases: 311   (source: C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training))
+
+=== T_inner ===
+  absolute (no anchor)               std  114.87                                      leaves 100% of the work
+  vs Input_T                         std    0.65   mean    -0.15   |max|   11.5   leaves   1% of the work
+
+=== T_avg ===
+  absolute (no anchor)               std  107.03                                      leaves 100% of the work
+  vs Input_T                         std   68.07   mean    -9.86   |max|  324.5   leaves  64% of the work
+  vs T_inner                         std   67.57   mean    -9.72   |max|  320.1   leaves  63% of the work
+  vs T_avg(0) [initial value]        std   77.08   mean   +19.12   |max|  318.4   leaves  72% of the work
+  vs 0.29*T_inner+0.71*T_outer       std    3.81   mean    -0.24   |max|   32.0   leaves   4% of the work
+
+=== T_outer ===
+  absolute (no anchor)               std  115.40                                      leaves 100% of the work
+  vs Input_T                         std   95.36   mean   -13.47   |max|  424.5   leaves  83% of the work
+  vs T_inner                         std   94.88   mean   -13.32   |max|  420.1   leaves  82% of the work
+  vs T_outer(0) [initial value]      std   56.59   mean   +15.51   |max|  294.2   leaves  49% of the work
+
+=== how far each channel sits from Input_T ===
+  |T_inner  - Input_T|   mean    0.40 C   max    11.5 C
+  |T_avg    - Input_T|   mean   53.77 C   max   324.5 C
+  |T_outer  - Input_T|   mean   75.16 C   max   424.5 C
+
+fitted blend weight w = 0.2886  (T_avg sits ~29% of the way from T_outer toward T_inner)

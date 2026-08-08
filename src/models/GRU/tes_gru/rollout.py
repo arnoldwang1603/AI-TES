@@ -65,6 +65,47 @@ def _rewrite_step_input(variant, x_t,
     return x_new
 
 
+def apply_other_anchor(model, pred, t_outer0_s):
+    """Reconstruct T_outer / T_avg from their fixed-reference anchors.
+
+    pred: (..., 3) raw head outputs in scaled space, channels
+          (T_inner, T_outer, T_avg). T_inner must already be final (its own
+          anchor applied) because T_avg's reference uses it.
+    t_outer0_s: T_outer at t=0 in scaled space, broadcastable to pred[..., 1].
+
+    Returns a new tensor; no-op (returns pred) when the anchor is disabled.
+    """
+    oa = (getattr(model, 'other_anchor', None)
+          if OTHER_CH_MODE.startswith('anchor') else None)
+    if oa is None:
+        return pred
+    (s_i, m_i), (s_o, m_o), (s_a, m_a) = oa['aff']
+    kb_o, kc_o = oa['out']
+    mu_a, kc_a = oa['avg']
+    w = oa['w']
+    # "anchor_avg" leaves T_outer absolute (its initial-value anchor was
+    # measured unstable); only T_avg gets the blend anchor.
+    t_out = (pred[..., 1] if OTHER_CH_MODE.startswith('anchor_avg')
+             else t_outer0_s + kb_o + kc_o * pred[..., 1])
+    t_in = pred[..., 0]
+    # blend in RAW space, then map back into T_avg's scaled space.
+    # The reference channels are DETACHED (unless OTHER_CH_MODE ends in
+    # "_grad"): without this, T_avg's loss backprops into the T_inner and
+    # T_outer heads and reshapes them to suit T_avg. Measured 2026-08-06:
+    # with gradients flowing, T_outer went bimodal across seeds (0.72/2.14
+    # for arm F, 0.73/2.59 for arm G) and the seed spread blew up from 0.035
+    # to ~1.0, with the bad runs early-stopping in a poor basin. Same trap
+    # already fixed once in the physics-bound hinge.
+    detach_ref = not OTHER_CH_MODE.endswith("_grad")
+    if detach_ref:
+        t_in_ref, t_out_ref = t_in.detach(), t_out.detach()
+    else:
+        t_in_ref, t_out_ref = t_in, t_out
+    raw_blend = w * (t_in_ref - m_i) / s_i + (1.0 - w) * (t_out_ref - m_o) / s_o
+    t_avg = s_a * (raw_blend + mu_a) + m_a + kc_a * pred[..., 2]
+    return torch.stack([t_in, t_out, t_avg], dim=-1)
+
+
 def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
                       tf_prob=0.0):
     """Forward pass during training/validation, variant-aware.
@@ -94,6 +135,22 @@ def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
         # No AR feedback exists, so the TF gate is a no-op. h0 still comes
         # from the InitStateEncoder (initial state is given).
         out, _ = model(inputs, hidden)
+        anc = getattr(model, 'tinner_anchor', None) \
+            if TINNER_MODE == "anchor" else None
+        if anc is not None:
+            # Same T_inner reconstruction as the sliding path, vectorized over
+            # the whole sequence. Input_T is column 1 here (inputs are
+            # [Time, Input_T]); ANCHOR_LEAD=1 shifts the anchor to step t+1.
+            ka, kb, kc = anc
+            inp_t = inputs[:, :, 1]
+            if ANCHOR_LEAD:
+                inp_t = torch.cat([inp_t[:, 1:], inp_t[:, -1:]], dim=1)
+            tin = ka * inp_t + kb + kc * out[..., 0]
+            out = torch.cat([tin.unsqueeze(-1), out[..., 1:]], dim=-1)
+        # T_outer / T_avg anchors. T_outer(0) is the GT initial condition,
+        # available in init_conds[:, 0] (scaled). Applied after the T_inner
+        # anchor because T_avg's reference consumes the final T_inner.
+        out = apply_other_anchor(model, out, init_conds[:, :1].to(out.device))
         return out
 
     if variant == 'abs_sliding':

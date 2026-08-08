@@ -43,10 +43,20 @@ SEED = SEEDS[0]                 # legacy: kept for any code referencing it as a 
 WINDOW_SIZE = int(os.environ.get("WINDOW_SIZE", "10"))
 assert 1 <= WINDOW_SIZE <= 200, f"unreasonable WINDOW_SIZE={WINDOW_SIZE}"
 
+# 2026-08-06: architecture env-overridable for the round-4 capacity sweep.
+# The 5-layer/128-hidden recipe was tuned for the AR formulation; the direct
+# (one-pass) formulation may want a different capacity, and Arnold flagged
+# layers + hidden size as the first knobs to analyze. lr is intentionally NOT
+# exposed (coupled with batch size; out of scope this round).
+HIDDEN_SIZE = int(os.environ.get("HIDDEN_SIZE", "128"))
+NUM_LAYERS = int(os.environ.get("NUM_LAYERS", "5"))
+DROPOUT = float(os.environ.get("DROPOUT", "0.3"))
+assert 8 <= HIDDEN_SIZE <= 1024 and 1 <= NUM_LAYERS <= 8 and 0.0 <= DROPOUT < 0.9
+
 LATEST_PARAMS = dict(
-    hidden_size=128,
-    num_layers=5,
-    dropout=0.3,
+    hidden_size=HIDDEN_SIZE,
+    num_layers=NUM_LAYERS,
+    dropout=DROPOUT,
     lr=0.0025,
     # 2026-07-16: epoch budget cut 1200 -> 800 and early stopping enabled,
     # based on ALL full-length (1200-ep) runs to date: across 36 completed
@@ -209,7 +219,15 @@ assert len(LOSS_WEIGHTS) == 3, "LOSS_WEIGHTS needs 3 comma-separated values"
 # hinge on violations, applied in RAW temperature space (the MinMax scaling
 # is per-channel, so the ordering is not preserved in scaled space).
 # 0.0 disables it.
-PHYSICS_BOUND_WEIGHT = float(os.environ.get("PHYSICS_BOUND_WEIGHT", "1.0"))
+# 2026-07-25: default flipped 1.0 -> 0.0. MEASURED HARMFUL: arm C (bound on)
+# scored 1.44 overall vs arm B (bound off) 1.27, and T_avg -- the channel it
+# was meant to help -- got WORSE (2.79 -> 3.21; late bias +3.01 -> +3.31).
+# Likely cause: the bracket |T_inner - T_outer| averages 79 C while the bias
+# is only ~2.5 C, so the hinge fires on just 3.3% of steps -- a rare, spiky
+# gradient that perturbs optimization without ever addressing the in-bracket
+# level offset. Kept available for the convection data, where near-isothermal
+# starts make the bracket genuinely tight.
+PHYSICS_BOUND_WEIGHT = float(os.environ.get("PHYSICS_BOUND_WEIGHT", "0.0"))
 
 # ------------------------------------------------------------
 # T_outer / T_avg output parameterization (Arnold's request, 2026-07-23 mtg)
@@ -231,9 +249,37 @@ PHYSICS_BOUND_WEIGHT = float(os.environ.get("PHYSICS_BOUND_WEIGHT", "1.0"))
 # by itself remove a level offset (the current failure mode) because there is
 # no absolute reference to pull the level back. Kept as an experimental arm
 # so the question is settled by measurement rather than argument.
-OTHER_CH_MODE = os.environ.get("OTHER_CH_MODE", "abs")   # "abs" | "persistence"
-assert OTHER_CH_MODE in ("abs", "persistence"), \
-    f"OTHER_CH_MODE must be abs/persistence, got {OTHER_CH_MODE!r}"
+#   "anchor"      (2026-08-06) anchor BOTH remaining channels on fixed
+#                 references instead of their own previous prediction, so
+#                 nothing integrates:
+#                   T_outer(t) = T_outer(0) + delta_o
+#                       T_outer(0) is the GIVEN initial condition (GT), so the
+#                       reference is constant -- residual std 56.6 C vs 115.4 C
+#                       absolute (-51%).
+#                   T_avg(t)   = w*T_inner(t) + (1-w)*T_outer(t) + delta_a
+#                       T_avg is physically the volume average between the two
+#                       surfaces. Fitting w on the train set gives w = 0.289
+#                       with residual std 3.81 C vs 107.0 C absolute (-96%) --
+#                       an anchor as strong as the T_inner one. w is stable
+#                       across cases (per-case mean 0.288, std 0.034; only
+#                       2/311 cases have within-case residual std > 10 C).
+#                       This is the physics-bound idea done right: the bound
+#                       only said "T_avg is somewhere between", which was too
+#                       weak to help; this pins where.
+#                 Both deltas are z-scored like the T_inner anchor. Safe in
+#                 forward_direct because there is no AR loop for the errors to
+#                 compound through.
+#   "anchor_avg"  (2026-08-06, MEASURED BEST) anchor ONLY T_avg on the blend;
+#                 leave T_outer absolute. The 5-arm F result split the two:
+#                 the T_avg blend anchor worked (seed42 T_avg 2.45 -> 1.76,
+#                 overall 0.912 -- best ever) while the T_outer initial-value
+#                 anchor was unstable (seed7 T_outer 0.74 -> 2.14, wrecking
+#                 that seed). Consistent with the fitted residuals: the T_avg
+#                 anchor removes 96% of the variance, the T_outer one only
+#                 51% -- too weak to pay for the extra constraint.
+OTHER_CH_MODE = os.environ.get("OTHER_CH_MODE", "abs")   # abs|persistence|anchor|anchor_avg
+assert OTHER_CH_MODE in ("abs", "persistence", "anchor", "anchor_avg"), \
+    f"OTHER_CH_MODE must be abs/persistence/anchor/anchor_avg, got {OTHER_CH_MODE!r}"
 
 
 def warmup_lr(epoch, base_lr, warmup_epochs=None):
@@ -369,8 +415,23 @@ INPUT_DIMS = {
     'inverse_abs':         2,                   # Time + T_avg
     'inverse_abs_sliding': 2,                   # Time + T_avg per step, W-step sequence input
     # forward_direct: exogenous-only [Time, Input_T]; single pass, no AR.
-    'forward_direct': 2,
+    # +INPUT_LOOKAHEAD extra columns of near-future Input_T (see below).
+    'forward_direct': 2,   # patched to 2 + INPUT_LOOKAHEAD right below
 }
+
+# ------------------------------------------------------------
+# Inlet lookahead (2026-08-06) -- the targeted Case-40 fix
+# ------------------------------------------------------------
+# The remaining +8.5 C first-step error on inlet-jump cases is the physical
+# T_inner lag: the model at step t cannot see that the inlet jumps at t+1,
+# so it cannot predict the lag. But the FULL Input_T curve is a given
+# boundary condition, so showing the model the next k values is legal.
+# INPUT_LOOKAHEAD=k appends k extra features to forward_direct's input:
+# Input_T(t+1) .. Input_T(t+k), tail-held at the last value. 0 = off.
+# (forward_direct only; the AR variants are untouched.)
+INPUT_LOOKAHEAD = int(os.environ.get("INPUT_LOOKAHEAD", "0"))
+assert 0 <= INPUT_LOOKAHEAD <= 30
+INPUT_DIMS['forward_direct'] = 2 + INPUT_LOOKAHEAD
 
 # ------------------------------------------------------------
 # Output layout
@@ -406,16 +467,21 @@ INPUT_DIMS = {
 # Convention: prefix with the date (YYYY-MM-DD) so chronology is obvious.
 _LW = "-".join(f"{w:g}" for w in LOSS_WEIGHTS)
 _VTAG = "-".join(VARIANTS)
-RUN_NAME_BASE = (f"2026-07-23_{_VTAG}_W{WINDOW_SIZE}"
-                 f"_{LATEST_PARAMS['max_epochs']}ep"
-                 f"_ES{LATEST_PARAMS['early_stop_patience']}"
-                 f"_P0_{SLIDING_PAD_MODE}_Tin-{TINNER_MODE}"
-                 f"_lead{ANCHOR_LEAD}_w{_LW}_pb{PHYSICS_BOUND_WEIGHT:g}"
-                 f"_oth-{OTHER_CH_MODE}")
-# ^ window size, epoch budget, early-stop patience, pad mode, and T_inner
-#   mode all folded into the run dir name; set via the WINDOW_SIZE /
-#   SLIDING_PAD_MODE / TINNER_MODE env vars (see run_tinner_ablation.py and
-#   run_window_sweep.py).
+# Run-name scheme (2026-08-06 rebuild): only the knobs that VARY between runs
+# are folded in; constants (epoch cap, ES patience, pad mode when default) live
+# in run_config.json. Kept short deliberately -- the old scheme plus new tags
+# was pushing full plot paths toward the Windows 260-char limit.
+_parts = [f"2026-08-06_{_VTAG}", f"W{WINDOW_SIZE}",
+          f"Tin-{TINNER_MODE}", f"l{ANCHOR_LEAD}", f"w{_LW}",
+          f"oth-{OTHER_CH_MODE}",
+          f"h{HIDDEN_SIZE}x{NUM_LAYERS}dp{DROPOUT:g}"]
+if INPUT_LOOKAHEAD:
+    _parts.append(f"la{INPUT_LOOKAHEAD}")
+if PHYSICS_BOUND_WEIGHT:
+    _parts.append(f"pb{PHYSICS_BOUND_WEIGHT:g}")
+if SLIDING_PAD_MODE != "variable":
+    _parts.append(SLIDING_PAD_MODE)
+RUN_NAME_BASE = "_".join(_parts)
 RUN_NAME = RUN_NAME_BASE                       # mutated per-seed at runtime in main loop
 RUNS_ROOT_DIR = "runs"                         # parent folder under src/
 
@@ -449,11 +515,19 @@ CHECKPOINT_EVERY_N_EPOCHS = 1      # save resume_state.pt every N epochs
 # 2026-07-16: aligned with the protocol every comparable run actually used
 # (see run_config.json of the 2026-05-21 zero baseline AND the init sweep):
 # train on the Latest Database, test on the fixed 70-case set.
+# 2026-08-06: data now lives in the repo at AI-TES/data/ with a FLAT layout
+# (no training_data/ or tests/ level). Verified byte-identical to the data all
+# previous runs used: train 311/311 and test 70/70 files match by MD5, so
+# results stay directly comparable.
 TRAIN_SUBDIR = "Latest Database (Use this for training)"
-TEST_SUBDIR = "70_cases"       # fixed 70-case test set (baseline protocol)
+TEST_SUBDIR = "Test_70_cases"  # fixed 70-case test set (baseline protocol)
 
 # Explicit data-root candidates, tried in order. The first existing path wins.
 NEW_DATA_ROOT_CANDIDATES = [
+    # 2026-08-06: repo-local data (AI-TES/data/), flat layout. BASE_DIR is
+    # src/models/GRU, so three levels up is the repo root. Tried first so a
+    # fresh clone works with no machine-specific path editing.
+    os.path.join("..", "..", "..", "data"),
     # When the script is run from this repo's src/ dir, the new data lives
     # outside ML-model-for-thermal-predictions/ -- under the Arnold-team folder.
     os.path.join(
