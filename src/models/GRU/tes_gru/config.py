@@ -277,9 +277,33 @@ PHYSICS_BOUND_WEIGHT = float(os.environ.get("PHYSICS_BOUND_WEIGHT", "0.0"))
 #                 that seed). Consistent with the fitted residuals: the T_avg
 #                 anchor removes 96% of the variance, the T_outer one only
 #                 51% -- too weak to pay for the extra constraint.
-OTHER_CH_MODE = os.environ.get("OTHER_CH_MODE", "abs")   # abs|persistence|anchor|anchor_avg
-assert OTHER_CH_MODE in ("abs", "persistence", "anchor", "anchor_avg"), \
-    f"OTHER_CH_MODE must be abs/persistence/anchor/anchor_avg, got {OTHER_CH_MODE!r}"
+#   "anchor_avg_grad"  same as anchor_avg but WITHOUT detaching the blend's
+#                 reference channels, so T_avg's loss backprops into the
+#                 T_inner/T_outer heads. Kept as the ablation control for the
+#                 detach decision. (This value was missing from the assert
+#                 list below, which silently killed the round-4 G arm at
+#                 import time -- 12 runs lost.)
+#   "pos_head"    (2026-08-09) T_avg is reparametrized as a POSITION between
+#                 the two surfaces, predicted per step:
+#                     T_avg = T_outer + pos * (T_inner - T_outer)
+#                     pos   = pos_mean + pos_sd * z_head
+#                 Diagnosis behind it: T_avg's error is a position error
+#                 amplified by the surface gap. pos is nearly constant within
+#                 a case (std 0.037) but genuinely varies BETWEEN cases
+#                 (0.238-0.332). Oracle ladder on the 70-case test set:
+#                     fixed global blend w=0.289 -> T_avg MAE 2.41
+#                     model predicting T_avg     -> 2.42   (i.e. we sit exactly
+#                                                   at the fixed-blend ceiling)
+#                     per-case optimal pos       -> 1.54   <- 36% headroom
+#                 That ceiling is why the round-4 fixed-w anchor could not
+#                 help: its oracle was already the model's own level. Letting
+#                 the head predict pos targets the 1.54 instead. References
+#                 are detached, as in anchor_avg.
+OTHER_CH_MODE = os.environ.get("OTHER_CH_MODE", "abs")
+_OTHER_OK = ("abs", "persistence", "anchor", "anchor_avg", "anchor_avg_grad",
+             "pos_head")
+assert OTHER_CH_MODE in _OTHER_OK, \
+    f"OTHER_CH_MODE must be one of {_OTHER_OK}, got {OTHER_CH_MODE!r}"
 
 
 def warmup_lr(epoch, base_lr, warmup_epochs=None):
@@ -434,6 +458,20 @@ assert 0 <= INPUT_LOOKAHEAD <= 30
 INPUT_DIMS['forward_direct'] = 2 + INPUT_LOOKAHEAD
 
 # ------------------------------------------------------------
+# Anchor output range (2026-08-09)
+# ------------------------------------------------------------
+# Multiplier on the T_inner anchor's z-scaling std. Round 4 established that
+# the stubborn +8.4 C residual on the inlet-jump cases is a RANGE limit, not
+# an information limit: giving the model the inlet's future (lookahead 1/3/5)
+# left Case 40 at 8.38 / 8.46 / 8.49 C, i.e. untouched, while making overall
+# MAE significantly worse (p=0.003). With the fitted delta std ~0.65 C, an
+# 8.5 C correction sits ~13 sigma out -- unreachable for the head. Raising
+# this widens what the head can express, at the cost of resolution in the
+# near-zero regime where almost all steps live. 1.0 = round-4 behaviour.
+ANCHOR_SCALE = float(os.environ.get("ANCHOR_SCALE", "1.0"))
+assert 0.1 <= ANCHOR_SCALE <= 50.0
+
+# ------------------------------------------------------------
 # Output layout
 # ------------------------------------------------------------
 # Every run writes into  src/runs/<RUN_NAME>/  with the structure:
@@ -479,6 +517,8 @@ if INPUT_LOOKAHEAD:
     _parts.append(f"la{INPUT_LOOKAHEAD}")
 if PHYSICS_BOUND_WEIGHT:
     _parts.append(f"pb{PHYSICS_BOUND_WEIGHT:g}")
+if ANCHOR_SCALE != 1.0:
+    _parts.append(f"as{ANCHOR_SCALE:g}")
 if SLIDING_PAD_MODE != "variable":
     _parts.append(SLIDING_PAD_MODE)
 RUN_NAME_BASE = "_".join(_parts)

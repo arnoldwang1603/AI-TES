@@ -40,6 +40,178 @@ best-val checkpointing is unchanged, so results remain comparable.
 
 ---
 
+## 2026-08-09 — Round 4 results `[DONE]` + two fixes + Round 5 `[CODE]`
+
+300 runs launched, **288 usable** (see the config bug below). All on the
+fixed 70-case set, forward_direct unless noted.
+
+### Three hypotheses tested; three refuted
+
+**1. Anchors on T_outer / T_avg — settled, they lose.** At n=20 the
+round-3 "0.87 best run" is exposed as a lucky tail:
+
+| | n | overall MAE | range | runs >1.5 °C |
+|---|---|---|---|---|
+| **E (no anchor)** | 20 | **1.284 ± 0.236** | 0.89–1.67 | 5/20 |
+| F (both anchors) | 12 | 1.930 ± 0.810 | 0.85–3.26 | 8/12 |
+| H (T_avg anchor, detached) | 20 | 1.867 ± 1.200 | 0.81–**4.31** | 9/20 |
+
+Permutation test H vs E: **p = 0.037**. Per channel the trade is plainly
+bad — the anchors wreck T_outer (0.825 → 2.57/2.77) while T_avg barely
+moves (2.761 → 2.708/2.731). Anchoring is dropped for T_outer/T_avg; the
+T_inner anchor (a genuinely tight reference) stays.
+
+**2. Inlet lookahead does NOT fix Case 40 — my hypothesis was wrong.**
+
+| | Case 40 MaxErr | Case 54 | all-case EarlyMAE T_inner | overall |
+|---|---|---|---|---|
+| la=0 | **8.42** | 7.83 | 0.31 | **1.284** |
+| la=1 | 8.38 | 7.71 | 0.32 | 1.641 |
+| la=3 | 8.46 | 7.86 | 0.31 | 1.495 |
+| la=5 | 8.49 | 7.84 | 0.33 | 1.755 |
+
+The target metric is untouched while overall MAE degrades significantly
+(p = 0.003). So the residual is **not** an information limit. It is a
+**range limit of the anchor head**: with the fitted delta std ≈ 0.65 °C, the
+8.5 °C correction Case 40 needs is ~13 σ — unreachable no matter what the
+model knows. (This is the same "magazine size" argument used earlier to
+explain why the anchor is safe in-distribution; it applies here too and I
+should have seen it before spending the runs.) Round 5's `ANCHOR_SCALE`
+tests this directly.
+
+**3. Loss weights — Arnold's suspicion also refuted; 1/6/3 is already best.**
+
+| weights | overall | T_avg |
+|---|---|---|
+| 1-3-3 | 1.655 | 3.49 |
+| 1-4-4 | 1.485 | 2.94 |
+| **1-6-3 (current)** | **1.284** | **2.76** |
+| 1-6-5 | 1.453 | 2.95 |
+| 1-6-6 | 1.445 | 2.95 |
+| 1-6-8 | 1.551 | 3.18 |
+
+Counter-intuitively, raising T_avg's weight makes **T_avg itself worse**.
+Nothing to change here; the answer for Arnold is "tested, current ratio wins".
+
+### What did work: capacity
+
+| | L=2 | L=3 | L=5 |
+|---|---|---|---|
+| h64 dp0.3 | 1.427 | 1.394 | 1.339 |
+| h64 dp0.1 | 1.316 | 1.431 | 1.252 |
+| **h128 dp0.3** | **1.114 ± 0.181** | 1.454 | 1.284 *(default)* |
+| h128 dp0.1 | 1.269 | 1.446 | 1.444 |
+| h256 dp0.3 | 1.363 | 1.578 | 1.369 |
+| h256 dp0.1 | 1.256 | 1.305 | **1.152 ± 0.110** |
+
+**h128×2 is the leader** (p = 0.123 vs default — suggestive at n=6, not yet
+proven), and capacity is also the **only** lever that improved T_avg
+(2.76 → 2.42 at h128×2, → 2.32 at h256×5dp0.1). The 5-layer recipe was
+tuned for the AR formulation; the direct model wants fewer layers.
+
+AR baseline (arm B) on seeds 21/123: 1.597 → combined 4-seed ≈ 1.43, worse
+than every direct configuration.
+
+### Two fixes
+
+- **`config.py` assert list was missing `anchor_avg_grad`** — it killed the
+  round-4 G arm at import time on the runner (12 runs lost, the detach
+  control). The list is now a named `_OTHER_OK` tuple with all five modes.
+- **`ANCHOR_SCALE`** (new): multiplier on the T_inner anchor's z-scaling
+  std, so the head can express corrections beyond a few σ. Folded into the
+  run name (`_as<k>`) and `run_config.json`.
+
+### Diagnosis — what T_avg's error actually IS (zero-cost, no GPU)
+
+Before designing another T_avg fix, the round-4 data was mined for what makes
+the persistently-bad cases bad. No single physical feature explains much
+(strongest correlation: surface gap r = +0.36, swing r = +0.34), but
+reparametrizing exposes the mechanism. Define the **position** of T_avg
+between the two surfaces:
+
+```
+pos = (T_avg − T_outer) / (T_inner − T_outer)
+```
+
+- **Within a case, pos is essentially constant** — median std 0.037 over 187
+  cases.
+- **Between cases it genuinely varies** — 0.238 … 0.332, sd 0.027.
+- The surface gap averages 78 °C (max 195), so a pos error of just **0.02
+  costs 1.6 °C** of T_avg error (3.9 °C on the widest-gap cases).
+
+So T_avg's error is a **position error amplified by the gap** — which is why
+the worst cases (70, 42, 15, 5, 13, 6) are exactly the large-gap,
+large-swing ones, and why extra loss weight never helped: the problem is
+resolving one number, not spending more effort.
+
+**Oracle ladder** (all using the TRUE surfaces, so these bound any
+reparametrization), T_avg MAE on the 70-case test set:
+
+| | MAE | worst case |
+|---|---|---|
+| fixed global blend w = 0.289 *(the round-4 anchor)* | 2.41 | 5.42 |
+| **model as it stands (predicts T_avg directly)** | **2.42** | — |
+| **per-case optimal constant pos** | **1.54** | 4.67 |
+
+This is the retrospective explanation for the round-4 anchor failure: its
+oracle ceiling (2.41) was already the model's own level, so a fixed w could
+not buy anything no matter how it was trained. The headroom lives in the
+**per-case** position — 2.42 → 1.54, about 36 %.
+
+### Change K — T_avg position head (`OTHER_CH_MODE=pos_head`) `[CODE]`
+
+Acting on the diagnosis: instead of predicting T_avg, the head predicts the
+position and T_avg is reconstructed,
+
+```
+T_avg = T_outer + pos · (T_inner − T_outer),    pos = μ + σ · z_head
+```
+
+with μ = 0.272 and σ widened to 0.055 (2× the observed spread) so ±3σ spans
+0.11 … 0.44, comfortably covering the 0.238 … 0.332 range the fixed w could
+not follow. Reference channels are **detached** — the same rule the anchor
+work established, so T_avg's objective cannot reshape the T_inner / T_outer
+heads. Verified: reconstruction exact (maxdiff 0), pos stays in a sane band,
+and T_avg's loss produces exactly zero gradient into the other two channels.
+
+Distinct from the failed round-4 anchor in the one way that matters: there
+the blend weight was a **fixed constant** and the head could only add a
+scalar correction on top; here the head predicts the weight itself, which is
+precisely the per-case degree of freedom the oracle says is worth 36 %.
+
+### Change J — Round 5 (`run_round5.py`) `[CODE]`
+
+34 configs / 364 runs / ~23 h, everything aimed at the open questions:
+
+- **T1 confirm** — the two leaders + the default at **20 seeds** each, to
+  turn p = 0.12 into a verdict.
+- **T2 refine** — capacity grid around the winner: h {96,128,160,192} ×
+  L {1,2,3} × dropout {0.2,0.3}, 10 seeds. Adds **L=1** (never tried) and
+  dropout 0.2 (skipped in round 4).
+- **T3 range** — `ANCHOR_SCALE` {3,6,12} × {la0, la1}, 10 seeds: the direct
+  test of the Case-40 range hypothesis. Lookahead is paired back in because
+  it may only pay once the head can express the correction it enables.
+- **T4 gaps** — the G control that the config bug killed, plus 2 more AR
+  seeds for a 6-seed baseline.
+- **T6 position head** — `pos_head` on two architectures, 10 seeds each: the
+  targeted attack on T_avg from the diagnosis above.
+- **T5 champion** — `--champion H=..,L=..,DP=..,AS=..` at 20 seeds, run
+  after reading T1–T3/T6 (deliberately not planned blind).
+
+36 configs / 384 runs / ~24 h.
+
+### Status of every case flagged by Arnold and in review
+
+| flagged | targeted change | outcome |
+|---|---|---|
+| Case 40 / 54 bad start (−37 °C) | `ANCHOR_LEAD` (anchor on Input_T(t+1)) | **fixed** −37.3 → +8.5 |
+| the remaining +8.4 °C | `INPUT_LOOKAHEAD` k = 1/3/5 | **failed** — 8.42 → 8.38/8.46/8.49, untouched; hypothesis was wrong (range limit, not information limit). Second attempt = `ANCHOR_SCALE`, untested |
+| late drift on 58-65, 1-4, 8-10, 19, 23, 27 (T_avg) | physics bound / loss weights / fixed-w anchor | **all three failed**; only capacity helped (2.82 → 2.15 on that group), which is a global gain, not a targeted fix. Third attempt = `pos_head`, untested |
+| "odd initial values" on 41-45, 48-51 | plot the t = 0 point | **resolved** — it was a plotting artifact (isothermal start), never a model error; that group is now the best of the three (1.96) |
+| "weird jumps" (Arnold, from the plots) | traced to the anchor, not to dropping AR | **resolved by removing the anchor** — E showed 7 cases with spurious jumps vs G's 43 |
+
+---
+
 ## 2026-08-06 — meeting follow-ups (Arnold)
 
 ### Verified: the "weird jumps" Arnold saw are caused by the ANCHOR, not by dropping AR

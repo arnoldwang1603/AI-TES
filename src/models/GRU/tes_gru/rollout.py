@@ -75,6 +75,20 @@ def apply_other_anchor(model, pred, t_outer0_s):
 
     Returns a new tensor; no-op (returns pred) when the anchor is disabled.
     """
+    if OTHER_CH_MODE == 'pos_head':
+        ph = getattr(model, 'pos_head', None)
+        if ph is None:
+            return pred
+        p_mu, p_sd, (s_i, m_i), (s_o, m_o), (s_a, m_a) = ph
+        t_in, t_out = pred[..., 0], pred[..., 1]
+        # References detached: the T_avg objective must not reshape the
+        # T_inner / T_outer heads (same rule as the anchor path).
+        ti_raw = ((t_in.detach() - m_i) / s_i)
+        to_raw = ((t_out.detach() - m_o) / s_o)
+        pos = p_mu + p_sd * pred[..., 2]
+        t_avg = (to_raw + pos * (ti_raw - to_raw)) * s_a + m_a
+        return torch.stack([t_in, t_out, t_avg], dim=-1)
+
     oa = (getattr(model, 'other_anchor', None)
           if OTHER_CH_MODE.startswith('anchor') else None)
     if oa is None:

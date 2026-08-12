@@ -110,6 +110,42 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
     #                        + mu_a ) + m_a + KCa*z_a
     # Constants fitted on the train set here (same pattern as the T_inner
     # anchor), so resume is unaffected.
+    # ---- T_avg position head (OTHER_CH_MODE == 'pos_head') ----
+    # T_avg = T_outer + pos*(T_inner - T_outer), pos = mu + sd*z, fitted on
+    # the train set. Only steps with a meaningful gradient contribute to the
+    # fit (|T_inner - T_outer| > 5 C); elsewhere pos is ill-conditioned.
+    if variant in ('abs_sliding', 'forward_direct') and OTHER_CH_MODE == 'pos_head':
+        ps = []
+        for df, _ in train_dfs:
+            d = df.copy()
+            d.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
+            ti = d["T_inner (C)"].values
+            to = d["T_outer (C)"].values
+            ta = d["T_avg (C)"].values
+            gap = ti - to
+            ok = np.abs(gap) > 5.0
+            if ok.sum():
+                ps.append((ta[ok] - to[ok]) / gap[ok])
+        ps = np.concatenate(ps) if ps else np.array([0.27])
+        p_mu = float(ps.mean())
+        # Widen beyond the raw spread so the head can reach the tails; the
+        # between-case spread is what the fixed-w anchor could not follow.
+        p_sd = float(max(ps.std(), 1e-3) * 2.0)
+        i_o = ThermalDataset.BASE_COLS.index("T_outer (C)")
+        i_i = ThermalDataset.BASE_COLS.index("T_inner (C)")
+        i_a = ThermalDataset.BASE_COLS.index("T_avg (C)")
+        model.pos_head = (
+            p_mu, p_sd,
+            (float(scaler.scale_[i_i]), float(scaler.min_[i_i])),
+            (float(scaler.scale_[i_o]), float(scaler.min_[i_o])),
+            (float(scaler.scale_[i_a]), float(scaler.min_[i_a])),
+        )
+        print(f"[{variant}] T_avg position head: pos mean={p_mu:.4f} "
+              f"raw sd={ps.std():.4f} -> head sd={p_sd:.4f} "
+              f"(covers pos {p_mu-3*p_sd:.3f}..{p_mu+3*p_sd:.3f} at 3 sigma)")
+    else:
+        model.pos_head = None
+
     if variant in ('abs_sliding', 'forward_direct') and OTHER_CH_MODE.startswith('anchor'):
         d_out, num, den, parts = [], 0.0, 0.0, []
         for df, _ in train_dfs:
@@ -164,6 +200,19 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         # Floor the std: with the Input_T:=T_inner fallback data the delta
         # degenerates to ~0 and would kill the head's gradient.
         d_std = float(max(deltas.std(), 0.05))
+        # ANCHOR_SCALE widens the head's usable output range (2026-08-09).
+        # Round 4 showed the residual +8.4 C on inlet-jump cases (40, 54) is
+        # NOT an information problem -- feeding the inlet's future (lookahead
+        # 1/3/5) left it at 8.38/8.46/8.49, unchanged. With d_std ~0.65 C, an
+        # 8.5 C correction is ~13 sigma: the head simply cannot reach it. This
+        # multiplier rescales KC so the same z range spans a wider correction
+        # (the trade is coarser resolution in the common near-zero regime).
+        d_std *= ANCHOR_SCALE
+        if ANCHOR_SCALE != 1.0:
+            print(f"[{variant}] ANCHOR_SCALE={ANCHOR_SCALE} -> effective delta "
+                  f"std {d_std:.3f} C (max |delta| in train set "
+                  f"{np.abs(deltas - d_mean).max():.1f} C = "
+                  f"{np.abs(deltas - d_mean).max()/d_std:.1f} sigma)")
         i_tin = ThermalDataset.BASE_COLS.index("T_inner (C)")
         i_inp = ThermalDataset.BASE_COLS.index("Input Temperature (C)")
         # sklearn MinMaxScaler: scaled = raw * scale_ + min_

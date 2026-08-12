@@ -64,6 +64,7 @@ def save_run_config_snapshot():
         'physics_bound_weight': PHYSICS_BOUND_WEIGHT,
         'other_ch_mode': OTHER_CH_MODE,
         'input_lookahead': INPUT_LOOKAHEAD,
+        'anchor_scale': ANCHOR_SCALE,
         'variants': VARIANTS,
         'input_dims': INPUT_DIMS,
         'latest_params': LATEST_PARAMS,
