@@ -52,16 +52,19 @@ picking one:
               inherited from the LSTM line and confirmed best under the old
               parametrization; T_avg's weight now steers a position head.
   S5 AR       does the position idea transfer to the autoregressive
-              formulation? Opt-in only (--stage S5): AR costs ~18 h/seed
-              against ~3 min here. Worth having for the paper, not worth
-              blocking on.
+              formulation? Runs last, and dominates the budget on its own:
+              ~18 h per seed against ~3 min for a direct run, so 4 runs cost
+              ~72 h against ~31 h for S1-S4 combined. Note it uses the plain
+              position head -- once S1 names a gate, this pair is worth
+              re-running with it.
 
 Usage:
-    python run_round6.py                 # S1 -> S4
+    python run_round6.py                 # everything, ~103 h (S5 is ~72 of it)
     python run_round6.py --stage S1
     python run_round6.py --only tgate30
     python run_round6.py --dry-run
-    python run_round6.py --stage S5      # the expensive AR comparison
+    python run_round6.py --stage S1      # just the gating sweep, ~22 h
+    python run_round6.py --stage S5      # just the AR comparison, ~72 h
 Env: SEEDS overrides everything; PROGRESS_EVERY tunes the status cadence.
 Resumable; Ctrl+C safe. Logs -> sweep_logs/r6-<config>.log
 """
@@ -155,7 +158,12 @@ STAGES = {
                         OTHER_CH_MODE="abs"), "7,21", 1080),
     ],
 }
-DEFAULT_STAGES = ["S1", "S3", "S4"]
+# Everything, cheapest first: S1-S4 land in ~31 h, then the AR
+# comparison adds ~72 h on its own (~18 h per seed against ~3 min
+# for a direct run). Ordered last so every direct-model result is
+# already in hand before that starts, and so killing the round
+# after S4 costs nothing.
+DEFAULT_STAGES = ["S1", "S3", "S4", "S5"]
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LAUNCHER = os.path.join(HERE, "GRU_input_ablation.py")
