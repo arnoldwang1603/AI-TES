@@ -32,17 +32,23 @@ picking one:
   learned gate  POS_LEARNED_GATE: the model predicts the handover weight
                 itself. Worth having because every threshold above is derived
                 from where the excursions sit in THIS dataset, which may not be
-                the boundary that actually matters.
+                the boundary that actually matters. POS_LEARNED_POOL makes it
+                a per-CASE router (pooled logit, jump-free); POS_GATE_BIAS=10
+                pins it inert as the 5-channel null.
+  fallback      POS_ANCHORED_FALLBACK: what the gates hand over TO. Default is
+                a raw absolute head -- the family this project refuted three
+                times; the anchored version predicts the deviation from the
+                model's own surface midpoint instead, inheriting the surfaces'
+                accuracy. POS_FIT_CLEAN separately drops excursion steps from
+                the position fit (they inflate sd ~34%).
 
-  S1 gating   32 arms x 20 seeds. Every mechanism swept alone before any
+  S1 gating   34 arms x 20 seeds. Every mechanism swept alone before any
               combination, plus two controls: plain pos_head, and the extra
               absolute head with nothing gating to it. That second control
               matters -- the extra output channel shifts the RNG stream, so a
               4-channel arm and a 3-channel arm do not share an initialization
               even at the same seed, and without it a gating "win" could just
               be that shift.
-  S2 base     the round-5 champion to 20 seeds (10 of them already exist, so
-              this mostly resumes).
   S3 arch     capacity re-scanned under pos_head, 12 seeds. The round-5 grid
               was measured under the OLD parametrization. L=1 is excluded --
               PyTorch applies dropout only BETWEEN layers, so at L=1 the
@@ -52,19 +58,30 @@ picking one:
               inherited from the LSTM line and confirmed best under the old
               parametrization; T_avg's weight now steers a position head.
   S5 AR       does the position idea transfer to the autoregressive
-              formulation? Runs last, and dominates the budget on its own:
-              ~18 h per seed against ~3 min for a direct run, so 4 runs cost
-              ~72 h against ~31 h for S1-S4 combined. Note it uses the plain
+              formulation? Runs last (~5 h/seed measured in round 4 vs ~3 min
+              for a direct run; 8 runs ~ 40 h, more than S1-S4 combined), so
+              every direct-model conclusion is in hand before it starts and
+              killing the round after S4 costs nothing. It uses the plain
               position head -- once S1 names a gate, this pair is worth
               re-running with it.
 
+Decision rule, fixed BEFORE the run (31 selection arms invite a winner's
+curse -- the best of 32 at n=20 overstates its edge, so the analysis must
+rank, not test-each-vs-base at 0.05):
+  primary    overall MAE, paired per seed against `base` (same seed lists)
+  secondary  T_avg MAE on the 20 excursion cases (32-40, 50-53, 59-65)
+  tertiary   spurious-jump count (max over channels of |step change| beyond
+             truth, per case) -- hard per-step gates can CREATE exactly the
+             discontinuities Arnold flagged in earlier reviews, so an arm
+             that wins MAE but jumps is not a winner
+  a winner within noise of a simpler arm loses to the simpler arm.
+
 Usage:
-    python run_round6.py                 # everything, ~103 h (S5 is ~72 of it)
-    python run_round6.py --stage S1
+    python run_round6.py                 # everything, ~73 h (S5 is ~40 of it)
+    python run_round6.py --stage S1      # just the gating sweep, ~23 h
+    python run_round6.py --stage S5      # just the AR comparison, ~40 h
     python run_round6.py --only tgate30
     python run_round6.py --dry-run
-    python run_round6.py --stage S1      # just the gating sweep, ~22 h
-    python run_round6.py --stage S5      # just the AR comparison, ~72 h
 Env: SEEDS overrides everything; PROGRESS_EVERY tunes the status cadence.
 Resumable; Ctrl+C safe. Logs -> sweep_logs/r6-<config>.log
 """
@@ -80,10 +97,18 @@ S16 = "7,21,42,123,1,2,3,5,11,13,17,29,31,37,41,43"
 S12 = "7,21,42,123,1,2,3,5,11,13,17,29"
 
 # Everything inherits the round-5 champion; stages vary one axis at a time.
+# EVERY knob the child process reads is pinned here, so a stray
+# `set POS_CASE_GATE=1` left in the launching shell cannot silently turn
+# every arm into a gated one (2026-08-22 review finding).
 BASE = dict(TINNER_MODE="anchor", ANCHOR_LEAD="1", PHYSICS_BOUND_WEIGHT="0",
             VARIANTS="forward_direct", LOSS_WEIGHTS="1,6,3",
             OTHER_CH_MODE="pos_head", HIDDEN_SIZE="128", NUM_LAYERS="2",
-            DROPOUT="0.3")
+            DROPOUT="0.3", WINDOW_SIZE="10", SLIDING_PAD_MODE="variable",
+            ANCHOR_SCALE="1.0", INPUT_LOOKAHEAD="0",
+            POS_GAP_FLOOR="0", POS_FLOOR_SOFT="0",
+            POS_TEMP_GATE="0", POS_TEMP_SOFT="0", POS_CASE_GATE="0",
+            POS_LEARNED_GATE="0", POS_GATE_BIAS="2.0", POS_LEARNED_POOL="0",
+            POS_ABS_HEAD="0", POS_ANCHORED_FALLBACK="0", POS_FIT_CLEAN="0")
 
 
 def cfg(**kw):
@@ -100,18 +125,22 @@ def mins(h=128, l=2):
 STAGES = {
     "S1": (
         # -- controls ------------------------------------------------------
+        # base: RUN_NAME matches the round-5 champion dirs, so on a machine
+        # that ran round 5 the first 10 seeds resume via done.flag. The base
+        # code path is numerically unchanged (gates off, floor off), so
+        # mixing is safe -- delete those dirs to force a clean re-run.
         [("base", cfg(), S20, mins()),
          # 4 channels, nothing gating to them: isolates the RNG shift and the
          # extra parameters from any actual gating effect.
          ("abshead", cfg(POS_ABS_HEAD=1), S20, mins())]
         # -- (a) recondition only, never switch ----------------------------
         + [("floor{}".format(f), cfg(POS_GAP_FLOOR=f), S20, mins())
-           for f in (10, 20, 40, 80, 120)]
+           for f in (10, 20, 40, 80)]
         + [("floor{}-soft".format(f), cfg(POS_GAP_FLOOR=f, POS_FLOOR_SOFT=1),
             S20, mins()) for f in (20, 40, 80)]
         # -- (b) timestep gate, hard switch --------------------------------
         + [("tgate{}".format(t), cfg(POS_TEMP_GATE=t), S20, mins())
-           for t in (10, 20, 30, 50, 80)]
+           for t in (10, 20, 30, 50)]
         # -- (c) timestep gate, ramped handover ----------------------------
         #    threshold and ramp width swept semi-independently: a wide ramp
         #    from a low threshold is a different shape from a narrow ramp off
@@ -121,15 +150,41 @@ STAGES = {
            for t, w in ((20, 20), (30, 15), (30, 30), (30, 60), (50, 50),
                         (10, 40))]
         # -- (d) case gate --------------------------------------------------
-        + [("cgate", cfg(POS_CASE_GATE=1), S20, mins())]
+        #    cgate alone keeps 3 channels (Arnold's original: gated cases
+        #    simply predict T_avg absolutely) -- but that makes channel 2
+        #    serve two roles, z on ungated cases and a scaled temperature on
+        #    gated ones. cgate-ah gives the fallback its own 4th channel, so
+        #    the pair separates "case gate" from "dual-use channel".
+        + [("cgate", cfg(POS_CASE_GATE=1), S20, mins()),
+           ("cgate-ah", cfg(POS_CASE_GATE=1, POS_ABS_HEAD=1), S20, mins())]
         # -- (e) learned gate ----------------------------------------------
         #    bias sets where training starts: +2 trusts the position formula
         #    (w=0.88), 0 is uncommitted, +4 nearly always trusts it.
         + [("learned", cfg(POS_LEARNED_GATE=1), S20, mins()),
            ("learned-b0", cfg(POS_LEARNED_GATE=1, POS_GATE_BIAS=0), S20, mins()),
-           ("learned-b4", cfg(POS_LEARNED_GATE=1, POS_GATE_BIAS=4), S20, mins())]
+           ("learned-b4", cfg(POS_LEARNED_GATE=1, POS_GATE_BIAS=4), S20, mins()),
+           # per-CASE learned router: pooled logit, jump-free by construction
+           ("learned-case", cfg(POS_LEARNED_GATE=1, POS_LEARNED_POOL=1),
+            S20, mins()),
+           # 5-channel null: bias +10 pins sigmoid at ~1-5e-5, so the gate is
+           # inert -- the 5-channel analogue of abshead. Without it a
+           # "learned" win is confounded with the OUTPUT_SIZE=5 RNG shift.
+           ("learned-b10", cfg(POS_LEARNED_GATE=1, POS_GATE_BIAS=10),
+            S20, mins())]
+        # -- (e2) anchored fallback: the gate hands over to a fallback that is
+        #    itself anchored on the model's own surfaces (midpoint + z*sd)
+        #    instead of a raw absolute head -- the raw-absolute family is the
+        #    one this project has refuted three times.
+        + [("tgate30s30-afb", cfg(POS_TEMP_GATE=30, POS_TEMP_SOFT=30,
+                                  POS_ANCHORED_FALLBACK=1), S20, mins()),
+           ("cgate-afb", cfg(POS_CASE_GATE=1, POS_ANCHORED_FALLBACK=1),
+            S20, mins())]
+        # -- (e3) clean fit: excursion steps excluded from the mu/sd fit
+        #    (they inflate sd ~34% and cost normal-regime resolution)
+        + [("base-cleanfit", cfg(POS_FIT_CLEAN=1), S20, mins())]
         # -- (f) combinations ----------------------------------------------
-        + [("floor40-cgate", cfg(POS_GAP_FLOOR=40, POS_CASE_GATE=1), S20, mins()),
+        + [("floor40-cgate-ah", cfg(POS_GAP_FLOOR=40, POS_CASE_GATE=1,
+                                    POS_ABS_HEAD=1), S20, mins()),
            ("floor40-tgate30s30", cfg(POS_GAP_FLOOR=40, POS_TEMP_GATE=30,
                                       POS_TEMP_SOFT=30), S20, mins()),
            ("floor40-learned", cfg(POS_GAP_FLOOR=40, POS_LEARNED_GATE=1),
@@ -137,9 +192,7 @@ STAGES = {
            ("tgate30s30-cgate", cfg(POS_TEMP_GATE=30, POS_TEMP_SOFT=30,
                                     POS_CASE_GATE=1), S20, mins()),
            ("learned-cgate", cfg(POS_LEARNED_GATE=1, POS_CASE_GATE=1),
-            S20, mins()),
-           ("floor80-tgate20s20", cfg(POS_GAP_FLOOR=80, POS_TEMP_GATE=20,
-                                      POS_TEMP_SOFT=20), S20, mins())]
+            S20, mins())]
     ),
     "S3": [
         ("arch-h{}x{}".format(h, l), cfg(HIDDEN_SIZE=h, NUM_LAYERS=l), S12,
@@ -153,9 +206,14 @@ STAGES = {
                   "1,6,0.5", "2,6,3")
     ],
     "S5": [
-        ("AR-pos_head", cfg(VARIANTS="abs_sliding", NUM_LAYERS=5), "7,21", 1080),
+        # 300 min/seed from measurement, not folklore: round 4 ran the
+        # identical abs_sliding config at ~4.25 h/seed (B-ar stage, 2 seeds in
+        # ~8.5 h) and the 2026-07-16 log books 4.5-5.9 h/seed. 4 seeds per
+        # arm -- n=2 sits below the project's own evidence bar.
+        ("AR-pos_head", cfg(VARIANTS="abs_sliding", NUM_LAYERS=5),
+         "7,21,42,123", 300),
         ("AR-base", cfg(VARIANTS="abs_sliding", NUM_LAYERS=5,
-                        OTHER_CH_MODE="abs"), "7,21", 1080),
+                        OTHER_CH_MODE="abs"), "7,21,42,123", 300),
     ],
 }
 # Everything, cheapest first: S1-S4 land in ~31 h, then the AR
@@ -191,6 +249,11 @@ def main():
     dry = "--dry-run" in sys.argv
     stages = ([sys.argv[sys.argv.index("--stage") + 1].upper()]
               if "--stage" in sys.argv else DEFAULT_STAGES)
+    for st in stages:
+        if st not in STAGES:
+            sys.exit("unknown stage " + st + "; valid: " + ", ".join(STAGES)
+                     + "  (S2 is intentionally absent -- stage numbering"
+                       " carries over from round 5)")
     only = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else None
     os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -215,6 +278,39 @@ def main():
     if dry:
         print("\nDry run complete -- nothing launched.")
         return
+
+    # Pre-flight (2026-08-22 review): a done.flag makes the sweep silently
+    # reuse a directory, and one stale smoke-test dir already got mixed into
+    # an arm once. Round-6 gating dirs must carry the full provenance the
+    # current runio.py writes; round-5 reuse (base / arch arms) is exempt
+    # because those names carry no round-6 tag.
+    import json as _json
+    _tags = ("_tg", "_fl", "_cgate", "_lg", "_ah", "_afb", "_cf")
+    stale = []
+    runs_root = os.path.join(HERE, "runs")
+    if os.path.isdir(runs_root):
+        for d in os.listdir(runs_root):
+            if not any(t in d for t in _tags):
+                continue
+            rdir = os.path.join(runs_root, d)
+            rc = os.path.join(rdir, "run_config.json")
+            flags = [f for dp, _, fs in os.walk(rdir) for f in fs
+                     if f == "done.flag"]
+            if not flags or not os.path.isfile(rc):
+                continue
+            try:
+                keys = _json.load(open(rc))
+            except Exception:
+                stale.append(d + "  (unreadable run_config)")
+                continue
+            if "pos_fit_clean" not in keys:
+                stale.append(d + "  (pre-round-6 code)")
+    if stale:
+        print("\nREFUSING TO LAUNCH -- stale done-flagged run dirs would be")
+        print("silently reused by these arms. Delete or rename them first:")
+        for d in stale:
+            print("   runs/" + d)
+        sys.exit(2)
 
     res, done, spent = {}, 0, 0.0
     try:

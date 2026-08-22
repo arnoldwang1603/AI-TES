@@ -553,8 +553,31 @@ POS_CASE_GATE = os.environ.get("POS_CASE_GATE", "0") not in ("0", "", "false", "
 POS_LEARNED_GATE = os.environ.get("POS_LEARNED_GATE", "0") not in ("0", "", "false", "False")
 POS_GATE_BIAS = float(os.environ.get("POS_GATE_BIAS", "2.0"))
 assert -10.0 <= POS_GATE_BIAS <= 10.0
+# POS_LEARNED_POOL: pool the learned-gate logit over the whole sequence
+# before the sigmoid, making it a per-CASE router instead of a per-step
+# one -- jump-free by construction (2026-08-22 review: the per-step gate
+# can flap between two T_avg estimates that differ by degrees, creating
+# exactly the discontinuities the decision rule vetoes).
+POS_LEARNED_POOL = os.environ.get("POS_LEARNED_POOL", "0") not in ("0", "", "false", "False")
+# POS_ANCHORED_FALLBACK: replace the raw absolute fallback with a
+# surface-anchored one, T_avg_fb = midpoint(T_inner,T_outer) + mu + sd*z.
+# Review argument: every gate falls back to a raw absolute head -- the
+# mechanism family this project refuted three times -- while the model's
+# own surfaces are its two most accurate outputs (0.28 / 0.56 C).
+# Anchoring on their midpoint inherits that accuracy and stays exact as
+# the gap closes (midpoint -> T_avg when the surfaces converge). The
+# midpoint is used rather than max(T_i,T_o)+softplus (as first proposed)
+# because gated regions also contain BETWEEN-surface steps, which a
+# >=max fallback cannot express.
+POS_ANCHORED_FALLBACK = os.environ.get("POS_ANCHORED_FALLBACK", "0") not in ("0", "", "false", "False")
+# POS_FIT_CLEAN: drop excursion steps (T_avg outside the surface bracket)
+# from the no-floor mu/sd fit. Review measurement: those steps inflate
+# the fitted sd ~34% (0.164 vs 0.122), coarsening the head's resolution
+# in the normal regime for every ungated arm.
+POS_FIT_CLEAN = os.environ.get("POS_FIT_CLEAN", "0") not in ("0", "", "false", "False")
 POS_ABS_HEAD = (os.environ.get("POS_ABS_HEAD", "0") not in ("0", "", "false", "False")
-                or POS_TEMP_GATE > 0 or POS_LEARNED_GATE)
+                or POS_TEMP_GATE > 0 or POS_LEARNED_GATE
+                or POS_ANCHORED_FALLBACK)
 # Output channels the head emits (the rollout always returns 3): the 4th is
 # the absolute T_avg fallback, the 5th is the learned handover weight.
 if OTHER_CH_MODE == "pos_head" and POS_LEARNED_GATE:
@@ -619,8 +642,14 @@ if POS_TEMP_GATE:
 if POS_CASE_GATE:
     _parts.append("cgate")
 if POS_LEARNED_GATE:
-    _parts.append("lg" + (f"b{POS_GATE_BIAS:g}" if POS_GATE_BIAS != 2.0 else ""))
-if POS_ABS_HEAD and not POS_TEMP_GATE and not POS_LEARNED_GATE:
+    _parts.append("lg" + ("p" if POS_LEARNED_POOL else "")
+                  + (f"b{POS_GATE_BIAS:g}" if POS_GATE_BIAS != 2.0 else ""))
+if POS_ANCHORED_FALLBACK:
+    _parts.append("afb")
+if POS_FIT_CLEAN:
+    _parts.append("cf")
+if (POS_ABS_HEAD and not POS_TEMP_GATE and not POS_LEARNED_GATE
+        and not POS_ANCHORED_FALLBACK):
     _parts.append("ah")
 if SLIDING_PAD_MODE != "variable":
     _parts.append(SLIDING_PAD_MODE)

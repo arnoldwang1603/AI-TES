@@ -38,7 +38,11 @@ def family(c):
     """Coarse bucket: which experiment arm is this, ignoring capacity."""
     v = (c.get("variants") or ["?"])[0]
     if v == "abs_sliding":
-        return "AR"
+        # The AR arms differ in other_ch_mode too -- without this the
+        # AR-pos_head / AR-base pair collapses into one group and the
+        # per-seed files overwrite each other.
+        m = c.get("other_ch_mode", "abs")
+        return "AR" if m == "abs" else "AR_" + m
     if v != "forward_direct":
         return v
     mode = c.get("other_ch_mode", "abs")
@@ -69,10 +73,16 @@ def leaf_name(c, lp):
     if c.get("pos_case_gate"):
         p.append("cgate")
     if c.get("pos_learned_gate"):
-        p.append("lg" + ("b{:g}".format(c["pos_gate_bias"])
-                         if c.get("pos_gate_bias", 2.0) != 2.0 else ""))
+        p.append("lg" + ("p" if c.get("pos_learned_pool") else "")
+                 + ("b{:g}".format(c["pos_gate_bias"])
+                    if c.get("pos_gate_bias", 2.0) != 2.0 else ""))
+    if c.get("pos_anchored_fallback"):
+        p.append("afb")
+    if c.get("pos_fit_clean"):
+        p.append("cf")
     if (c.get("pos_abs_head") and not c.get("pos_temp_gate", 0)
-            and not c.get("pos_learned_gate")):
+            and not c.get("pos_learned_gate")
+            and not c.get("pos_anchored_fallback")):
         p.append("ah")
     if c.get("input_lookahead", 0):
         p.append("la{}".format(c["input_lookahead"]))
@@ -80,7 +90,7 @@ def leaf_name(c, lp):
         p.append("as{:g}".format(c["anchor_scale"]))
     w = tuple(c.get("loss_weights") or ())
     if w and w != DEFAULT_W:
-        p.append("w" + "-".join(str(int(x)) for x in w))
+        p.append("w" + "-".join("{:g}".format(x) for x in w))
     if c.get("tinner_mode") != "anchor":
         p.append("Tin-{}".format(c.get("tinner_mode")))
     return "_".join(p)
@@ -197,6 +207,11 @@ output."""),
     ("lg", """Instead of us picking the temperature threshold, the model
 predicts the handover weight itself and learns where the position idea can be
 trusted. It starts out biased towards trusting it."""),
+    ("afb", """The handover target is anchored on the model's own two
+surface predictions (their midpoint) instead of being a raw absolute
+temperature, so the fallback inherits the surfaces' accuracy."""),
+    ("cf", """The position statistics are fitted with the excursion steps
+excluded, which sharpens the head's resolution in the normal regime."""),
     ("la", "the model additionally sees the input temperature N steps ahead."),
     ("as", "the inner-surface correction head's output range, multiplied by N."),
     ("w", """the relative weight of the three temperatures in the training

@@ -120,10 +120,19 @@ def apply_other_anchor(model, pred, t_outer0_s, inp_t=None):
         pos = p_mu + p_sd * pred[..., 2]
         t_avg = (to_raw + pos * den) * s_a + m_a
 
-        # Absolute fallback estimate. Its own channel when one exists: channel
-        # 2 holds a z-scored position (~N(0,1)) while an absolute T_avg is a
+        # Fallback estimate. Its own channel when one exists: channel 2
+        # holds a z-scored position (~N(0,1)) while an absolute T_avg is a
         # MinMax-scaled temperature (~0.5), so one channel cannot carry both.
-        t_abs = pred[..., 3] if pred.shape[-1] > 3 else pred[..., 2]
+        if POS_ANCHORED_FALLBACK and pred.shape[-1] > 3 \
+                and getattr(model, 'pos_mid', None) is not None:
+            # Surface-anchored: deviation from the (detached) surface
+            # midpoint, so the fallback inherits the model's two most
+            # accurate outputs instead of re-learning a 100-400 C level.
+            mu_m, sd_m = model.pos_mid
+            t_abs = ((ti_raw + to_raw) * 0.5 + mu_m
+                     + sd_m * pred[..., 3]) * s_a + m_a
+        else:
+            t_abs = pred[..., 3] if pred.shape[-1] > 3 else pred[..., 2]
 
         w = None
         if POS_TEMP_GATE:
@@ -142,7 +151,14 @@ def apply_other_anchor(model, pred, t_outer0_s, inp_t=None):
             # out trusting the position formula instead of sitting at an
             # uncommitted 0.5. Multiplied with any hand-designed gate, so both
             # have to want the position formula for it to be used.
-            lw = torch.sigmoid(pred[..., 4] + POS_GATE_BIAS)
+            logit = pred[..., 4]
+            if POS_LEARNED_POOL:
+                # Per-case router: one decision per sequence, jump-free.
+                # (Per-step calls from the sliding path see T=1, where
+                # pooling degenerates to per-step -- AR arms do not use
+                # this knob in round 6.)
+                logit = logit.mean(dim=-1, keepdim=True)
+            lw = torch.sigmoid(logit + POS_GATE_BIAS)
             w = lw if w is None else w * lw
         if w is not None:
             t_avg = w * t_avg + (1.0 - w) * t_abs
@@ -448,6 +464,20 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
             t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
             tin_s = ka * inputs[:, t_a, IDX_INP] + kb + kc * pred_t[:, 0]
             pred_t = torch.cat([tin_s.unsqueeze(1), pred_t[:, 1:]], dim=1)
+
+        if OTHER_CH_MODE == 'pos_head':
+            # T_avg reconstruction (and any gates), the same helper as the
+            # forward_direct path, applied per step as (B, 1, C). T_inner
+            # must already be final (its anchor above) because the position's
+            # reference consumes it; the RECONSTRUCTED T_avg is what feeds
+            # back into the AR window below. Without this call the AR
+            # variant would compare (and feed back) the raw position z as if
+            # it were a temperature. t_outer0_s is unused by the pos_head
+            # branch; inp_t carries the full exogenous input-temperature
+            # profile for the case gate.
+            pred_t = apply_other_anchor(
+                model, pred_t.unsqueeze(1), None,
+                inp_t=inputs[:, :, IDX_INP]).squeeze(1)
 
         preds.append(pred_t)
 

@@ -135,6 +135,12 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                 ps.append((ta - to) / gd)
             else:
                 ok = np.abs(gap) > 5.0
+                if POS_FIT_CLEAN:
+                    # Excursion steps carry pos far outside the normal
+                    # band and inflate sd; the head should not pay
+                    # resolution for steps a gate handles anyway.
+                    ok &= ((ta <= np.maximum(ti, to) + 0.5)
+                           & (ta >= np.minimum(ti, to) - 0.5))
                 if ok.sum():
                     ps.append((ta[ok] - to[ok]) / gap[ok])
         ps = np.concatenate(ps) if ps else np.array([0.27])
@@ -145,6 +151,24 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         i_o = ThermalDataset.BASE_COLS.index("T_outer (C)")
         i_i = ThermalDataset.BASE_COLS.index("T_inner (C)")
         i_a = ThermalDataset.BASE_COLS.index("T_avg (C)")
+        if POS_ANCHORED_FALLBACK:
+            # Midpoint-anchored fallback constants: T_avg deviation from
+            # the surface midpoint, over ALL steps (the fallback must
+            # serve both between-surface and excursion regimes).
+            res = []
+            for df, _ in train_dfs:
+                dd = df.copy()
+                dd.rename(columns={'T_ave (C)': 'T_avg (C)'}, inplace=True)
+                res.append(dd['T_avg (C)'].values
+                           - 0.5 * (dd['T_inner (C)'].values
+                                    + dd['T_outer (C)'].values))
+            res = np.concatenate(res)
+            model.pos_mid = (float(res.mean()),
+                             float(max(res.std(), 1.0)))
+            print(f"[{variant}] anchored fallback: midpoint residual "
+                  f"mean={model.pos_mid[0]:+.2f} C sd={model.pos_mid[1]:.2f} C")
+        else:
+            model.pos_mid = None
         model.pos_head = (
             p_mu, p_sd,
             (float(scaler.scale_[i_i]), float(scaler.min_[i_i])),

@@ -40,6 +40,67 @@ best-val checkpointing is unchanged, so results remain comparable.
 
 ---
 
+---
+
+## 2026-08-22 — Round 6 `[CODE]` + adversarial design review
+
+Round 6 asks one question: WHERE should the position parametrization stop
+being trusted? Four mechanism families in `run_round6.py` S1 (34 arms x 20
+seeds): denominator floor (hard/soft), per-timestep temperature gate
+(hard/ramped), per-case gate (Arnold's both-phases rule), and a learned gate
+(per-step and per-case pooled). Plus S3 arch / S4 weights re-scans under
+pos_head and S5, the AR transfer pair. 55 configs / 916 runs / ~73 h.
+Decision rule pre-registered in the runner docstring (primary overall MAE
+paired vs base; secondary excursion-case T_avg; tertiary a spurious-jump
+veto), because a best-of-31 selection at n=20 otherwise overstates its edge.
+
+Before launch the whole setup went through an adversarial review (3 lenses +
+independent checks). What it caught, all fixed:
+
+- **AR path never applied pos_head** — `apply_other_anchor` was wired only
+  into forward_direct; `_rollout_sliding` and evaluate's AR branch fed the
+  raw position z to the loss AND back into the AR window. S5 would have
+  burned ~40 h comparing two effectively identical arms. Wired in per step
+  (reconstructed T_avg is what feeds back), unit-verified exact.
+- **Stale done.flag dirs** — a pre-round-6 smoke run (`_tg30s30_seed7`) would
+  have been silently absorbed as seed 7 of an arm. Deleted, and the runner
+  now refuses to launch if any round-6-tagged dir carries pre-round-6
+  provenance.
+- **Exporter merged the S5 pair** — `family()` bucketed every abs_sliding run
+  as "AR" regardless of mode, so AR-pos_head and AR-base averaged together
+  and overwrote each other's per-seed files. Fixed (`AR_pos_head` family).
+- **Env leakage** — the runner passed the parent shell's environment through,
+  so a leftover `set POS_CASE_GATE=1` would silently gate every arm. All 15
+  knobs now pinned in BASE.
+- **Confounded controls** — 5-channel learned arms had no channel-count null
+  (added `learned-b10`: bias pins the gate inert); `floor40-cgate` was the
+  only cgate combo without the dedicated fallback channel (now `-ah`).
+- **Decision metrics did not exist** — the jump veto and excursion-case
+  aggregate were prose only, and predictions.npz is not retained for most
+  arms after export. The jump metric (`MaxJump (C)`, `JumpSteps_gt2C`) now
+  lands in every summary_errors.csv at evaluation time.
+- **Two new mechanism arms from the review**: `*-afb` — gates hand over to a
+  surface-anchored fallback (midpoint + z*sd, fitted) instead of the raw
+  absolute head this project has refuted three times (midpoint rather than
+  the proposed max+softplus, because gated regions also contain
+  between-surface steps a >=max fallback cannot express); `base-cleanfit` —
+  excursion steps excluded from the mu/sd fit (they inflate sd ~34%).
+  Cut in exchange: floor120, tgate80, floor80-tgate20s20 (operate far
+  outside the failure regime, median excursion gap is 7 C).
+- **S5 rebooked from measurement**: round 4 ran the same AR config at
+  ~4.25 h/seed, not the folklore 18 h — so 4 seeds/arm now fit in ~40 h and
+  n=2 (below the project's own evidence bar) is avoided.
+- **Case-gate detector validated on TRAINING data** (was test-only): fires on
+  107/311, catches 105/105 excursion cases, 2 false fires. 34% of training
+  cases carry excursions, so the fallback path gets real training signal.
+- **Free win measured**: averaging the 10 round-5 champion seeds' predictions
+  gives overall MAE 0.829 vs 0.890 single-seed mean (T_outer 0.56 -> 0.43),
+  zero training cost. The deployment recipe should be an ensemble.
+
+Known, accepted: S3/S4 still run under the UNGATED head (they are
+null-checks; any n=12 winner needs confirmation), and S5 uses the plain
+position head — if S1 names a gate, the AR pair is worth re-running with it.
+
 ## 2026-08-12 — Round 5 results `[DONE]` — **the position head wins**
 
 384/384 runs complete, 36 configs, nothing lost this time (the `anchor_avg_grad`

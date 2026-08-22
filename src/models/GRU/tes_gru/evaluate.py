@@ -219,6 +219,14 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                     ka, kb, kc = anchor
                     t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
                     pred[0] = ka * float(x[t_a, IDX_INP].item()) + kb + kc * pred[0]
+                if OTHER_CH_MODE == 'pos_head':
+                    # Mirror of the train-path call in _rollout_sliding.
+                    pt = torch.tensor(pred, dtype=torch.float32,
+                                      device=DEVICE).view(1, 1, -1)
+                    pt = apply_other_anchor(
+                        model, pt, None,
+                        inp_t=x[:, IDX_INP].unsqueeze(0).to(DEVICE))
+                    pred = pt.view(-1).cpu().numpy()
                 preds.append(pred)
 
                 # pred channels (per VARIANT_OUTPUT_CHANNELS) = [T_inner, T_outer, T_avg]
@@ -376,6 +384,23 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             [inv_pred[:, SCALER_COL[c]] for c in channel_names])
         metric_row['MAPE_Overall (%)'] = _mape(concat_g, concat_p)
         metric_row['R2_Overall']       = _r2(concat_g, concat_p)
+
+        # Spurious-jump metric (2026-08-22, the decision rule's tertiary
+        # veto): per step, how much LARGER the predicted change is than
+        # the true change. Hard per-step gates can manufacture exactly
+        # the single-step discontinuities Arnold flags in review, and an
+        # arm that wins MAE while jumping is not a winner. Computed here
+        # so it lands in every summary_errors.csv -- predictions.npz is
+        # not retained for most arms after export.
+        _jumps = []
+        for _c in channel_names:
+            _col = SCALER_COL[_c]
+            _dp = np.abs(np.diff(inv_pred[:, _col]))
+            _dg = np.abs(np.diff(inv_actual[:, _col]))
+            _jumps.append(np.maximum(_dp - _dg, 0.0))
+        _jumps = np.stack(_jumps) if _jumps else np.zeros((1, 1))
+        metric_row['MaxJump (C)'] = float(_jumps.max())
+        metric_row['JumpSteps_gt2C'] = int((_jumps > 2.0).sum())
 
         # Stash raw arrays for replotting (saved to predictions.npz at end).
         raw_predictions.append({
