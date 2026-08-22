@@ -4,7 +4,7 @@ What round 4 established (300 runs, 288 usable):
   * Anchors on T_outer/T_avg LOSE. E (no anchor) 1.284+-0.236 over 20 seeds
     vs H 1.867+-1.200 and F 1.930+-0.810 (permutation p=0.037). They wreck
     T_outer (0.83 -> 2.6) while barely moving T_avg (2.76 -> 2.71).
-  * Inlet lookahead does NOT fix the Case-40 residual: 8.42 -> 8.38/8.46/8.49
+  * Input-temperature lookahead does NOT fix the Case-40 residual: 8.42 -> 8.38/8.46/8.49
     for k=1/3/5, i.e. untouched, and overall MAE got worse (p=0.003). The
     +8.4 C is a RANGE limit of the anchor head (8.5 C is ~13 sigma of the
     fitted delta), not an information limit -- hence ANCHOR_SCALE this round.
@@ -161,7 +161,11 @@ def main():
     try:
         for st, name, env_over, seeds, n, est in plan:
             print(f"\n{'='*74}\n=== [{st}] {name}  ({n} seeds, ~{est/60:.1f} h) ===")
-            env = dict(os.environ, **env_over, SEEDS=seeds)
+            # PYTHONUNBUFFERED: the child's stdout is a FILE here, so Python would
+            # block-buffer it and the progress reader below would see
+            # nothing for minutes at a time.
+            env = dict(os.environ, **env_over, SEEDS=seeds,
+                       PYTHONUNBUFFERED="1")
             lp = os.path.join(LOG_DIR, f"r5-{name}.log")
             print(f"  console -> {lp}")
             stop = threading.Event()

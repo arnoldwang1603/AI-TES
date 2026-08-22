@@ -38,6 +38,7 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
 
     model = ThermalGRU(
         input_size=INPUT_DIMS[variant],
+        output_size=OUTPUT_SIZE,
         hidden_size=params['hidden_size'],
         num_layers=params['num_layers'],
         dropout=params['dropout'],
@@ -123,9 +124,19 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
             to = d["T_outer (C)"].values
             ta = d["T_avg (C)"].values
             gap = ti - to
-            ok = np.abs(gap) > 5.0
-            if ok.sum():
-                ps.append((ta[ok] - to[ok]) / gap[ok])
+            if POS_GAP_FLOOR:
+                # Floor the denominator, then EVERY step is usable -- the
+                # ill-conditioned ones are exactly what the floor repairs.
+                sgn = np.where(gap < 0, -1.0, 1.0)
+                if POS_FLOOR_SOFT:
+                    gd = sgn * np.sqrt(gap * gap + POS_GAP_FLOOR ** 2)
+                else:
+                    gd = sgn * np.maximum(np.abs(gap), POS_GAP_FLOOR)
+                ps.append((ta - to) / gd)
+            else:
+                ok = np.abs(gap) > 5.0
+                if ok.sum():
+                    ps.append((ta[ok] - to[ok]) / gap[ok])
         ps = np.concatenate(ps) if ps else np.array([0.27])
         p_mu = float(ps.mean())
         # Widen beyond the raw spread so the head can reach the tails; the
@@ -140,7 +151,15 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
             (float(scaler.scale_[i_o]), float(scaler.min_[i_o])),
             (float(scaler.scale_[i_a]), float(scaler.min_[i_a])),
         )
-        print(f"[{variant}] T_avg position head: pos mean={p_mu:.4f} "
+        print(f"[{variant}] T_avg position head"
+              f"{f' (gap floor {POS_GAP_FLOOR:g} C)' if POS_GAP_FLOOR else ''}"
+              f"{' (case gate ON)' if POS_CASE_GATE else ''}"
+              f"{f' (temp gate {POS_TEMP_GATE:g} C'
+                 f'{f", soft {POS_TEMP_SOFT:g} C" if POS_TEMP_SOFT else ", hard"})'
+                 if POS_TEMP_GATE else ''}"
+              f"{f' (learned gate, bias {POS_GATE_BIAS:g})' if POS_LEARNED_GATE else ''}"
+              f"{f' [{OUTPUT_SIZE} output channels]' if OUTPUT_SIZE != 3 else ''}"
+              f": pos mean={p_mu:.4f} "
               f"raw sd={ps.std():.4f} -> head sd={p_sd:.4f} "
               f"(covers pos {p_mu-3*p_sd:.3f}..{p_mu+3*p_sd:.3f} at 3 sigma)")
     else:
@@ -201,8 +220,8 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         # degenerates to ~0 and would kill the head's gradient.
         d_std = float(max(deltas.std(), 0.05))
         # ANCHOR_SCALE widens the head's usable output range (2026-08-09).
-        # Round 4 showed the residual +8.4 C on inlet-jump cases (40, 54) is
-        # NOT an information problem -- feeding the inlet's future (lookahead
+        # Round 4 showed the residual +8.4 C on input-jump cases (40, 54) is
+        # NOT an information problem -- feeding the input temperature's future (lookahead
         # 1/3/5) left it at 8.38/8.46/8.49, unchanged. With d_std ~0.65 C, an
         # 8.5 C correction is ~13 sigma: the head simply cannot reach it. This
         # multiplier rescales KC so the same z range spans a wider correction

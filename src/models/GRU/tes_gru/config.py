@@ -194,7 +194,7 @@ assert TINNER_MODE in ("arfed", "anchor", "output_only"), \
 # condition known before the rollout starts -- so t+1 is equally causal and
 # strictly better: the residual the head must learn drops from max 37.5 C /
 # std 1.00 to max 8.5 C / std 0.49, because Input_T(t) is stale whenever the
-# inlet jumps between steps (Case 40: inlet 217->263 in one step, giving a
+# the input temperature jumps between steps (Case 40: input temperature 217->263 in one step, giving a
 # -37 C first-step error under lead=0).
 ANCHOR_LEAD = int(os.environ.get("ANCHOR_LEAD", "1"))
 assert ANCHOR_LEAD in (0, 1)
@@ -444,10 +444,10 @@ INPUT_DIMS = {
 }
 
 # ------------------------------------------------------------
-# Inlet lookahead (2026-08-06) -- the targeted Case-40 fix
+# Input-temperature lookahead (2026-08-06) -- the targeted Case-40 fix
 # ------------------------------------------------------------
-# The remaining +8.5 C first-step error on inlet-jump cases is the physical
-# T_inner lag: the model at step t cannot see that the inlet jumps at t+1,
+# The remaining +8.5 C first-step error on input-jump cases is the physical
+# T_inner lag: the model at step t cannot see that the input temperature jumps at t+1,
 # so it cannot predict the lag. But the FULL Input_T curve is a given
 # boundary condition, so showing the model the next k values is legal.
 # INPUT_LOOKAHEAD=k appends k extra features to forward_direct's input:
@@ -461,8 +461,8 @@ INPUT_DIMS['forward_direct'] = 2 + INPUT_LOOKAHEAD
 # Anchor output range (2026-08-09)
 # ------------------------------------------------------------
 # Multiplier on the T_inner anchor's z-scaling std. Round 4 established that
-# the stubborn +8.4 C residual on the inlet-jump cases is a RANGE limit, not
-# an information limit: giving the model the inlet's future (lookahead 1/3/5)
+# the stubborn +8.4 C residual on the input-jump cases is a RANGE limit, not
+# an information limit: giving the model the input temperature's future (lookahead 1/3/5)
 # left Case 40 at 8.38 / 8.46 / 8.49 C, i.e. untouched, while making overall
 # MAE significantly worse (p=0.003). With the fitted delta std ~0.65 C, an
 # 8.5 C correction sits ~13 sigma out -- unreachable for the head. Raising
@@ -470,6 +470,99 @@ INPUT_DIMS['forward_direct'] = 2 + INPUT_LOOKAHEAD
 # near-zero regime where almost all steps live. 1.0 = round-4 behaviour.
 ANCHOR_SCALE = float(os.environ.get("ANCHOR_SCALE", "1.0"))
 assert 0.1 <= ANCHOR_SCALE <= 50.0
+
+# ------------------------------------------------------------
+# pos_head excursion handling (2026-08-20)
+# ------------------------------------------------------------
+# Round 5 left cases 32-40 / 51-53 weak. Mechanism: for 3-6% of their
+# timesteps T_avg rises ABOVE both surfaces (up to 13 C above), so the
+# "position between the surfaces" assumption breaks. Ranking all 70 test
+# cases by how far the position falls outside the head's reachable band puts
+# exactly those 12 on top -- no misses, no extras.
+#
+# Two independent remedies, composable so the round-6 sweep can separate them:
+#
+# POS_GAP_FLOOR (timestep level, ours). The excursions coincide with the two
+#   surfaces being close (median 7 C apart), where pos = excess/gap is
+#   ill-conditioned -- measured max 66 against a typical 0.27. Flooring the
+#   denominator bounds it. Reconstruction stays exact, since pos is defined
+#   through the same floored denominator. 0 disables. A simulated +-3 sigma
+#   head shows the forced T_avg error on the 12 cases falling 0.14 -> 0.02 ->
+#   0.00 for floors of 0 / 20 / 30 C, with the other 58 cases untouched.
+#   (Same trick already used for the T_inner anchor's std floor.)
+#
+# POS_CASE_GATE (case level, Arnold's suggestion, 2026-08-20 meeting). Only
+#   runs with both a charging and a discharging phase show the excursion --
+#   confirmed on all 70 cases: 19 of the 20 excursion cases qualify, one false
+#   positive (case 58, 0.3% excursion) and one miss (case 50, discharging for
+#   only 3% of the run). Gated cases fall back to predicting T_avg directly.
+#   The gate is read off the INPUT TEMPERATURE profile alone (rises then falls back by
+#   >25% of its span, peak in the interior): 20/20 hits, 1 false alarm, 69/70
+#   correct. The input temperature is a given boundary condition, so this is legal
+#   at inference -- note that the more obvious "input temperature crosses the initial
+#   temperature" test is NOT usable, it catches only 3/20, because the phase
+#   is defined against the medium's evolving temperature rather than its
+#   initial one.
+# The knobs below are composable; each answers a different question about
+# WHERE the position parametrization should stop being trusted.
+#
+#   POS_GAP_FLOOR / POS_FLOOR_SOFT   never switch away, just recondition:
+#       bound the denominator so pos stays finite. Hard = max(|gap|, floor);
+#       soft = sqrt(gap^2 + floor^2), same asymptote without the kink at the
+#       threshold. Reconstruction stays exact either way, because train.py
+#       fits mu/sd through the same denominator.
+#   POS_TEMP_GATE / POS_TEMP_SOFT    timestep level: hand T_avg over to a
+#       dedicated absolute head while the surfaces are within POS_TEMP_GATE
+#       degrees of each other, which is exactly when the excursions happen
+#       (median separation 7 C). POS_TEMP_SOFT > 0 ramps the handover over
+#       that many degrees instead of switching abruptly.
+#   POS_CASE_GATE                    case level (Arnold, 2026-08-20 meeting):
+#       hand the whole run over when it contains both a charging and a
+#       discharging phase. Blunter -- it gives up the parametrization for
+#       100% of a case to repair 3-6% of it -- but it needs no in-sequence
+#       decision. Detected from the input temperature profile alone (see _input_case_gate).
+#
+# POS_ABS_HEAD adds a 4th output channel holding that absolute T_avg estimate.
+# It exists because channel 2 cannot serve both roles: it carries a z-scored
+# position (~N(0,1)) whereas an absolute T_avg is a MinMax-scaled temperature
+# (~0.5), so reusing it would force the head to jump between two unrelated
+# output ranges mid-sequence. The 4th channel is consumed inside the rollout,
+# which still returns 3 channels, so the loss is untouched. Auto-enabled by
+# POS_TEMP_GATE. Caveat to watch: this head only receives gradient where the
+# blend actually uses it, so in runs whose surfaces never converge it stays
+# untrained -- harmless while unused, but it is why the soft band is worth
+# preferring over a hard switch.
+POS_GAP_FLOOR = float(os.environ.get("POS_GAP_FLOOR", "0"))
+assert 0.0 <= POS_GAP_FLOOR <= 300.0
+POS_FLOOR_SOFT = os.environ.get("POS_FLOOR_SOFT", "0") not in ("0", "", "false", "False")
+POS_TEMP_GATE = float(os.environ.get("POS_TEMP_GATE", "0"))
+assert 0.0 <= POS_TEMP_GATE <= 300.0
+POS_TEMP_SOFT = float(os.environ.get("POS_TEMP_SOFT", "0"))
+assert 0.0 <= POS_TEMP_SOFT <= 300.0
+POS_CASE_GATE = os.environ.get("POS_CASE_GATE", "0") not in ("0", "", "false", "False")
+#   POS_LEARNED_GATE                 the model decides. A 5th channel is fed
+#       through a sigmoid to produce the handover weight directly, instead of
+#       us picking a temperature threshold for it. Worth testing against the
+#       hand-designed gates: our threshold is derived from where the
+#       excursions happen to sit in THIS dataset (surfaces a median 7 C apart),
+#       which may not be the boundary that actually matters. POS_GATE_BIAS
+#       shifts the sigmoid's starting point so training begins trusting the
+#       position formula (+2 -> w = 0.88) rather than sitting at an
+#       uncommitted 0.5. If a hand-designed gate is on at the same time, the
+#       two weights multiply: both have to want the position formula.
+POS_LEARNED_GATE = os.environ.get("POS_LEARNED_GATE", "0") not in ("0", "", "false", "False")
+POS_GATE_BIAS = float(os.environ.get("POS_GATE_BIAS", "2.0"))
+assert -10.0 <= POS_GATE_BIAS <= 10.0
+POS_ABS_HEAD = (os.environ.get("POS_ABS_HEAD", "0") not in ("0", "", "false", "False")
+                or POS_TEMP_GATE > 0 or POS_LEARNED_GATE)
+# Output channels the head emits (the rollout always returns 3): the 4th is
+# the absolute T_avg fallback, the 5th is the learned handover weight.
+if OTHER_CH_MODE == "pos_head" and POS_LEARNED_GATE:
+    OUTPUT_SIZE = 5
+elif OTHER_CH_MODE == "pos_head" and POS_ABS_HEAD:
+    OUTPUT_SIZE = 4
+else:
+    OUTPUT_SIZE = 3
 
 # ------------------------------------------------------------
 # Output layout
@@ -519,6 +612,16 @@ if PHYSICS_BOUND_WEIGHT:
     _parts.append(f"pb{PHYSICS_BOUND_WEIGHT:g}")
 if ANCHOR_SCALE != 1.0:
     _parts.append(f"as{ANCHOR_SCALE:g}")
+if POS_GAP_FLOOR:
+    _parts.append(f"fl{POS_GAP_FLOOR:g}" + ("s" if POS_FLOOR_SOFT else ""))
+if POS_TEMP_GATE:
+    _parts.append(f"tg{POS_TEMP_GATE:g}" + (f"s{POS_TEMP_SOFT:g}" if POS_TEMP_SOFT else ""))
+if POS_CASE_GATE:
+    _parts.append("cgate")
+if POS_LEARNED_GATE:
+    _parts.append("lg" + (f"b{POS_GATE_BIAS:g}" if POS_GATE_BIAS != 2.0 else ""))
+if POS_ABS_HEAD and not POS_TEMP_GATE and not POS_LEARNED_GATE:
+    _parts.append("ah")
 if SLIDING_PAD_MODE != "variable":
     _parts.append(SLIDING_PAD_MODE)
 RUN_NAME_BASE = "_".join(_parts)

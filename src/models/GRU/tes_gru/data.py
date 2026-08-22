@@ -104,7 +104,7 @@ class ThermalDataset(Dataset):
             # Exogenous-only seq2seq (2026-07-24): the model sees ONLY the
             # given boundary condition; all state channels are outputs, none
             # feed back. idx 0 = Time, 1 = Input_T.
-            # INPUT_LOOKAHEAD (2026-08-06): idx 2..1+k carry the inlet's next
+            # INPUT_LOOKAHEAD (2026-08-06): idx 2..1+k carry the input temperature's next
             # k values (legal: the full curve is a given boundary condition).
             # Built AFTER scaling, so the lead columns share Input_T's scale;
             # the tail holds the last value.

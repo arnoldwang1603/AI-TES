@@ -11,7 +11,7 @@ reserve after a first look at S1-S4 (available ~10 h in).
 Stages (cheap first; S6 AR last):
   S1 stability    E,H x20 seeds; F,G x12. Real distributions for the anchor
                   bimodality question instead of 2-seed coin flips.
-  S2 lookahead    INPUT_LOOKAHEAD in {1,3,5}: the model sees the inlet's next
+  S2 lookahead    INPUT_LOOKAHEAD in {1,3,5}: the model sees the input temperature's next
                   k values (legal: given boundary condition) -- the targeted
                   Case-40 fix. la1 x20, la3/la5 x12.
   S3 weights      T_avg emphasis grid {1-6-5, 1-6-6, 1-6-8, 1-4-4, 1-3-3} +
@@ -158,7 +158,11 @@ def main():
     try:
         for st, name, env_over, seeds, n, est in plan:
             print(f"\n{'=' * 72}\n=== [{st}] {name}  ({n} seeds, ~{est/60:.1f} h) ===")
-            env = dict(os.environ, **env_over, SEEDS=seeds)
+            # PYTHONUNBUFFERED: the child's stdout is a FILE here, so Python would
+            # block-buffer it and the progress reader below would see
+            # nothing for minutes at a time.
+            env = dict(os.environ, **env_over, SEEDS=seeds,
+                       PYTHONUNBUFFERED="1")
             log_path = os.path.join(LOG_DIR, f"r4-{name}.log")
             stop = threading.Event()
             mon = threading.Thread(target=tail_progress,

@@ -40,6 +40,80 @@ best-val checkpointing is unchanged, so results remain comparable.
 
 ---
 
+## 2026-08-12 — Round 5 results `[DONE]` — **the position head wins**
+
+384/384 runs complete, 36 configs, nothing lost this time (the `anchor_avg_grad`
+control ran, confirming the config fix).
+
+### Headline: `pos_head` is the best configuration the project has produced
+
+| config | n | overall MAE | worst run | runs >1.5 °C |
+|---|---|---|---|---|
+| **pos_head h128×2dp0.3** | 10 | **0.890 ± 0.077** | 1.047 | **0/10** |
+| pos_head h128×5dp0.3 | 10 | 1.072 ± 0.368 | 1.816 | 2/10 |
+| baseline h128×5 (previous best) | 20 | 1.284 ± 0.236 | 1.670 | 5/20 |
+| AR baseline (arm B, 6 seeds total) | 6 | ~1.52 | — | — |
+
+It is not only the lowest mean but by far the **tightest** distribution ever
+measured here (sd 0.077 vs 0.24–0.54 for everything else) — and the first
+configuration with **zero** runs above 1.5 °C. Against the autoregressive
+baseline that started this line of work, that is a **~41 % improvement**.
+
+Per channel (h128×2): T_avg **2.996 → 1.829** (permutation p = 0.0000),
+T_outer **0.812 → 0.561**, T_inner unchanged (0.291 → 0.280, by design — the
+position head does not touch it). Per case it wins on **56/70** for T_avg and
+**66/70** for T_outer.
+
+**On the cases flagged in review** — T_avg MAE:
+
+| group | default h128×5 | pos_head | change |
+|---|---|---|---|
+| **late-drift group** (58-65, 1-4, 8-10, 19, 23, 27) | 2.86 | **0.80** | **−72 %** |
+| start-jump (40, 54) | 3.39 | 2.65 | −22 % |
+| "odd initial value" (41-45, 48-51) | 2.34 | 1.84 | −22 % |
+
+The late-drift group — the one Arnold and I kept returning to and that three
+previous attempts failed on — is essentially solved. The diagnosis that
+preceded it (error = position error × surface gap, with 36 % headroom in the
+per-case position) predicted this, and the measured gain lands where predicted
+(T_avg 2.42 → 1.83 against an oracle of 1.54).
+
+A minority of cases got worse (67: 2.89 → 3.74, 33: 2.69 → 3.62, 35: 2.88 →
+3.39); case 70 remains the worst overall (6.31). Worth a look before the
+formulation is frozen.
+
+### Two more refutations
+
+**The round-4 architecture win did not replicate.** h128×2 measured
+1.114 ± 0.181 at n=6; at n=20 it is **1.366 ± 0.307**, and against the
+5-layer default p = 0.35 — indistinguishable. h256×5dp0.1 likewise
+(1.343, p = 0.76). So that "capacity is the only lever that worked"
+conclusion was an n=6 false positive, and the honest read is that within this
+grid **architecture barely matters**; the capacity grid (T2) spans only
+1.135–1.483 with overlapping error bars. This is the clearest argument yet
+for not trusting anything below ~15 seeds in this project.
+
+**`ANCHOR_SCALE` did nothing for Case 40** — MaxErr_T_inner 8.42 (as=1) →
+8.57 / 8.60 / 8.60 (as=3/6/12), with or without lookahead. So the residual is
+**neither an information limit nor a range limit**: at as=12 the required
+−8.5 °C correction is only ~1.1 σ, comfortably reachable, and the model still
+does not make it. The remaining explanation is that it is a *single timestep
+out of 1440* with no meaningful weight in the loss — Case 40's case-level
+T_inner MAE is 0.23 °C, i.e. excellent. It is a visible artifact on a plot
+rather than a modelling failure, and closing it would require explicitly
+weighting the first steps.
+
+### Anchor family, final word
+
+`anchor_avg_grad` (the control the config bug killed in round 4) came in at
+1.655 ± 1.318 with a worst run of 4.97 — matching the detached variant's
+instability. The whole fixed-reference anchor family for T_outer/T_avg is
+closed: it loses on the mean and is wildly unstable. `pos_head` succeeds
+precisely because it does the opposite — it predicts the blend weight rather
+than fixing it.
+
+---
+
 ## 2026-08-09 — Round 4 results `[DONE]` + two fixes + Round 5 `[CODE]`
 
 300 runs launched, **288 usable** (see the config bug below). All on the

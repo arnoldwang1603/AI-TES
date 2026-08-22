@@ -1,7 +1,7 @@
 """Incremental ablation of the 2026-07-23 fixes (single GPU).
 
 Three problems were found in the 2026-07-21 anchor run:
-  * bad first steps on cases with a jumping inlet (Case 40: -37 C) -- the
+  * bad first steps on cases with a jumping input temperature (Case 40: -37 C) -- the
     anchor used Input_T(t) to predict T_inner(t+1), one step stale;
   * T_avg carries a permanent ~+2.5 C level offset (70% of its error);
   * T_outer / T_avg are generally weak while T_inner is now near-perfect --

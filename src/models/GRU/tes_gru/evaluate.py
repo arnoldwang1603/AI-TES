@@ -101,7 +101,8 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             # T_outer / T_avg anchors (mirror of the train path). init_cond
             # layout is [T_outer, T_inner, T_avg, Input_T] at t=0, scaled.
             out = apply_other_anchor(
-                model, out, init_cond_b[:, :1].to(out.device))
+                model, out, init_cond_b[:, :1].to(out.device),
+                inp_t=x[:, 1].unsqueeze(0).to(out.device))
             pred_seq = out[0].cpu().numpy()
         elif is_inverse(variant):
             # Inverse rollout (single-case mirror of _rollout_inverse).
