@@ -175,15 +175,24 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
             (float(scaler.scale_[i_o]), float(scaler.min_[i_o])),
             (float(scaler.scale_[i_a]), float(scaler.min_[i_a])),
         )
-        print(f"[{variant}] T_avg position head"
-              f"{f' (gap floor {POS_GAP_FLOOR:g} C)' if POS_GAP_FLOOR else ''}"
-              f"{' (case gate ON)' if POS_CASE_GATE else ''}"
-              f"{f' (temp gate {POS_TEMP_GATE:g} C'
-                 f'{f", soft {POS_TEMP_SOFT:g} C" if POS_TEMP_SOFT else ", hard"})'
-                 if POS_TEMP_GATE else ''}"
-              f"{f' (learned gate, bias {POS_GATE_BIAS:g})' if POS_LEARNED_GATE else ''}"
-              f"{f' [{OUTPUT_SIZE} output channels]' if OUTPUT_SIZE != 3 else ''}"
-              f": pos mean={p_mu:.4f} "
+        # Plain concatenation, NOT nested f-strings: quote reuse and
+        # multi-line expressions inside f-strings are Python 3.12+ syntax
+        # (PEP 701) and crash older interpreters at import (2026-08-22,
+        # found the hard way on the lab server).
+        _tags = ""
+        if POS_GAP_FLOOR:
+            _tags += " (gap floor {:g} C)".format(POS_GAP_FLOOR)
+        if POS_CASE_GATE:
+            _tags += " (case gate ON)"
+        if POS_TEMP_GATE:
+            _soft = (", soft {:g} C".format(POS_TEMP_SOFT)
+                     if POS_TEMP_SOFT else ", hard")
+            _tags += " (temp gate {:g} C{})".format(POS_TEMP_GATE, _soft)
+        if POS_LEARNED_GATE:
+            _tags += " (learned gate, bias {:g})".format(POS_GATE_BIAS)
+        if OUTPUT_SIZE != 3:
+            _tags += " [{} output channels]".format(OUTPUT_SIZE)
+        print(f"[{variant}] T_avg position head{_tags}: pos mean={p_mu:.4f} "
               f"raw sd={ps.std():.4f} -> head sd={p_sd:.4f} "
               f"(covers pos {p_mu-3*p_sd:.3f}..{p_mu+3*p_sd:.3f} at 3 sigma)")
     else:

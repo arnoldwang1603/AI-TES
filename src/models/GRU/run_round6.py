@@ -279,6 +279,17 @@ def main():
         print("\nDry run complete -- nothing launched.")
         return
 
+    # Pre-flight 0: compile the package under the interpreter that will
+    # actually run it. The dev box runs Python 3.13, which accepts syntax
+    # (PEP 701 f-strings) that older server interpreters reject -- that
+    # mismatch once crashed every arm at import. 2 seconds here buys one
+    # clear error message instead of 55 dead configs.
+    import compileall
+    if not compileall.compile_dir(os.path.join(HERE, "tes_gru"),
+                                  quiet=1, force=True):
+        sys.exit("tes_gru does not compile under " + sys.version.split()[0]
+                 + " -- fix the syntax error above before launching")
+
     # Pre-flight (2026-08-22 review): a done.flag makes the sweep silently
     # reuse a directory, and one stale smoke-test dir already got mixed into
     # an arm once. Round-6 gating dirs must carry the full provenance the
