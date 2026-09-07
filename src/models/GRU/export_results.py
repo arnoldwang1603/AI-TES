@@ -36,6 +36,13 @@ DEFAULT_W = (1.0, 6.0, 3.0)
 
 def family(c):
     """Coarse bucket: which experiment arm is this, ignoring capacity."""
+    fam = _family_core(c)
+    # Round-7 sanity arms are scored on a REDUCED test set (both-phase runs
+    # removed), so their numbers must never sit next to full-set ones.
+    return "sanity_xb_" + fam if c.get("exclude_both_phase") else fam
+
+
+def _family_core(c):
     v = (c.get("variants") or ["?"])[0]
     if v == "abs_sliding":
         # The AR arms differ in other_ch_mode too -- without this the
@@ -48,6 +55,8 @@ def family(c):
     mode = c.get("other_ch_mode", "abs")
     if mode != "abs":
         base = mode
+        if c.get("case_flag_input"):
+            base += "_flag_input"
         if (c.get("pos_gap_floor", 0) or c.get("pos_case_gate")
                 or c.get("pos_temp_gate", 0) or c.get("pos_abs_head")
                 or c.get("pos_learned_gate")):
@@ -86,6 +95,10 @@ def leaf_name(c, lp):
         p.append("ah")
     if c.get("input_lookahead", 0):
         p.append("la{}".format(c["input_lookahead"]))
+    if c.get("case_flag_input"):
+        p.append("fi" + str(c["case_flag_input"])[0])
+    if c.get("exclude_both_phase"):
+        p.append("xb")
     if c.get("anchor_scale", 1.0) != 1.0:
         p.append("as{:g}".format(c["anchor_scale"]))
     w = tuple(c.get("loss_weights") or ())
@@ -128,10 +141,21 @@ def write_csv(path, rows):
         w.writerows(rows)
 
 
+def n_test_cases(r):
+    """Rows of summary_errors.csv minus the AVERAGE line (70 on the full
+    test set, 49 for the round-7 sanity arms)."""
+    p = os.path.join(r["vd"], "summary_errors.csv")
+    if not os.path.isfile(p):
+        return ""
+    return sum(1 for row in csv.DictReader(open(p, newline=""))
+               if row.get("Case") != "AVERAGE")
+
+
 def stats_row(rs, **extra):
     o = [x["meta"]["Test_MAE_Overall"] for x in rs]
     row = dict(extra)
-    row.update(seeds=len(o), overall_mean=round(st.mean(o), 4),
+    row.update(seeds=len(o), test_cases=n_test_cases(rs[0]),
+               overall_mean=round(st.mean(o), 4),
                overall_sd=round(st.stdev(o) if len(o) > 1 else 0.0, 4),
                overall_best=round(min(o), 4), overall_worst=round(max(o), 4),
                runs_above_1_5C=sum(1 for x in o if x > 1.5))
@@ -149,6 +173,25 @@ def stats_row(rs, **extra):
 # export get written, so the README never explains something that is not there.
 # ---------------------------------------------------------------------------
 FAMILY_DOC = [
+    ("pos_head_flag_input", """The network is TOLD which kind of run it is
+looking at: one extra input column, read off the input temperature curve,
+says whether the run both charges and discharges (or, in the per-timestep
+form, whether the discharge has begun). In round 6 the gates made that
+decision outside the network and the network never saw it; here it can adapt
+its own predictions to the regime instead of being switched from outside."""),
+    ("pos_head_flag_input_excursion_fix", """The regime flag above combined
+with one of the round-6 gates."""),
+    ("sanity_xb_pos_head", """A check requested at the 2026-09-05 meeting:
+every run containing both a charging and a discharging phase is REMOVED from
+training and from the test set, and the model is retrained. Scored on the 49
+remaining test cases only -- these numbers are not comparable with any other
+folder here."""),
+    ("sanity_xb_pos_head_excursion_fix", """The same check with a gate switched
+on. With the both-phase runs gone the gate can never fire, so each gated
+configuration must reproduce its ungated twin with the same number of output
+channels: cgate (3 channels) reproduces the plain check, cgate_afb (4
+channels) reproduces the 4-channel "ah" control. A difference within such a
+pair would point at the shared code. Scored on 49 test cases."""),
     ("pos_head_excursion_fix", """Fixes for where the position idea breaks
 down. In some runs the average temperature climbs ABOVE both surfaces -- the
 material is still giving back stored heat while both surfaces have already
@@ -213,6 +256,15 @@ temperature, so the fallback inherits the surfaces' accuracy."""),
     ("cf", """The position statistics are fitted with the excursion steps
 excluded, which sharpens the head's resolution in the normal regime."""),
     ("la", "the model additionally sees the input temperature N steps ahead."),
+    ("fi", """the regime flag fed to the network as an extra input: "fic" is
+one value per run (both charging and discharging, or not), "fip" is per
+timestep (1 from the first step after the input temperature's peak plateau,
+i.e. once the discharge has begun, in such a run), "fiz" is a column of
+zeros -- the control, because adding any input column changes the random
+starting point of training."""),
+    ("xb", """runs with both a charging and a discharging phase were removed
+from training AND from the test set before this run (the 2026-09-05 sanity
+check). Scored on 49 test cases; not comparable with the others."""),
     ("as", "the inner-surface correction head's output range, multiplied by N."),
     ("w", """the relative weight of the three temperatures in the training
 objective, in the order inner / outer / average. The default is 1-6-3."""),
@@ -244,6 +296,7 @@ def write_readme(dst, runs, fams_present, index, with_plots):
             or (k == "L" and re.search(r"\bL\d", leaves))
             or (k not in ("h", "L") and k in leaves)]
     best = index[0]
+    n_cases = best.get("test_cases") or 70
     out = ["# What is in this folder", ""]
     out.append(_wrap(
         "{} training runs, grouped into {} configurations. Each configuration "
@@ -253,10 +306,12 @@ def write_readme(dst, runs, fams_present, index, with_plots):
         "is real.".format(len(runs), len(index))))
     out += ["", "## Layout", "",
             "    summary/configs_ranked.csv        every configuration, best first",
-            "    summary/best_config_per_case.csv  the winner's error on each of the 70 test cases",
+            "    summary/best_config_per_case.csv  the winner's error on each of the {} test cases".format(n_cases),
+            "    summary/sanity_xb_reduced_testset.csv  (if present) the 2026-09-05 sanity check, scored on 49 cases -- not comparable",
             "    configs/01_.../                   one folder per FAMILY, best family first",
             "        _family.csv                   that family's configurations, best first",
-            "        h128/L2_dp0.3/                hidden size, then layers (+ anything else that differs)",
+            "        h128/L2_dp0.3/                hidden size, then layers (+ anything else that differs);",
+            "                                      the round's best configuration is suffixed ' (cur best)'",
             "            _summary.csv              one row per seed",
             "            run_config.json           the exact settings used",
             "            seed007/                  that run's metrics",
@@ -269,12 +324,13 @@ def write_readme(dst, runs, fams_present, index, with_plots):
                   "be regenerated.".format(with_plots)),
             "", "## The numbers", "",
             _wrap("overall MAE is the average error in degrees Celsius across "
-                  "the three temperatures and all 70 test cases; lower is "
+                  "the three temperatures and all {} test cases (the sanity_xb "
+                  "families are the exception: 49 cases); lower is "
                   "better. T_inner, T_outer and T_avg are those three on their "
                   "own -- the inner surface, the outer surface, and the average "
                   "temperature of the material. sd is how much the result moved "
                   "between seeds, so a small sd means the configuration trains "
-                  "reliably rather than getting lucky."),
+                  "reliably rather than getting lucky.".format(n_cases)),
             "",
             _wrap("Best in this folder: {} / h{} / {} at {} +/- {} C over {} "
                   "seeds.".format(best["family"], best["hidden_size"],
@@ -314,15 +370,25 @@ def main():
     cfgs = {}
     for r in runs:
         cfgs.setdefault((r["fam"], r["h"], r["leaf"]), []).append(r)
-    ranked = sorted(cfgs, key=lambda k: st.mean(
+    # Round-7 sanity arms (EXCLUDE_BOTH_PHASE) are scored on 49 test cases,
+    # so they never compete for the ranking, the plots or "(cur best)"; they
+    # are listed after every full-set family instead.
+    full = [k for k in cfgs if not cfgs[k][0]["cfg"].get("exclude_both_phase")]
+    sanity = [k for k in cfgs if k not in full]
+    if not full:
+        raise SystemExit("only sanity (reduced test set) runs found -- "
+                         "nothing to rank")
+    ranked = sorted(full, key=lambda k: st.mean(
         [x["meta"]["Test_MAE_Overall"] for x in cfgs[k]]))
     heavy = set(ranked[:args.with_plots])
 
     fams = {}
     for k in cfgs:
         fams.setdefault(k[0], []).append(k)
-    fam_order = sorted(fams, key=lambda f: min(
+    fam_order = sorted([f for f in fams if not f.startswith("sanity_xb_")],
+                       key=lambda f: min(
         st.mean([x["meta"]["Test_MAE_Overall"] for x in cfgs[k]]) for k in fams[f]))
+    fam_order += sorted(f for f in fams if f.startswith("sanity_xb_"))
 
     print("{} runs | {} configurations | {} families".format(
         len(runs), len(cfgs), len(fam_order)))
@@ -341,7 +407,10 @@ def main():
         for k in keys:
             rs = sorted(cfgs[k], key=lambda x: x["meta"]["Test_MAE_Overall"])
             _, h, leaf = k
-            ldir = os.path.join(fdir, "h{}".format(h), leaf)
+            # The single best configuration of the round gets a visible tag on
+            # its folder, so it can be found by browsing without opening a CSV.
+            ldir = os.path.join(fdir, "h{}".format(h),
+                                leaf + (" (cur best)" if k == ranked[0] else ""))
             os.makedirs(ldir, exist_ok=True)
             shutil.copy2(os.path.join(args.src, rs[0]["dir"], "run_config.json"),
                          os.path.join(ldir, "run_config.json"))
@@ -373,19 +442,28 @@ def main():
             g = dict(e)
             g["family"] = fam
             index.append(g)
-            print("     h{:<5} {:<28} n={:<3} {:.3f} +- {:.3f}{}".format(
+            print("     h{:<5} {:<28} n={:<3} {:.3f} +- {:.3f}{}{}".format(
                 h, leaf, e["seeds"], e["overall_mean"], e["overall_sd"],
-                "   [+plots]" if k in heavy else ""))
+                "   [+plots]" if k in heavy else "",
+                "   <-- (cur best)" if k == ranked[0] else ""))
         frows.sort(key=lambda r: r["overall_mean"])
         write_csv(os.path.join(fdir, "_family.csv"), frows)
 
     os.makedirs(os.path.join(args.dst, "summary"), exist_ok=True)
+    # Full-set configurations ranked; sanity (49-case) configurations go to
+    # their own file so a reader cannot line the two up by accident.
+    sanity_rows = [r for r in index if r["family"].startswith("sanity_xb_")]
+    index = [r for r in index if not r["family"].startswith("sanity_xb_")]
     index.sort(key=lambda r: r["overall_mean"])
     for i, r in enumerate(index, 1):
         r_ = dict(rank=i)
         r_.update(r)
         index[i - 1] = r_
     write_csv(os.path.join(args.dst, "summary", "configs_ranked.csv"), index)
+    if sanity_rows:
+        sanity_rows.sort(key=lambda r: r["overall_mean"])
+        write_csv(os.path.join(args.dst, "summary", "sanity_xb_reduced_testset.csv"),
+                  sanity_rows)
 
     # per-case table for the winner
     acc = {}

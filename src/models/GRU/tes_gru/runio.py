@@ -76,6 +76,8 @@ def save_run_config_snapshot():
         'pos_learned_pool': POS_LEARNED_POOL,
         'pos_anchored_fallback': POS_ANCHORED_FALLBACK,
         'pos_fit_clean': POS_FIT_CLEAN,
+        'case_flag_input': CASE_FLAG_INPUT,
+        'exclude_both_phase': EXCLUDE_BOTH_PHASE,
         'output_size': OUTPUT_SIZE,
         'variants': VARIANTS,
         'input_dims': INPUT_DIMS,

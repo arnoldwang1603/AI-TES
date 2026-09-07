@@ -367,7 +367,7 @@ def main():
             nm, "OK" if rc == 0 else "exit {}".format(rc), h))
     print("#" * 74)
     print("# Export with:  python export_results.py runs Round6_upload "
-          "--with-plots 2 --title 'Round 6'")
+          "--with-plots 2")
 
 
 if __name__ == "__main__":

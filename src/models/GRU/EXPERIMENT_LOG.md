@@ -1,46 +1,375 @@
 # TES GRU Surrogate — Experiment Log
 
-Lab notebook for the GRU input-feature ablation pipeline
-(`GRU_input_ablation.py` → `tes_gru/` package). Newest entries on top.
+Newest entries on top. **New to the project? Read "Start here" below first.**
+It explains what the model does and what the words in the entries mean. The
+entries themselves are a lab record, written for whoever runs the next round.
 
-**Conventions**
-- One dated entry per change or run. Record *what* changed, *why*, the config
-  delta, the expected effect, and (later) the observed result.
+---
+
+## Start here
+
+### What we are building
+
+A thermal energy storage tank is charged with hot fluid and later discharged.
+Simulating one run properly (CFD / PyAnsys) takes hours. This model is a
+**surrogate**: give it the same boundary condition and it reproduces the
+tank's temperature curves in about a second. A design study that would cost a
+week of simulation then costs minutes.
+
+### The data
+
+One **case** is one complete run of the tank, stored as a CSV time series
+(~1440 rows, 10 s apart). Each row holds the time, the **inlet fluid
+temperature** (`Input Temperature`), and the three temperatures we predict:
+
+| | what it is | how hard |
+|---|---|---|
+| `T_inner` | inner wall of the tank | easy — it tracks the inlet temperature closely |
+| `T_outer` | outer wall | medium |
+| `T_avg` | average temperature of the storage material | hardest, and the one the application cares about |
+
+311 runs are used for training (5% of them held out for validation) and a
+**fixed set of 70 runs is the test set** — never trained on, unchanged since
+the project started, so a number from any round is comparable with any other.
+Data lives in `AI-TES/data/` (`Latest Database (Use this for training)` and
+`Test_70_cases`).
+
+### What the model sees and produces
+
+Input: the whole `[time, inlet temperature]` sequence. The inlet temperature
+is a **boundary condition** — at deployment the user specifies it — so the
+model may see all of it up front, including the future. Output: the three
+temperature curves, one value per timestep.
+
+Nothing the model predicts is fed back into it. This is the **direct**
+variant; one seed trains in about three minutes. An older **autoregressive**
+variant feeds its own predictions back step by step; it costs 4-6 hours per
+seed, scores worse, and survives only as a reference.
+
+### The three ideas that got the error down
+
+Everything in this log is variations on these three.
+
+1. **`T_inner`: predict the offset from the inlet temperature.** The model
+   outputs how far `T_inner` sits above the inlet — a few degrees — and the
+   inlet carries the large swings for free. `T_inner`'s error has been 0.3 °C
+   ever since (2026-07-23).
+2. **`T_avg`: predict its position between the two walls.** `T_avg` almost
+   always lies between them, so the model outputs
+   `pos = (T_avg − T_outer) / (T_inner − T_outer)`, a number near 0.28, and
+   `T_avg = T_outer + pos × (T_inner − T_outer)` reconstructs it. `T_avg`
+   went 3.0 → 1.9 °C (2026-08-12).
+3. **Weight the loss towards `T_outer`.** The three errors are added with
+   weights. `T_avg` is computed *from* `T_outer`, so spending the training
+   budget on `T_avg` starves what it depends on. Dropping `T_avg`'s weight
+   from 3 to 1 took the overall error 0.97 → 0.77 °C (2026-08-26) — the
+   biggest win of round 6, out of a weight rather than a new mechanism.
+
+### The one known blind spot
+
+In 20 of the 70 test cases the run both charges *and* discharges. For a few
+minutes in those runs the true `T_avg` climbs **above both walls** (the walls
+cool first while the interior still holds heat), and the walls are only a few
+degrees apart. Idea 2 cannot express that: `pos` would have to reach 10 or 50
+instead of 0.28. Those cases — 32-40 and 51-53 are the worst 12 — carry a
+`T_avg` error of 2.9 °C against 1.7 °C elsewhere. Rounds 6 and 7 are mostly
+about what `T_avg` should do when the position idea stops applying; the five
+answers are in "Methods, plainly" below.
+
+### How a result is judged
+
+- **MAE in °C** per temperature; **overall MAE** is the plain mean of the
+  three. Lower is better. Current best: 0.77 °C overall.
+- **Never one run.** Training is stochastic, so every configuration is trained
+  10-20 times from different random starts (**seeds**) and we report the mean
+  and the spread. A difference smaller than the spread is not a result.
+- **Stability counts as much as the mean.** A seed ending above 1.5 °C is a
+  **blow-up**; a good mean with two blow-ups loses to a slightly worse mean
+  with none.
+- **The deployment recipe is the ensemble**: average the predictions of all
+  seeds of a configuration, then score that. It is free accuracy (0.774 →
+  0.742 in round 6). `ensemble_eval.py` computes it.
+
+### Vocabulary used in the entries
+
+| word | meaning |
+|---|---|
+| case | one complete tank run = one CSV = one test-set item |
+| seed | one training run from one random start; "20 seeds" = the same configuration trained 20 times |
+| arm / config | one setting being compared in a round |
+| excursion case | a case where `T_avg` leaves the interval between the walls (the blind spot above); 20 of the 70 |
+| blow-up | a seed whose final overall MAE exceeds 1.5 °C |
+| channel | one of the model's outputs (3 normally; the gates add a 4th) |
+| gate | a rule that decides, per case or per timestep, to stop using the position formula and take `T_avg` from somewhere else |
+| direct / AR | one forward pass over the whole sequence / feeding predictions back step by step |
+| anchor | predicting an offset from a known reference rather than an absolute temperature (idea 1) |
+
+### Where things are, and how to run
+
+    tes_gru/                the package: config, data, models, rollout, train, evaluate
+    GRU_input_ablation.py   thin launcher -- runs ONE configuration (env vars pick it)
+    run_roundN.py           a round: many configurations x many seeds, resumable
+    export_results.py       package a finished round for the shared drive
+    ensemble_eval.py        seed-ensemble scores (the deployment metric)
+    sanity_compare.py       two configurations on their common cases, paired by seed
+    runs/<name>_seed<N>/    one directory per run: metrics, plots, predictions
+
+Every knob is an environment variable read in `config.py`, and `run_roundN.py`
+pins all of them for every arm, so nothing left over in your shell can leak
+into a run. To reproduce a round: `python run_round7.py` (`--dry-run` shows
+the plan, `--stage S1` runs one stage). Runs are resumable — rerunning skips
+anything with a `done.flag`.
+
+Current defaults: GRU, hidden 128, 2 layers, dropout 0.3, lr 0.0025, batch 16,
+800 epochs with early stopping (patience 150), best-validation checkpoint.
+
+### Methods, plainly
+
+The entries and the round-7 runner refer to "method 2/3/4". They are five
+answers to one question: what should `T_avg` do where the position idea does
+not apply?
+
+1. **Position head** (round 5, the current base). `T_avg` is reconstructed
+   from its position between the walls. Idea 2 above.
+2. **Case gate → plain extra output** (`cgate-ah`). A fixed rule reads the
+   inlet-temperature curve, decides "this run both charges and discharges",
+   and for those runs takes `T_avg` from a fourth output that predicts the
+   temperature directly. Best on the 12 hard cases; that fourth output has to
+   produce a whole temperature on its own, and it is not always stable.
+3. **Case gate → anchored extra output** (`cgate-afb`). Same rule, but the
+   fourth output gives only the distance from the midpoint of the two walls,
+   a few degrees. Never blew up in 20 seeds.
+4. **Timestep gate** (`tgate10-soft40`). No case rule at all: at each
+   timestep, wide gap between the walls → use the position, gap down to a few
+   degrees → fade over to the fourth output. Best overall score.
+5. **Regime flag as an input** (round 7, `fic` / `fip`). Methods 2-4 switch
+   the model's output from outside and the model itself never learns which
+   regime it is in. Here the same rule's verdict goes in as an extra input
+   column, so the model can adapt on its own.
+
+One failure worth knowing so nobody repeats it: giving the *same* output
+channel two meanings — position in normal runs, temperature in gated ones —
+destroys the runs it never touches, because the model cannot tell which
+meaning is wanted. That is round 6's `cgate` arm, and it is the plot that
+caused the 2026-09-05 misunderstanding.
+
+### Conventions for the entries below
+
+- One dated entry per change or run: *what* changed, *why*, the config delta,
+  the expected effect, and (later) the observed result.
 - Status tags: `[CODE]` landed in source, not yet run · `[RUNNING]` ·
   `[DONE]` results in hand · `[SUPERSEDED]`.
-- Each sweep writes to `runs/<RUN_NAME_BASE>_seed<N>/`. Keep the `RUN_NAME_BASE`
-  here in sync with `config.py` so the log maps 1:1 to output folders.
+- Each sweep writes to `runs/<RUN_NAME_BASE>_seed<N>/`; the run name encodes
+  the configuration, so the log maps 1:1 onto output folders.
+- Decision rules are written down **before** a round launches.
 
-| `RUN_NAME_BASE` | pad mode | variants × seeds | status |
+### What each round asked
+
+| date | round | question | answer |
 |---|---|---|---|
-| `2026-05-25_8var_1200ep_P0_seqsliding` | `zero` | 8 × 4 = 32 runs | `[DONE]` ~116 GPU-h (rejected baseline) |
-| `2026-06-28_abs_sliding_1200ep_P0_init` | `init` | `abs_sliding` × 4 = 4 | `[DONE]` see 2026-07-16 results |
-| `2026-07-16_abs_sliding_800ep_ES150_P0_variable` | `variable` | `abs_sliding` × 4 = 4 | `[DONE]` **t=0 winner** — see results |
-| `2026-07-20_abs_sliding_W{5,10,20,50}_1000ep_ES150_P0_variable` | `variable` | 4 W × 2 seeds = 8 (screening) | **`[POSTPONED]`** — T_inner ablation takes priority (Arnold 2026-07); lab box is single-GPU, use `run_window_sweep.py` when resumed |
-| `2026-07-21_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-{anchor,output_only}` | `variable` | 2 modes × 2 seeds {7,42} = 4 | `[DONE]` **anchor wins** — overall 1.39 °C, early T_inner 0.37 °C |
-
-The open question (report Future Work) is which `t=0` fix wins on the **forward
-sliding variant** (`abs_sliding`): **`init`** — pad the pre-history with the `t=0`
-steady-state value (Yiming's suggestion at the final review) — vs **`variable`** —
-a variable-length window feeding only the real steps (the presenter's proposal;
-the report's "cleanest fix"). The old **`zero`** padding was rejected at that
-review (it caused the ~9 °C `t=0` undershoot); its data already exists
-(`2026-05-25`), so it is the fixed baseline, **not re-run**. Both new sweeps use
-the full seed set `{7, 21, 42, 123}`; every non-sliding variant is untouched, so
-its `2026-05-25` numbers still stand.
-
-Shared protocol: stacked GRU `hidden=128, layers=5, dropout=0.3`, `lr=0.0025`,
-`batch=16`, best-val checkpoint; P0 stability provisions (grad-clip `1.0`,
-orthogonal recurrent init, `60`-epoch LR warmup); learned `InitStateEncoder`
-(h0); teacher forcing `0.5 → 0` over `100` epochs; `WINDOW_SIZE=10`; seeds
-`{7, 21, 42, 123}`; fixed 70-case test set (`MANUAL_SPLIT_ENABLED=False`).
-Epoch budget: runs through 2026-06-28 used `1200` epochs / no early stop;
-**since 2026-07-16 (Change C): `800` epochs + early stop (patience `150`)** —
-best-val checkpointing is unchanged, so results remain comparable.
+| 2026-05-25 | — | 8 input layouts, zero-padded history | rejected: 9 °C error at t=0 |
+| 2026-06-28 | — | refactor the 2957-line script into a package | done; run command unchanged |
+| 2026-07-16 | — | how to handle the start of a run | a variable-length window wins; epoch budget cut to 800 + early stop |
+| 2026-07-21/23 | — | can `T_inner` be made easy? (Arnold) | yes — anchor it on the inlet temperature: 1.93 → 1.39 °C |
+| 2026-07-25 | — | five candidate fixes | loss weights + no feedback: 1.27 °C |
+| 2026-08-06 | — | are the "weird jumps" caused by dropping feedback? | no, by the fixed anchors |
+| 2026-08-09 | 4 | do fixed anchors on `T_outer` / `T_avg` help? | no, all three hypotheses refuted |
+| 2026-08-12 | 5 | predict `T_avg` as a position between the walls | best so far: 0.890 °C, no blow-ups |
+| 2026-08-26 | 6 | where should the position stop being trusted? | the lever was the loss weight: 0.774 °C; methods 3 and 4 are the safe gates |
+| 2026-09-06 | 7 | combine the weight with the gates; tell the model its regime | `[CODE]`, running |
 
 ---
 
----
+## 2026-09-06 — Round 7 `[CODE]` — combine the weight lever with the robust gates; tell the GRU which regime it is in
+
+**In one line:** round 6's two separate wins — the loss weight and the two
+safe gates (methods 3 and 4) — have never been used together, so this round
+stacks them; it also tries feeding the model the regime flag as an input
+(method 5) and runs the check Arnold asked for on 2026-09-05.
+
+Where round 6 left us: the loss weight was the lever (1-6-1: 0.774 ± 0.02 over
+12 seeds vs 0.973 for 1-6-3, monotone in T_avg's weight, T_outer 0.70 → 0.44
+doing the work); the gates that repair the 12 excursion cases without damaging
+the other 58 are tgate10-soft40 (0.822, 0/20 blow-ups), cgate-afb (0.841, 0/20)
+and cgate-ah (0.948, 2/20), all measured under 1-6-3; floors and learned gates
+are dead; h256/L3 is the best capacity point (0.845 under 1-6-3). The
+2026-09-05 meeting added two things: Arnold's sanity protocol (drop every
+both-phase run from train and test, rerun, see whether the rest recovers), and
+the diagnosis that the shared-channel cgate failed because the GRU is never
+told which regime a step is in (the 49 never-switched cases went 1.90 → 7.90).
+
+**Code (`tes_gru`)**
+- `CASE_FLAG_INPUT` = `case` | `phase` | `zero` (config/data): one extra
+  forward_direct input column derived from the input-temperature profile
+  alone, appended last so Input_T stays at idx 1. `case` = the per-run
+  detector flag; `phase` = 1 from the first step after the input-temperature
+  peak plateau (the steps from the maximum onward within 1% of the span), i.e.
+  once the discharge has begun — argmax alone flipped 24–37% of the run early
+  on profiles that hold their top temperature (review finding); `zero` = a
+  constant column, the null for the init-RNG shift an extra input causes.
+  Tag `fic`/`fip`/`fiz`. Asserted forward_direct-only.
+- `EXCLUDE_BOTH_PHASE` (config/data): removes every run the detector fires
+  on from train, val and test before the scaler is fitted (296/15/70 →
+  189/15/49). Tag `xb`. `export_results` files these under `sanity_xb_*`
+  families, keeps them out of the ranking / plots / "(cur best)", writes them
+  to `summary/sanity_xb_reduced_testset.csv`, and adds a `test_cases` column.
+- `data.input_case_flag_np` / `input_phase_flag_np`: numpy twins of
+  `rollout._input_case_gate`. `run_round7.py` runs the twin check in a child
+  process (BASE env pinned, CUDA hidden) over every train / val / test run,
+  comparing the raw-column numpy verdict with the torch verdict on the scaled,
+  last-row-dropped X the gates actually see; a second child under
+  EXCLUDE_BOTH_PHASE=1 asserts no retained run fires. Refuses to launch on any
+  disagreement (dev box: 381/381 agree; test 21 fire; retained 189/15/49).
+- Provenance keys `case_flag_input`, `exclude_both_phase` (runio); export
+  naming and README legend updated.
+- `ensemble_eval.py`: per configuration, average the per-seed predictions
+  case by case and score the average (the deployment recipe; round 6 gave
+  0.774 → 0.742 for w1-6-1). Per-channel layout self-check against meta.json;
+  `--seeds` for a common n across stages; `--subset-size/--subset-reps` for a
+  subset sd; T_avg on the 12 flagged / 21 switched / 49 untouched cases.
+- `sanity_compare.py`: two configurations on their common test cases, paired
+  by seed, with a sign-flip p — the reading of S0 (see below).
+
+**Runner `run_round7.py`** (~27 h direct + ~40 h AR, all stages default)
+
+| stage | arms | seeds | question |
+|---|---|---|---|
+| S0 | xb-base, xb-ah, xb-cgate, xb-cgate-afb (1-6-3); xb-w161 | 10; 12 | code check: xb-cgate == xb-base and xb-cgate-afb == xb-ah seed by seed (the gate is inert; a 4th channel shifts the init RNG, so afb pairs with ah, not base). Training-set question via sanity_compare: xb-base vs round-6 base, xb-w161 vs w161, on the 49 retained cases |
+| S1 | w161, w161-ah, w161-tg10s40, -tg20, -tg30, -tg30s30, -cgate-afb, -cgate-ah, -tg10s40-cgate-afb | 20 | how much gate gain survives the weight change, and which gate; ah = 4-channel null |
+| S2 | w1-8-1, w1-10-1, w1-12-1, w1-8-2 | 12 | T_avg pinned at 1, is more T_outer weight still better |
+| S3 | w161-fic, -fip, -fiz, -fip-cgate-afb, -fiz-cgate-afb | 20 | does telling the GRU the regime beat switching it from outside; fiz = input-column null, fiz-cgate-afb = the combo's null |
+| S4 | w161-h256x3, -h192x2, -h256x3-ah, -h256x3-tg10s40, -h256x3-cgate-afb | 12 | capacity under the new weights, with the two robust gates and their null |
+| S5 | AR-w161, AR-w161-cgate-afb | 4 | does the lever transfer to the autoregressive branch (descriptive) |
+
+**Decision rule (pre-registered, full text in the runner docstring)**: every
+arm is paired per seed against its own null (same input and output channel
+count): S2 vs w161, 4-channel gates vs w161-ah, fic/fip vs w161-fiz,
+fip-cgate-afb vs fiz-cgate-afb, h256x3 gates vs h256x3-ah. Primary = paired
+overall-MAE difference with an exact sign-flip p and 95% CI, arms ranked;
+"within noise" = CI includes 0. Secondary = T_avg on the 12 flagged cases, plus
+the 21 switched and the 49 untouched, with no paired degradation on the 49.
+Veto = any seed > 1.5 °C on the common seeds, or a paired increase in
+JumpSteps_gt2C with p < 0.05. Deployment metric = seed-ensemble MAE at a common
+n (--seeds S12) with a subset sd. Simplicity order: 3-ch < 4-ch, no flag <
+flag, h128x2 < larger, one gate < two.
+
+**Dev-box smoke runs (2026-09-06)**: one seed (7) each of `w161-fip` and
+`xb-cgate-afb` through the runner end to end — done.flag, npz, provenance all
+correct; fip 0.708 overall / T_avg 1.43 (single seed, before the phase-onset
+fix; that run dir was deleted so w161-fip starts clean), xb-cgate-afb 1.084 on
+49 cases (kept; resumes as seed 7). Exit code 0xC0000409 after DONE is the
+known Windows CUDA teardown crash.
+
+**Expected**: S0 pairs bit-identical (anything else is a shared-code bug);
+S1 w161 ≈ 0.77 at n=20, gates adding at most a few hundredths on the mean but
+halving the 12-case T_avg; S3 `fip` is the arm to watch — if the phase flag
+lets the GRU handle the excursion itself, it should beat every output-side
+gate on the 12 cases without the `ah` penalty; S4 h256x3 × w161 ≈ 0.70.
+
+## 2026-08-26 — Round 6 results `[DONE]` — the lever was the loss weight, not the gate
+
+**In one line:** the round set out to fix the 12 hard cases and found a
+bigger win elsewhere — counting `T_avg`'s error for less during training
+improved everything (0.97 → 0.77 °C). Of the four ways to handle the hard
+cases, two are safe (methods 3 and 4), one is unstable (method 2) and one
+wrecks the other cases (the shared-channel arm).
+
+916/916 runs, 55 configs, nothing lost. Base (pos_head h128x2) re-run fresh
+on the lab server reproduced round 5 seed-for-seed to 2 decimals — the direct
+path is deterministic across machines.
+
+### Headline: T_avg loss weight 3 → 1 is the biggest single gain of the project
+
+| weights (Ti/To/Ta) | n | overall | sd | T_outer | T_avg | blow-ups |
+|---|---|---|---|---|---|---|
+| **1-6-1** | 12 | **0.7745** | **0.022** | **0.436** | **1.605** | 0/12 |
+| 1-6-0.5 | 12 | 0.799 | 0.114 | 0.469 | 1.650 | 0/12 |
+| 1-8-3 | 12 | 0.916 | 0.250 | 0.608 | 1.842 | 1/12 |
+| 1-6-3 (champion) | 20 | 0.973 | 0.453 | 0.701 | 1.933 | 1/20 |
+| 1-6-6 | 12 | 1.617 | 0.678 | 1.592 | 2.912 | 4/12 |
+| 1-6-10 | 12 | 1.685 | 0.436 | 1.715 | 3.008 | 9/12 |
+
+Monotone dose-response over six settings, and the tightest spread of any
+configuration ever measured here (sd 0.022). Mechanism: under pos_head,
+T_avg = T_outer + pos·gap, so T_avg accuracy is DOWNSTREAM of T_outer. The
+two heads compete for the shared trunk; a heavy T_avg weight starves T_outer
+(0.70) and thereby T_avg itself. Dropping it to 1 improves BOTH (T_outer
+0.70 → 0.44, T_avg 1.93 → 1.61). Round 5's "1/6/3 is optimal" was true under
+the old parametrization only — exactly the concern that put S4 in this round.
+Needs 20-seed confirmation (n=12), but the dose-response makes a fluke
+unlikely. 12-seed prediction ensemble: **0.742**.
+
+### Gating (S1, 34 arms × 20 seeds) under the pre-registered rule
+
+**Primary (overall MAE, paired vs base 0.973 ± 0.453):**
+
+| arm | overall | sd | worst | excursion-case T_avg | jumps |
+|---|---|---|---|---|---|
+| tgate10-soft40 | **0.822** | 0.067 | 0.98 | 1.65 | 1409 |
+| tgate30 (hard) | 0.831 | 0.105 | 1.18 | 1.65 | 1450 |
+| cgate-afb | 0.841 | 0.127 | 1.20 | 1.42 | 1419 |
+| tgate20-soft20 | 0.851 | 0.130 | 1.25 | 1.73 | 1401 |
+| cgate-ah | 0.948 | 0.528 | 2.87 | **1.30** | 1410 |
+| base | 0.973 | 0.453 | 2.87 | 2.09 | 1407 |
+
+tgate10-soft40 is the only arm significant vs base (paired sign-flip
+p = 0.024) — with 31 selection arms that p is not to be taken at face value;
+its real credential is **zero blow-ups and sd 0.067 against base's 1/20
+blow-up (seed 17 → 2.87) and sd 0.45**. Nineteen arms had zero blow-ups;
+the gates buy robustness more than they buy mean.
+
+**Secondary (20 excursion cases):** the case-gate family wins outright —
+floor40-cgate-ah 1.05, cgate-ah 1.30, cgate-afb 1.42 vs ~1.65–1.75 for the
+timestep gates and 2.09 base. On the 12 originally flagged cases cgate-ah
+cuts T_avg from 2.93 to **1.45** (−50 %) but pays on the other 58 (1.87 vs
+1.73); tgate10-soft40 improves both (2.25 / 1.55). By median cgate-ah is
+actually the best arm (0.761, 15/20 seeds beat base) — but it carries one
+catastrophic seed.
+
+**Tertiary (jumps):** no gate materially increased jumps except cgate
+(2150); hard timestep gates sit at 1440–1460 vs base 1407. The pre-registered
+fear that hard gates manufacture discontinuities did **not** materialize.
+
+**Verdicts on the pre-registered questions:**
+- *Timestep gate beats case gate?* (my prediction) — **not confirmed.** Different
+  profiles: case gate has the better median and far better excursion cases,
+  timestep gates are more robust. A draw, not a win.
+- *Anchored fallback (afb)?* — **mixed.** Helps the case gate (cgate-afb 0.841,
+  zero blow-ups, vs cgate-ah 0.948 with one), hurts the timestep gate
+  (tgate30s30-afb 0.961 vs 0.899). The 0.778 smoke number was one lucky seed.
+- *Learned gates?* — **dead.** Every variant (per-step, pooled, three biases)
+  is worse than its own inert 5-channel null (1.08): 1.19–1.26.
+- *Dual-use channel (Arnold's proposal as literally stated)?* — **catastrophic
+  and now measured:** cgate 2.18 ± 0.05, T_avg 5.86, 20/20 blow-ups; with a
+  dedicated fallback channel (cgate-ah) 0.948. The review finding was right.
+- *Floors?* — **dead.** floor10/20/80 ≈ base, floor40 worse (1.06), soft
+  floors worse still. Reconditioning without a handover does nothing.
+- *Clean fit?* — no effect (0.944 vs 0.973).
+- *Channel-count controls:* 4 channels −0.03 vs base (noise); 5 channels +0.11.
+
+### S3 / S5
+
+Under pos_head, **depth 5 hurts**: h128/L5 1.10, h256/L5 1.68 ± 2.41 (blow-ups);
+2–3 layers fine, h256/L3 0.845 ± 0.056. Round 5's "architecture doesn't
+matter" held only for the old parametrization.
+
+AR pair (n=4): AR-pos_head 1.207 ± 0.638 vs AR-base 1.434 ± 0.208. The
+position idea transfers (T_avg 3.08 → 2.04) but is unstable in the AR loop and
+the direct model remains ~40 % better. AR stays the scenario branch, not the
+accuracy contender.
+
+### Still true
+
+Case 40/54 first-step MaxErr unchanged (8.4–8.6) across every arm — a
+single-timestep artifact no gate touches, as predicted.
+
+### Round 7 (`[PLAN]`)
+
+Everything points one way: **combine w1-6-1 with the robust gates**. Confirm
+w1-6-1 at 20 seeds; w1-6-1 × {tgate10-soft40, tgate30, cgate-afb, cgate-ah};
+a weight sweep around it (1-6-0.5 / 1-6-2 / 1-8-1 / 1-10-1); h256/L3 × w1-6-1.
+Drop floors and learned gates. ~12 arms × 20 seeds ≈ 10 h. Deployment recipe
+= seed ensemble (0.742 already, likely ~0.70 with the combination).
 
 ## 2026-08-22 — Round 6 `[CODE]` + adversarial design review
 

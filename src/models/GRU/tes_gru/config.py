@@ -455,7 +455,39 @@ INPUT_DIMS = {
 # (forward_direct only; the AR variants are untouched.)
 INPUT_LOOKAHEAD = int(os.environ.get("INPUT_LOOKAHEAD", "0"))
 assert 0 <= INPUT_LOOKAHEAD <= 30
-INPUT_DIMS['forward_direct'] = 2 + INPUT_LOOKAHEAD
+
+# ------------------------------------------------------------
+# Case-flag input (2026-09-06, Round 7)
+# ------------------------------------------------------------
+# Round 6 established that the case gate has to live OUTSIDE the GRU: the
+# network never sees the gate decision, and the shared-channel arm failed
+# precisely because one channel had to serve two regimes the GRU could not
+# tell apart (2026-09-05 meeting). The direct fix is to TELL it. One extra
+# input column, derived from the input-temperature profile alone (a given
+# boundary condition, so legal at inference and identical in training),
+# appended LAST so every existing column index still holds:
+#   "case"   the per-run detector flag (both charging and discharging),
+#            constant over the run
+#   "phase"  per timestep: 1 once the discharge has begun in a both-phase
+#            run (the excursion starts right there), 0 everywhere else.
+#            "Begun" = the first step after the peak plateau (the steps
+#            from the maximum onward that stay within 1% of the span), so
+#            a held top temperature still counts as charging.
+#   "zero"   a constant-zero column. The control: one more input column
+#            shifts the RNG stream at init exactly like the extra output
+#            channel did in round 6, so "the flag helps" needs this null.
+# forward_direct only (asserted below, where VARIANTS is in scope).
+CASE_FLAG_INPUT = os.environ.get("CASE_FLAG_INPUT", "").strip().lower()
+assert CASE_FLAG_INPUT in ("", "case", "phase", "zero"), CASE_FLAG_INPUT
+INPUT_DIMS['forward_direct'] = 2 + INPUT_LOOKAHEAD + (1 if CASE_FLAG_INPUT else 0)
+
+# EXCLUDE_BOTH_PHASE (Arnold, 2026-09-05): drop every run the case detector
+# fires on -- from train, val AND test -- and rerun. Under this flag no gate
+# can ever fire, so a gated arm has to reproduce the ungated one on the
+# remaining cases; if it does not, the shared code is broken. Runs made this
+# way are scored on a 49-case test set and must never be compared with
+# full-set numbers (export_results keeps them in their own family).
+EXCLUDE_BOTH_PHASE = os.environ.get("EXCLUDE_BOTH_PHASE", "0") not in ("0", "", "false", "False")
 
 # ------------------------------------------------------------
 # Anchor output range (2026-08-09)
@@ -631,6 +663,12 @@ _parts = [f"2026-08-06_{_VTAG}", f"W{WINDOW_SIZE}",
           f"h{HIDDEN_SIZE}x{NUM_LAYERS}dp{DROPOUT:g}"]
 if INPUT_LOOKAHEAD:
     _parts.append(f"la{INPUT_LOOKAHEAD}")
+if CASE_FLAG_INPUT:
+    assert list(VARIANTS) == ["forward_direct"], \
+        "CASE_FLAG_INPUT is a forward_direct-only knob (got %r)" % (VARIANTS,)
+    _parts.append("fi" + CASE_FLAG_INPUT[0])          # fic / fip / fiz
+if EXCLUDE_BOTH_PHASE:
+    _parts.append("xb")
 if PHYSICS_BOUND_WEIGHT:
     _parts.append(f"pb{PHYSICS_BOUND_WEIGHT:g}")
 if ANCHOR_SCALE != 1.0:

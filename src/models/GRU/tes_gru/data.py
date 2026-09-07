@@ -13,6 +13,51 @@ from .config import *
 
 
 # ============================================================
+# 1. Case detector, numpy twin (Round 7, 2026-09-06)
+# ============================================================
+# Same rule as rollout._input_case_gate (torch, batched): the input
+# temperature peaks in the interior of the run and both the rise into and
+# the fall out of that peak exceed 25% of the profile's span. Scale-invariant,
+# so it gives the same answer on raw degrees and on MinMax-scaled columns.
+# KEEP THE TWO IN SYNC -- run_round7.py's preflight asserts they agree on
+# every test case before launching anything.
+def input_case_flag_np(inp):
+    """True if this run both charges and discharges (per-run flag)."""
+    inp = np.asarray(inp, dtype=float).reshape(-1)
+    n = inp.shape[0]
+    if n == 0:
+        return False
+    k = int(np.argmax(inp))
+    peak = inp[k]
+    before = inp[:k + 1].min()
+    after = inp[k:].min()
+    span = inp.max() - inp.min()
+    return bool((peak - after > 0.25 * span) and (peak - before > 0.25 * span)
+                and (k > 0.02 * n) and (k < 0.98 * n))
+
+
+def input_phase_flag_np(inp):
+    """Per-timestep flag: 1 once the discharge has begun in a both-phase
+    run, 0 elsewhere and 0 throughout every run the case flag rejects.
+
+    "Begun" = the first step AFTER the peak plateau, where the plateau is
+    the run of steps from the maximum onward that stay within 1% of the
+    span of that maximum. A held peak therefore still counts as charging
+    (review finding, 2026-09-06: argmax alone flipped the flag 24-37% of
+    the run early on the profiles that hold their top temperature)."""
+    inp = np.asarray(inp, dtype=float).reshape(-1)
+    n = inp.shape[0]
+    if not input_case_flag_np(inp):
+        return np.zeros(n, dtype=float)
+    k = int(np.argmax(inp))
+    thr = inp.max() - 0.01 * (inp.max() - inp.min())
+    k_end = k
+    while k_end + 1 < n and inp[k_end + 1] >= thr:
+        k_end += 1
+    return (np.arange(n) > k_end).astype(float)
+
+
+# ============================================================
 # 2. Dataset (variant-aware)
 # ============================================================
 class ThermalDataset(Dataset):
@@ -113,6 +158,21 @@ class ThermalDataset(Dataset):
                 lead = f"InputT_lead{_i}"
                 df[lead] = df["Input Temperature (C)"].shift(-_i).ffill()
                 feat_cols.append(lead)
+            if CASE_FLAG_INPUT:
+                # Round 7 (2026-09-06): one column from the input-temperature
+                # profile alone, appended LAST so Input_T stays at idx 1 and
+                # the lead columns keep their slots. Computed per run (the
+                # groupby below is one file, but stay correct for several).
+                # Already 0/1, so it is deliberately NOT scaled.
+                flag_col = "CaseFlag_" + CASE_FLAG_INPUT
+                df[flag_col] = 0.0
+                for _fn, _idx in df.groupby("FileName").groups.items():
+                    _inp = df.loc[_idx, "Input Temperature (C)"].values
+                    if CASE_FLAG_INPUT == "case":
+                        df.loc[_idx, flag_col] = float(input_case_flag_np(_inp))
+                    elif CASE_FLAG_INPUT == "phase":
+                        df.loc[_idx, flag_col] = input_phase_flag_np(_inp)
+                feat_cols.append(flag_col)
         elif variant == 'abs_sliding' and TINNER_MODE == 'output_only':
             # v22-style A/B: T_inner is predicted (targets unchanged) but is
             # NOT an input, so its own predictions never feed back.
@@ -373,6 +433,25 @@ def load_all_data():
     val_dfs = [(pd.read_csv(f), _case_id(f)) for f in val_paths]
     print("Loading test data...")
     test_dfs = [(pd.read_csv(f), _case_id(f)) for f in test_paths]
+
+    if EXCLUDE_BOTH_PHASE:
+        # Round 7 sanity protocol (Arnold, 2026-09-05): remove every run the
+        # case detector fires on from train, val AND test, then rerun. The
+        # scaler below is fitted on the reduced train set, as it would be
+        # had those runs never existed.
+        def _fires(df):
+            col = ("Input Temperature (C)" if "Input Temperature (C)" in df.columns
+                   else "T_inner (C)")           # same fallback as ThermalDataset
+            return input_case_flag_np(df[col].values)
+        _n0 = (len(train_dfs), len(val_dfs), len(test_dfs))
+        train_dfs = [(df, fid) for df, fid in train_dfs if not _fires(df)]
+        val_dfs = [(df, fid) for df, fid in val_dfs if not _fires(df)]
+        test_dfs = [(df, fid) for df, fid in test_dfs if not _fires(df)]
+        print("EXCLUDE_BOTH_PHASE: train {}->{}  val {}->{}  test {}->{}".format(
+            _n0[0], len(train_dfs), _n0[1], len(val_dfs), _n0[2], len(test_dfs)))
+        if not train_dfs or not test_dfs:
+            raise RuntimeError("EXCLUDE_BOTH_PHASE removed every case -- "
+                               "check the detector / data root")
 
     # Sanity: case_ids must be globally unique across train/val/test
     all_ids = [fid for _, fid in train_dfs] + [fid for _, fid in val_dfs] \
