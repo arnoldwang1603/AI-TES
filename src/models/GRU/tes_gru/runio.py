@@ -59,6 +59,9 @@ def save_run_config_snapshot():
         'window_size': WINDOW_SIZE,
         'sliding_pad_mode': SLIDING_PAD_MODE,
         'tinner_mode': TINNER_MODE,
+        'touter_mode': TOUTER_MODE,
+        'touter_tau': TOUTER_TAU,
+        'touter_scale': TOUTER_SCALE,
         'anchor_lead': ANCHOR_LEAD,
         'loss_weights': LOSS_WEIGHTS,
         'physics_bound_weight': PHYSICS_BOUND_WEIGHT,
@@ -97,6 +100,12 @@ def save_run_config_snapshot():
         },
     }
     path = os.path.join(run_dir(), "run_config.json")
+    # A finished run's provenance is frozen: once every variant carries a
+    # done.flag the snapshot is not rewritten, so a later launch (with
+    # whatever env it happens to have) cannot relabel what was trained
+    # (2026-09-12 review: the MAX_EPOCHS guard depended on this file).
+    if os.path.isfile(path) and all(is_variant_complete(v) for v in VARIANTS):
+        return path
     with open(path, "w") as f:
         json.dump(cfg, f, indent=2)
     return path

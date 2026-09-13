@@ -158,21 +158,8 @@ class ThermalDataset(Dataset):
                 lead = f"InputT_lead{_i}"
                 df[lead] = df["Input Temperature (C)"].shift(-_i).ffill()
                 feat_cols.append(lead)
-            if CASE_FLAG_INPUT:
-                # Round 7 (2026-09-06): one column from the input-temperature
-                # profile alone, appended LAST so Input_T stays at idx 1 and
-                # the lead columns keep their slots. Computed per run (the
-                # groupby below is one file, but stay correct for several).
-                # Already 0/1, so it is deliberately NOT scaled.
-                flag_col = "CaseFlag_" + CASE_FLAG_INPUT
-                df[flag_col] = 0.0
-                for _fn, _idx in df.groupby("FileName").groups.items():
-                    _inp = df.loc[_idx, "Input Temperature (C)"].values
-                    if CASE_FLAG_INPUT == "case":
-                        df.loc[_idx, flag_col] = float(input_case_flag_np(_inp))
-                    elif CASE_FLAG_INPUT == "phase":
-                        df.loc[_idx, flag_col] = input_phase_flag_np(_inp)
-                feat_cols.append(flag_col)
+            # (the CASE_FLAG_INPUT column is appended after the variant
+            #  branches below, so forward_direct and abs_sliding share it)
         elif variant == 'abs_sliding' and TINNER_MODE == 'output_only':
             # v22-style A/B: T_inner is predicted (targets unchanged) but is
             # NOT an input, so its own predictions never feed back.
@@ -186,6 +173,25 @@ class ThermalDataset(Dataset):
                 "Time (s)",
                 "T_outer (C)", "T_inner (C)", "T_avg (C)", "Input Temperature (C)",
             ]
+
+        if CASE_FLAG_INPUT:
+            # Round 7 (2026-09-06), extended to abs_sliding in round 8: one
+            # column from the input-temperature profile alone, appended LAST
+            # so every existing column index holds (forward_direct: Input_T
+            # at idx 1 and the lead columns; abs_sliding: Input_T at idx 4,
+            # the rollout appends this column to each window row itself).
+            # Computed per run (the groupby below is one file, but stay
+            # correct for several). Already 0/1, so it is NOT scaled.
+            assert variant in ('forward_direct', 'abs_sliding'), variant
+            flag_col = "CaseFlag_" + CASE_FLAG_INPUT
+            df[flag_col] = 0.0
+            for _fn, _idx in df.groupby("FileName").groups.items():
+                _inp = df.loc[_idx, "Input Temperature (C)"].values
+                if CASE_FLAG_INPUT == "case":
+                    df.loc[_idx, flag_col] = float(input_case_flag_np(_inp))
+                elif CASE_FLAG_INPUT == "phase":
+                    df.loc[_idx, flag_col] = input_phase_flag_np(_inp)
+            feat_cols.append(flag_col)
 
         self.X = []
         self.Y = []

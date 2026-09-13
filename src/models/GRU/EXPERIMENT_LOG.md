@@ -79,7 +79,7 @@ answers are in "Methods, plainly" below.
 ### How a result is judged
 
 - **MAE in °C** per temperature; **overall MAE** is the plain mean of the
-  three. Lower is better. Current best: 0.77 °C overall.
+  three. Lower is better. Current best: 0.72 °C overall for a single model (round 7, `cgate-ah`), 0.68 °C as a 20-seed ensemble.
 - **Never one run.** Training is stochastic, so every configuration is trained
   10-20 times from different random starts (**seeds**) and we report the mean
   and the spread. A difference smaller than the spread is not a result.
@@ -134,8 +134,9 @@ not apply?
 2. **Case gate → plain extra output** (`cgate-ah`). A fixed rule reads the
    inlet-temperature curve, decides "this run both charges and discharges",
    and for those runs takes `T_avg` from a fourth output that predicts the
-   temperature directly. Best on the 12 hard cases; that fourth output has to
-   produce a whole temperature on its own, and it is not always stable.
+   temperature directly. Best on the 12 hard cases. Under the round-6 weights
+   it blew up in 2 of 20 seeds; under the round-7 weights (idea 3) it is the
+   most accurate and most stable configuration we have.
 3. **Case gate → anchored extra output** (`cgate-afb`). Same rule, but the
    fourth output gives only the distance from the midpoint of the two walls,
    a few degrees. Never blew up in 20 seeds.
@@ -176,9 +177,254 @@ caused the 2026-09-05 misunderstanding.
 | 2026-08-09 | 4 | do fixed anchors on `T_outer` / `T_avg` help? | no, all three hypotheses refuted |
 | 2026-08-12 | 5 | predict `T_avg` as a position between the walls | best so far: 0.890 °C, no blow-ups |
 | 2026-08-26 | 6 | where should the position stop being trusted? | the lever was the loss weight: 0.774 °C; methods 3 and 4 are the safe gates |
-| 2026-09-06 | 7 | combine the weight with the gates; tell the model its regime | `[CODE]`, running |
+| 2026-09-06 | 7 | combine the weight with the gates; tell the model its regime | `[CODE]` — see 2026-09-12 |
+| 2026-09-12 | 8 | combine the two survivors; give the outer wall a reference (the inlet, and a slow running average of it -- the physical one tracks the wall to 5 °C with no model at all); AR at 2 layers | `[CODE]` |
+| 2026-09-12 | 7 | (results) | the case gate with a plain 4th channel wins under the new weights: 0.72 °C, no blow-ups, the 12 hard cases halved; the regime flag helps the other 49 cases instead; removing both-phase runs from training hurts by 0.55 °C |
 
 ---
+
+## 2026-09-12 — Round 8 `[CODE]` — close the base-data line: combine the survivors, a physical outer-surface reference, a fair AR comparison
+
+**In one line:** round 7 left two things that each work on different cases
+(the case gate on the 12 hard runs, the phase flag on the other 49) and were
+never combined; this round combines them. It also runs the outer-surface
+anchor Arnold asked for on 2026-09-10 in two forms — his literal one (the
+inlet temperature at that moment) and the physical one found while preparing
+it (a slow running average of the inlet, which tracks the outer wall to
+within a few degrees) — on its own, on the winner, and on the full stack,
+with the same protocol the position head went through. The autoregressive
+branch gets its first run at the direct model's depth. Whatever wins becomes
+the deployment recipe. The convection phase is deferred until this is settled
+(2026-09-13).
+
+**The finding behind the anchor arm.** Scanning references for T_outer on the
+training set (residual std, T_outer's own std is 115.8 °C): raw Input_T(t)
+97.2; Input_T lagged 720 steps 39.8; exponential moving average of Input_T
+with τ = 480 / 720 / 1000 / 1200 / 1500 steps → 38.3 / 21.3 / 9.4 / **7.3** /
+12.0. The outer wall behaves as a first-order low-pass of the inlet (fitted
+slope 1.001, offset +2.8 °C); EMA(1200) removes 94% of its variance. For
+comparison the T_inner anchor removes 99% and won; the round-4 initial-value
+anchor removed 50% and lost. Arnold's intuition ("the input is the
+fundamental reference, it just has to be time-dependent") is right once the
+reference is the smoothed inlet rather than the instantaneous one.
+
+The formula alone, scored on the 70 test cases (reference + train-set mean
+offset, no model), is the floor each anchor arm has to beat on T_outer:
+
+| reference | T_outer MAE | worst case |
+|---|---|---|
+| Input_T(t) (To-ai) | 73.2 | 185.1 |
+| EMA τ = 720 | 14.3 | 39.5 |
+| EMA τ = 900 | 8.4 | 23.2 |
+| EMA τ = 1000 | 6.2 | 17.9 |
+| **EMA τ = 1200** | **5.3** | **12.7** |
+| EMA τ = 1500 | 8.6 | 27.1 |
+| the model today (w161, direct T_outer) | 0.45 | — |
+
+So the reference on its own is a 5 °C model and the network already does
+0.45 without it; the question S2 answers is whether "reference + learned
+correction" beats "learned absolute value" — the T_inner precedent says yes,
+the round-4 T_avg precedent (a 96%-variance anchor that lost to a head that
+already learned the dynamics) says not necessarily.
+
+**Code (`tes_gru`)**
+- `TOUTER_MODE` = `abs` | `anchor_input` | `anchor_ema`, `TOUTER_TAU`
+  (config/train/rollout/evaluate): T_outer(t+1) = ref(t+ANCHOR_LEAD) + delta,
+  delta z-scored on the train set (ANCHOR_SCALE included) — the T_inner recipe
+  applied verbatim to head 1 in the direct and the AR path, at train and test
+  time; the position formula consumes the anchored value. ref = Input_T or
+  its EMA (`rollout.touter_reference`, causal, affine-equivariant; numpy twin
+  in train.py). Tags `To-ai` / `To-em<tau>`; provenance `touter_mode`,
+  `touter_tau`; export family `pos_head_touter_anchor`. Asserted exclusive
+  with OTHER_CH_MODE's own T_outer re-parametrisations (persistence, anchor).
+- `CASE_FLAG_INPUT` extended to `abs_sliding`: data.py appends the column
+  after the variant branches (both variants share it), `INPUT_DIMS` grows by
+  one, `_rollout_sliding` and evaluate.py's mirror concatenate the column
+  onto every window row (GT, never fed back). The runner's preflight builds
+  one AR dataset and checks width, the flag column against the numpy flag,
+  and the Input_T column against the dataset's own scaled inlet series.
+- The case gate's verdict is computed once per rollout / per case and passed
+  into `apply_other_anchor(case_gate=...)` instead of 1440× per AR pass;
+  identical boolean (smoke run reproduced the previous number to 4 decimals),
+  AR evaluation 25% faster.
+- `MAX_EPOCHS` env override in `LATEST_PARAMS` for smoke tests only. A
+  non-1000 cap adds an `ep<N>` tag to RUN_NAME, so a smoke run never shares a
+  directory with a real seed; `save_run_config_snapshot` no longer rewrites a
+  finished run's provenance; and the runner refuses any finished dir with
+  Total_Epoch < 151 (unreachable for a real run under patience 150), which
+  survives any run_config rewrite.
+
+**Runner `run_round8.py`** (~12 h: S1 + S2 by default; the AR stage runs afterwards on request, with the base arm and the direct winner only, ~40 h, instead of all six AR arms at ~120 h)
+
+| stage | arms | seeds | question |
+|---|---|---|---|
+| S1 | w161-cgate-ah (resumes), w161-fip-cgate-ah, w161-fiz-cgate-ah | 20 | do the two survivors stack; fiz-cgate-ah is the null |
+| S2 | w161-To-ai; w161-To-em900 / -em1200 / -em1500; w161-To-em1200-cgate-ah; w161-fip-To-em1200-cgate-ah; w161-To-em1200-os2, w163-To-em1200, w131-To-em1200 | 20 | Arnold's literal reference vs w161; the physical one as a τ bracket vs w161, then on the winner (vs cgate-ah) and on the full stack (vs fip-cgate-ah); plus the companions the position head got in rounds 5-6: the head's output range (the residual's tail is 6 σ) and the loss balance under the anchor. The anchor adds no channel or input, so its null is the same arm without it |
+| S3 | AR-w161-L2, AR-w161-cgate-ah-L2, AR-w161-fip-cgate-ah-L2; AR-w161-To-em1200-L2, AR-w161-To-em1200-cgate-ah-L2, AR-w161-fip-To-em1200-cgate-ah-L2 | 4 | off by default, run after the direct results with `--stage S3 --only ...` for the base arm and the direct winner; the AR branch at 2 layers with the round-7 recipe, then the S2 main line mirrored (EMA anchor alone, on the winner, on the full stack); descriptive (the fiz null was cut: at n=4 it cannot resolve a 0.04 °C effect against a 0.3 °C seed spread) |
+
+**Expected progression** (the round-7 rule checks each step): cgate-ah 0.718 (measured) → fip-cgate-ah ≈ 0.70 (fip's −0.16 on the 49 untouched cases on top of the gate's −0.84 on the 21 switched) → To-em1200-cgate-ah, T_outer below its 0.45 with T_avg following through the position formula (the mechanism that made 1-6-1 win), ≈ 0.68 → fip-To-em1200-cgate-ah ≈ 0.65. Each step is checked against its parent (the same arm without the added piece): paired 95% CI below zero, no veto, and fip-cgate-ah also against fiz-cgate-ah (null shift reported; comparison repeated without any blow-up seed of the null). A step that does not materialise is dropped and the next one is tested on the previous survivor; the last survivor ships as its 20-seed ensemble. Also expected: To-ai within noise of w161 (its floor is 73 °C); the τ bracket a curve with 1200 best; os2 mattering only on the tail cases; the weight arms confirming 1-6-1, with 1-3-1 the candidate if the anchor has made T_outer easy enough that its weight was starving T_avg. Simplicity order adds “no T_outer anchor < anchor”; deployment metric on the common 20 seeds.
+
+**Review (2026-09-12, 4 lenses × 2 refuters, 20 findings kept)**: the two
+high-severity ones — the AR fip/fiz pair at n=4 (cut the null, kept the arm
+the PI asked for as descriptive) and the smoke-test guard reading a file every
+launch rewrites (fixed three ways, above). The lead-shifted-reference gap
+became the EMA scan and the To-em arms.
+
+**Smoke tests (dev box, 2026-09-12/13)**: 3-epoch direct runs of To-ai +
+cgate-ah, fip + cgate-ah, To-em1200 + cgate-ah and fip + To-em1200 + cgate-ah;
+2-epoch AR runs of fip + cgate-ah and of fip + To-em1200 + cgate-ah at L2
+(6-wide window rows and the per-step EMA anchor through training and the
+70-case evaluation); all artefacts present; the anchor fit printed the
+scan's numbers (EMA 1200: mean +2.76, std 7.34); all dirs deleted afterwards.
+
+**Expected**: fip-cgate-ah ≈ 0.70 single / ≈ 0.66 ensemble if the two effects
+add; To-ai within noise of w161; To-em1200 the arm to watch — the tightest
+reference T_outer has ever had, and a T_outer gain propagates into T_avg
+through the position formula; AR-L2 between 0.9 and 1.1, the last AR run
+unless the paper needs it.
+
+## 2026-09-12 — Round 7 results `[DONE]` — the case gate with a plain 4th channel wins under 1-6-1; the regime flag helps the other cases
+
+**In one line:** under the new loss weights the ranking of the gates turned
+over — the case gate with a raw absolute 4th channel (method 2, `cgate-ah`),
+which blew up twice in round 6, is now the best configuration the project has
+produced (0.718 ± 0.058, 0 blow-ups, ensemble 0.676) and cuts every one of the
+12 hard cases roughly in half; round 6's best gate (`tgate10-soft40`) blew up
+instead. Feeding the "discharge has begun" flag to the network (method 5,
+`fip`) does nothing for the 12 hard cases but improves the other 49; the two
+mechanisms are complementary and were not combined this round. Arnold's
+sanity check: with the both-phase runs removed, the gated arms reproduce their
+ungated twins bit for bit, and removing those runs from training makes the
+remaining 49 cases 0.55 °C worse.
+
+448/448 round-7 runs complete (plus the 916 round-6 runs in the same folder as
+references). Every number below was independently recomputed from the raw
+`meta.json` / `summary_errors.csv` files and agrees to two decimals; the
+decision-rule application was audited against the docstring and every call
+stands.
+
+### The table
+
+Overall MAE mean ± sd over seeds; f12 / sw21 / r49 = T_avg MAE on the 12
+flagged cases / the 21 the case gate switches / the 49 it never touches;
+paired = per-seed difference vs the arm's pre-registered null (negative = arm
+better) with the 95% bootstrap CI; ens = seed-ensemble MAE on the common 12
+seeds (`ensemble_eval.py --seeds S12`).
+
+| arm | n | overall | worst | blow | f12 | sw21 | r49 | null | paired overall (CI) | f12 paired | jumps paired | ens |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| w161 (new base) | 20 | 0.787 ± 0.046 | 0.92 | 0 | 2.47 | 1.69 | 1.61 | r6 base 1-6-3 | −0.187 [−0.40, −0.07] | −0.45 | −36 | 0.742 |
+| w161-ah (4-ch null) | 20 | 0.818 ± 0.090 | 1.09 | 0 | 2.48 | 1.70 | 1.68 | w161 | +0.031 [−0.01, +0.08] ns | ns | ns | 0.778 |
+| **w161-cgate-ah** (method 2) | 20 | **0.718 ± 0.058** | **0.85** | **0** | **1.09** | **0.86** | 1.67 | w161-ah | **−0.099 [−0.153, −0.048]** | **−1.39** | −14 ns | **0.681** |
+| w161-tg30s30 (method 4, soft) | 20 | 0.752 ± 0.076 | 0.96 | 0 | 1.88 | 1.41 | 1.56 | w161-ah | −0.066 [−0.119, −0.015] | −0.60 | +14 ns | 0.693 |
+| w161-cgate-afb (method 3) | 20 | 0.768 ± 0.051 | 0.89 | 0 | 1.93 | 1.41 | 1.73 | w161-ah | −0.050 [−0.096, −0.004] | −0.55 | +12 ns | 0.722 |
+| w161-tg20 (hard) | 20 | 0.770 ± 0.074 | 0.99 | 0 | 2.18 | 1.54 | 1.60 | w161-ah | −0.048 [−0.096, −0.004] | −0.30 | **+56, p=0.001 → veto** | 0.712 |
+| w161-tg30 (hard) | 20 | 0.784 ± 0.053 | 0.89 | 0 | 2.15 | 1.54 | 1.62 | w161-ah | −0.034 ns | −0.32 | **+73 → veto** | 0.727 |
+| w161-tg10s40 (round-6 best) | 20 | 1.004 ± 0.683 | 3.07 | **2** | 2.54 | 1.88 | 1.91 | w161-ah | +0.186 ns | ns | +79 | 0.798 |
+| w161-tg10s40-cgate-afb | 20 | 0.770 ± 0.079 | 1.01 | 0 | 1.87 | 1.38 | 1.76 | w161-ah | −0.047 [−0.086, −0.002] | −0.60 | **+47 → veto**; r49 +0.07 [+0.01, +0.15] | 0.729 |
+| w161-fiz (input-col null) | 20 | 0.775 ± 0.070 | 1.02 | 0 | 2.42 | 1.66 | 1.59 | w161 | −0.011 ns | ns | ns | 0.746 |
+| **w161-fip** (method 5, phase flag) | 20 | **0.733 ± 0.044** | 0.89 | 0 | 2.39 | 1.64 | **1.43** | w161-fiz | −0.042 [−0.079, −0.008] | −0.02 ns | **−34, p=0.001** | 0.705 |
+| w161-fic (case flag) | 20 | 0.786 ± 0.069 | 0.99 | 0 | 2.60 | 1.80 | 1.51 | w161-fiz | +0.011 ns | **+0.18 [+0.12, +0.24] worse** | −17 | 0.742 |
+| w161-fip-cgate-afb | 20 | 0.732 ± 0.038 | 0.84 | 0 | 1.70 | 1.30 | 1.66 | w161-fiz-cgate-afb | −0.077 [−0.201, −0.007] (null has 1 blow-up) | −0.16 | ns | 0.691 |
+| w161-fiz-cgate-afb (its null) | 20 | 0.809 ± 0.270 | 1.94 | 1 | 1.86 | 1.40 | 1.76 | — | — | — | — | 0.722 |
+| w1-8-1 / 1-10-1 / 1-12-1 / 1-8-2 | 12 | 0.810 / 0.846 / 0.820 / 0.794 | — | 0 | — | — | — | w161 | +0.035 [+0.00, +0.08] / +0.072 / +0.045 / +0.019 ns | — | — | 0.771 / 0.780 / 0.782 / 0.765 |
+| w161-h256x3 | 12 | 0.823 ± 0.041 | 0.91 | 0 | 2.80 | 1.87 | 1.67 | w161 | +0.048 [+0.02, +0.08] | +0.36 | +62 | — |
+| w161-h192x2 | 12 | 0.798 ± 0.063 | 0.96 | 0 | 2.52 | 1.71 | 1.67 | w161 | +0.024 ns | ns | ns | 0.765 |
+| w161-h256x3-{ah, tg10s40, cgate-afb} | 12 | 0.821 / 0.885 (1 blow-up) / 0.847 | | | | | | h256x3-ah | −0.002 / +0.064 ns / +0.026 ns; cgate-afb r49 +0.16 [+0.05, +0.30] | | | |
+| AR-w161 / AR-w161-cgate-afb | 4 | 1.121 ± 0.354 (1 blow-up) / 1.055 ± 0.319 | | | | | | r6 AR-pos_head 1.207 | −0.086 ns / −0.066 ns | | | descriptive |
+
+Round-7 seeds match round 6's lists, so every cross-round pair is per seed.
+Ensemble on all 20 seeds where available: cgate-ah **0.676** (f12 1.00, sw21
+0.70), fip-cgate-afb 0.699, fip 0.701, tg30s30 0.703, w161 0.753.
+
+### Decision under the pre-registered rule
+
+1. **Winner: `w161-cgate-ah`.** Beats its 4-channel null by 0.099 with the CI
+   clear of zero; f12 −1.39 (every one of the 20 seeds negative), sw21 −0.84;
+   r49 unchanged (−0.01, CI [−0.11, +0.08]); jumps −14 (no increase); 0 seeds
+   above 1.5 °C, worst 0.85. Simplicity clause closed directly: against the
+   simplest arm, w161 itself, the paired difference is −0.068, CI [−0.103,
+   −0.032] — no simpler arm is within noise. Against the other two survivors
+   in its class it is also ahead (vs cgate-afb −0.049 [−0.087, −0.011]; vs
+   tg30s30 −0.033 [−0.068, +0.006], within noise on the mean but −0.79 on the
+   hard cases). Per case, cgate-ah roughly halves all 12 (e.g. case 32: 2.13 →
+   0.77; case 53: 4.10 → 2.00); nothing gets worse.
+2. **Pass, ranked below:** tg30s30 (−0.066, soft ramp adds no jumps),
+   cgate-afb (−0.050), fip (−0.042 vs its input-column null), fip-cgate-afb
+   (−0.077, but its null carries a blow-up, so the comparison is one-seed
+   sensitive; vs the plain cgate-afb it is −0.036 [−0.063, −0.010]).
+3. **Vetoed by jumps:** tg20 (+56), tg30 (+73), tg10s40-cgate-afb (+47, and a
+   paired degradation on the 49). Hard per-timestep switches create the
+   discontinuities Arnold flagged; the soft ramp (tg30s30) does not.
+4. **Vetoed by blow-ups:** tg10s40 (2/20, both T_outer: 4.06 and 3.48),
+   h256x3-tg10s40 (1/12).
+5. **Weights closed.** T_outer weight above 6 is worse by the CI criterion
+   (1-8-1 +0.035 [+0.001, +0.077]; 1-10-1 and 1-12-1 likewise); 1-8-2 within
+   noise. 1-6-1 stays.
+6. **Capacity closed.** h256x3 is worse than h128x2 under 1-6-1 (+0.048, CI
+   clear of zero, and +62 jumps); h192x2 within noise and loses on
+   simplicity; h256x3 with either gate does not beat its own null and
+   cgate-afb degrades the 49. Round 6's "h256x3 is the best capacity point"
+   was a 1-6-3 artefact.
+7. **fic** (constant case flag) is within noise overall and makes the flagged
+   cases worse (+0.18); the constant tells the network *that* a discharge
+   comes but not *when*, and it hedges.
+8. **S5** descriptive: AR-w161 1.12 vs the round-6 AR pair 1.21, n=4, within
+   noise; the AR branch stays ~50% behind the direct model.
+
+### What changed between the rounds, and why it matters
+
+- The gate ranking **inverted** with the weight change. Under 1-6-3 the raw
+  absolute 4th channel (cgate-ah) blew up in 2/20 seeds and the soft timestep
+  gate (tg10s40) was the safe choice; under 1-6-1 cgate-ah has its worst seed
+  at 0.85 and tg10s40 blows up in 2/20. Both failure modes were T_outer
+  blow-ups (round-6 cgate-ah worst seeds: T_outer 3.10, 2.64; round-7
+  tg10s40: 4.06, 3.48), so the weight lever, which stabilised T_outer, moved
+  the stability boundary rather than the mechanism. Consequence: gate
+  conclusions do not transfer across loss weights; every gate has to be
+  re-measured with its null under the weights it will ship with.
+- The two survivors work on **different cases**. cgate-ah vs fip: overall
+  −0.015 (within noise), but cgate-ah wins the 21 switched cases by 0.78 and
+  fip wins the 49 untouched ones by 0.25 (CI [+0.18, +0.32]). fip also cuts
+  spurious jumps by 34 per seed and T_outer 0.448 → 0.420 across the board.
+  The flag stacks with a gate (fip-cgate-afb beats cgate-afb by 0.036 with the
+  CI clear of zero), so **fip × cgate-ah** is the obvious next arm.
+- The phase flag's onset definition (first step after the peak plateau) was
+  fixed before launch on a review finding; the earlier argmax version had
+  fired 24–37% of the run early on plateau cases.
+
+### S0 — Arnold's sanity check (2026-09-05 meeting)
+
+- **Identity.** With every both-phase run removed from train, val and test
+  (296/15/70 → 189/15/49) the gates cannot fire, and the gated arms reproduce
+  their ungated twins **exactly**: xb-cgate = xb-base and xb-cgate-afb = xb-ah
+  on all 10 seeds, all three channels, all 490 per-case rows (max |diff| =
+  0.0000). The shared code is clean; the only thing that ever differed was
+  what the gate did when it fired.
+- **Training-set question.** Removing those runs from training makes the
+  remaining 49 cases *worse*, like for like on the 49 (`sanity_compare.py`):
+  xb-w161 vs w161 +0.563 ± 0.077 overall (worse on every one of 12 seeds,
+  T_outer +0.86, T_avg +0.73, p = 0.001); xb-base vs the round-6 base +0.546 ±
+  0.371 (p = 0.002), with 2/10 blow-ups against 1/20. The both-phase runs are
+  36% of the training set and the model needs them; they are not
+  contaminating the normal regime.
+
+### Next (round 8, `[PLAN]`)
+
+- **fip × cgate-ah** (the two survivors combined), with its nulls fiz ×
+  cgate-ah and cgate-ah itself; 20 seeds. Expected to take the 49 from fip and
+  the 21 from cgate-ah at once.
+- **Arnold's request (2026-09-10 meeting):** anchor T_outer on the live
+  Input_T(t) the way T_inner is. Measured on the training set the residual
+  is 97 °C against 116 absolute (−16%) and 58 for the round-4 initial-value
+  anchor, and T_outer(0) = Input_T(0) exactly in every run, so the round-4
+  anchor already was "Input_T at t = 0"; the expectation is a null or a loss,
+  but it is cheap and it settles the question by measurement. One arm plus a
+  lead-shifted variant, 20 seeds.
+- Confirm cgate-ah's ensemble as the deployment recipe (0.676 at 20 seeds)
+  and hand the per-case plots to the shared drive.
+- Drop: hard timestep gates, tg10s40 under 1-6-1, further weights, larger
+  capacity, the constant case flag.
 
 ## 2026-09-06 — Round 7 `[CODE]` — combine the weight lever with the robust gates; tell the GRU which regime it is in
 

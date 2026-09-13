@@ -10,7 +10,7 @@ from matplotlib.ticker import MultipleLocator
 
 from .config import *
 from .runio import *
-from .rollout import apply_other_anchor   # shared T_outer/T_avg reconstruction
+from .rollout import apply_other_anchor, _input_case_gate, touter_reference   # shared reconstructions
 
 
 # ============================================================
@@ -98,6 +98,17 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                 if ANCHOR_LEAD:
                     inp_t = torch.cat([inp_t[1:], inp_t[-1:]])
                 out[0, :, 0] = ka * inp_t.to(out.device) + kb + kc * out[0, :, 0]
+            # Round 8: T_outer anchored on Input_T (mirror of the train path;
+            # must precede apply_other_anchor, whose position formula
+            # consumes T_outer).
+            oanc = getattr(model, 'touter_anchor', None) \
+                if TOUTER_MODE != "abs" else None
+            if oanc is not None:
+                ka_o, kb_o, kc_o = oanc
+                inp_o = touter_reference(x[:, 1].unsqueeze(0), e0=init_cond_b[:, 0])[0]
+                if ANCHOR_LEAD:
+                    inp_o = torch.cat([inp_o[1:], inp_o[-1:]])
+                out[0, :, 1] = ka_o * inp_o.to(out.device) + kb_o + kc_o * out[0, :, 1]
             # T_outer / T_avg anchors (mirror of the train path). init_cond
             # layout is [T_outer, T_inner, T_avg, Input_T] at t=0, scaled.
             out = apply_other_anchor(
@@ -169,8 +180,23 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             inner_hist = None if out_only else [float(x[0, 2].item())]
             avg_hist = [float(x[0, IDX_AVG].item())]
             anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
+            oanchor = getattr(model, 'touter_anchor', None) \
+                if TOUTER_MODE != "abs" else None
+            ref_o = (touter_reference(x[:, IDX_INP].unsqueeze(0).to(DEVICE),
+                                      e0=x[0:1, 1].to(DEVICE))[0]     # T_outer(0) GT
+                     if oanchor is not None else None)
             step_anchor = getattr(model, 'step_anchor', None) \
                 if OTHER_CH_MODE == "persistence" else None
+            # Round 8: the CASE_FLAG_INPUT column is the last input column
+            # (data.py appends it after Input_T); every window row carries it,
+            # exactly as _rollout_sliding does.
+            has_flag = bool(CASE_FLAG_INPUT)
+            idx_flag = feat_dim - 1
+            # The case gate's verdict depends only on the exogenous input
+            # profile: computed once per case, not 1440x (identical result).
+            inp_full = x[:, IDX_INP].unsqueeze(0).to(DEVICE)
+            case_gate = (_input_case_gate(inp_full)
+                         if (OTHER_CH_MODE == 'pos_head' and POS_CASE_GATE) else None)
 
             preds = []
             cur_h = hidden
@@ -188,20 +214,23 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                                 [x[0, j].item() for j in range(feat_dim)])
                     else:
                         if out_only:
-                            window_steps.append([
+                            row = [
                                 x[k, 0].item(),     # Time(k)      GT
                                 outer_hist[k],      # T_outer(k)   AR
                                 avg_hist[k],        # T_avg(k)     AR
                                 x[k, IDX_INP].item(),  # Input_T(k) GT
-                            ])
+                            ]
                         else:
-                            window_steps.append([
+                            row = [
                                 x[k, 0].item(),     # Time(k)      GT
                                 outer_hist[k],      # T_outer(k)   AR
                                 inner_hist[k],      # T_inner(k)   AR
                                 avg_hist[k],        # T_avg(k)     AR
                                 x[k, IDX_INP].item(),  # Input_T(k) GT
-                            ])
+                            ]
+                        if has_flag:
+                            row.append(x[k, idx_flag].item())   # flag(k) GT
+                        window_steps.append(row)
                 window = torch.tensor(
                     window_steps, dtype=torch.float32
                 ).unsqueeze(0).to(DEVICE)   # (1, W, feat_dim)
@@ -219,13 +248,18 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                     ka, kb, kc = anchor
                     t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
                     pred[0] = ka * float(x[t_a, IDX_INP].item()) + kb + kc * pred[0]
+                if oanchor is not None:
+                    # Round 8: T_outer anchored on Input_T -- mirrors
+                    # _rollout_sliding; precedes the position formula.
+                    ka_o, kb_o, kc_o = oanchor
+                    t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+                    pred[1] = ka_o * float(ref_o[t_a].item()) + kb_o + kc_o * pred[1]
                 if OTHER_CH_MODE == 'pos_head':
                     # Mirror of the train-path call in _rollout_sliding.
                     pt = torch.tensor(pred, dtype=torch.float32,
                                       device=DEVICE).view(1, 1, -1)
                     pt = apply_other_anchor(
-                        model, pt, None,
-                        inp_t=x[:, IDX_INP].unsqueeze(0).to(DEVICE))
+                        model, pt, None, inp_t=inp_full, case_gate=case_gate)
                     pred = pt.view(-1).cpu().numpy()
                 preds.append(pred)
 

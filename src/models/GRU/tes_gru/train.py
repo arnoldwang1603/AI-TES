@@ -277,6 +277,52 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         print(f"[{variant}] T_inner anchor on Input_T: delta mean={d_mean:+.3f} C "
               f"std={d_std:.3f} C  ->  KA={ka:.5f} KB={kb:+.5f} KC={kc:.6f}")
 
+    # ---- Round 8: T_outer anchored on the live input temperature (Arnold) ----
+    # The T_inner recipe applied verbatim to head 1: delta_o = T_outer(t+1) -
+    # Input_T(t+ANCHOR_LEAD), z-scored on the train set; the rollout
+    # reconstructs T_outer_s = KA*InputT_s + KB + KC*z.
+    if variant in ('abs_sliding', 'forward_direct') and TOUTER_MODE != 'abs':
+        def _ema(x, tau, e0):
+            # numpy twin of rollout.touter_reference (raw degrees; the EMA is
+            # affine-equivariant so the scaled-space reconstruction matches);
+            # seeded at T_outer(0), the given initial condition
+            a = 1.0 / float(tau)
+            e = np.empty_like(x, dtype=float)
+            e[0] = e0
+            for t in range(1, len(x)):
+                e[t] = e[t - 1] + a * (x[t] - e[t - 1])
+            return e
+        deltas_o, absol_o = [], []
+        for df, _ in train_dfs:
+            d = df.copy()
+            d.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
+            if "Input Temperature (C)" not in d.columns:
+                d["Input Temperature (C)"] = d["T_inner (C)"]
+            tout = d["T_outer (C)"].values.astype(float)
+            inp = d["Input Temperature (C)"].values.astype(float)
+            ref = _ema(inp, TOUTER_TAU, tout[0]) if TOUTER_MODE == 'anchor_ema' else inp
+            deltas_o.append(tout[1:] - (ref[1:] if ANCHOR_LEAD else ref[:-1]))
+            absol_o.append(tout)
+        deltas_o = np.concatenate(deltas_o)
+        do_mean = float(deltas_o.mean())
+        do_std = float(max(deltas_o.std(), 0.05)) * TOUTER_SCALE  # range multiplier, own knob
+        i_to = ThermalDataset.BASE_COLS.index("T_outer (C)")
+        i_inp = ThermalDataset.BASE_COLS.index("Input Temperature (C)")
+        s_to, m_to = float(scaler.scale_[i_to]), float(scaler.min_[i_to])
+        s_inp, m_inp = float(scaler.scale_[i_inp]), float(scaler.min_[i_inp])
+        ka_o = s_to / s_inp
+        kb_o = -ka_o * m_inp + s_to * do_mean + m_to
+        kc_o = s_to * do_std
+        model.touter_anchor = (ka_o, kb_o, kc_o)
+        print("[{}] T_outer anchor on {}: delta mean={:+.2f} C std={:.2f} C (x{:g} range) "
+              "(T_outer itself: std {:.2f} C)  ->  KA={:.5f} KB={:+.5f} KC={:.6f}".format(
+                  variant, ("EMA(tau=%d) of Input_T" % TOUTER_TAU
+                            if TOUTER_MODE == 'anchor_ema' else "Input_T"),
+                  do_mean, do_std, TOUTER_SCALE, float(np.concatenate(absol_o).std()),
+                  ka_o, kb_o, kc_o))
+    else:
+        model.touter_anchor = None
+
     # ---- Trainable parameter counts (broken down) ----
     def _count(module):
         return sum(p.numel() for p in module.parameters() if p.requires_grad)

@@ -85,7 +85,25 @@ def _input_case_gate(inp_t):
             & (kk > 0.02 * T) & (kk < 0.98 * T))
 
 
-def apply_other_anchor(model, pred, t_outer0_s, inp_t=None):
+def touter_reference(inp_seq, e0=None):
+    """(B, T) exogenous input temperature -> (B, T) reference for the round-8
+    T_outer anchor. "anchor_input": the input itself. "anchor_ema": its
+    exponential moving average with time constant TOUTER_TAU steps, seeded
+    at e0 = T_outer(0), the given initial condition (falls back to x[0]).
+    Causal (uses inputs up to t only) and affine-equivariant, so train.py's
+    fit on raw degrees and this scaled-space use agree exactly. No gradient
+    flows through it (inputs and initial condition are constants)."""
+    if TOUTER_MODE != "anchor_ema":
+        return inp_seq
+    a = 1.0 / float(TOUTER_TAU)
+    e = torch.empty_like(inp_seq)
+    e[:, 0] = inp_seq[:, 0] if e0 is None else e0.detach().to(inp_seq.device)
+    for t in range(1, inp_seq.shape[1]):
+        e[:, t] = e[:, t - 1] + a * (inp_seq[:, t] - e[:, t - 1])
+    return e
+
+
+def apply_other_anchor(model, pred, t_outer0_s, inp_t=None, case_gate=None):
     """Reconstruct T_outer / T_avg from their fixed-reference anchors.
 
     pred: (..., 3) raw head outputs in scaled space, channels
@@ -167,7 +185,11 @@ def apply_other_anchor(model, pred, t_outer0_s, inp_t=None):
             # Case level: a run containing both a charging and a discharging
             # phase breaks the between-the-surfaces premise outright, so hand
             # the whole run over.
-            g = _input_case_gate(inp_t).unsqueeze(-1).expand_as(t_avg)
+            # case_gate: the per-run verdict precomputed once by a per-step
+            # caller (the AR paths call this 1440x per rollout); identical
+            # to recomputing it here.
+            g = (case_gate if case_gate is not None
+                 else _input_case_gate(inp_t)).unsqueeze(-1).expand_as(t_avg)
             t_avg = torch.where(g, t_abs, t_avg)
         return torch.stack([t_in, t_out, t_avg], dim=-1)
 
@@ -243,6 +265,18 @@ def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
                 inp_t = torch.cat([inp_t[:, 1:], inp_t[:, -1:]], dim=1)
             tin = ka * inp_t + kb + kc * out[..., 0]
             out = torch.cat([tin.unsqueeze(-1), out[..., 1:]], dim=-1)
+        # Round 8 (Arnold): T_outer anchored on the live input temperature,
+        # the T_inner reconstruction applied verbatim to head 1. Done before
+        # the T_avg step so the position formula consumes the anchored value.
+        oanc = getattr(model, 'touter_anchor', None) \
+            if TOUTER_MODE != "abs" else None
+        if oanc is not None:
+            ka_o, kb_o, kc_o = oanc
+            inp_o = touter_reference(inputs[:, :, 1], e0=init_conds[:, 0])
+            if ANCHOR_LEAD:
+                inp_o = torch.cat([inp_o[:, 1:], inp_o[:, -1:]], dim=1)
+            tout = ka_o * inp_o + kb_o + kc_o * out[..., 1]
+            out = torch.cat([out[..., :1], tout.unsqueeze(-1), out[..., 2:]], dim=-1)
         # T_outer / T_avg anchors. T_outer(0) is the GT initial condition,
         # available in init_conds[:, 0] (scaled). Applied after the T_inner
         # anchor because T_avg's reference consumes the final T_inner.
@@ -365,6 +399,12 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
         IDX_AVG, IDX_INP, FEAT_DIM = 2, 3, 4
     else:
         IDX_AVG, IDX_INP, FEAT_DIM = 3, 4, 5
+    # Round 8: the CASE_FLAG_INPUT column (data.py appends it last) rides
+    # along as the last feature of every window row. GT, never fed back.
+    HAS_FLAG = bool(CASE_FLAG_INPUT)
+    IDX_FLAG = FEAT_DIM
+    if HAS_FLAG:
+        FEAT_DIM += 1
 
     # AR history per step k = 0 .. seq_len (one extra slot for the final
     # prediction we never use). Initialised from the GT t=0 row.
@@ -378,11 +418,20 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
     # T_inner_s = KA * InputT_s(t) + KB + KC * z (constants from train_model;
     # AttributeError here means train_model never attached them -- fail loud).
     anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
+    oanchor = getattr(model, 'touter_anchor', None) \
+        if TOUTER_MODE != "abs" else None
+    # The T_outer reference depends only on the exogenous input: one pass.
+    ref_o = (touter_reference(inputs[:, :, IDX_INP], e0=inputs[:, 0, 1])   # T_outer(0) GT
+             if oanchor is not None else None)
     step_anchor = getattr(model, 'step_anchor', None) \
         if OTHER_CH_MODE == "persistence" else None
 
     preds = []
     cur_h = hidden
+    # The case gate's verdict depends only on the exogenous input profile:
+    # compute it once per rollout instead of once per step.
+    case_gate = (_input_case_gate(inputs[:, :, IDX_INP])
+                 if (OTHER_CH_MODE == 'pos_head' and POS_CASE_GATE) else None)
 
     for t in range(seq_len):
         # Teacher-forcing gate (t > 0). Replace the t-step AR values with
@@ -437,6 +486,9 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
                         avg_hist[k].detach(),     # T_avg(k)       AR
                         inputs[:, k, IDX_INP],    # Input_T(k)     GT exogenous
                     ], dim=1)
+                if HAS_FLAG:
+                    step_feats = torch.cat(
+                        [step_feats, inputs[:, k, IDX_FLAG:IDX_FLAG + 1]], dim=1)
                 window_steps.append(step_feats)
         window = torch.stack(window_steps, dim=1)   # (B, W, FEAT_DIM)
 
@@ -465,6 +517,15 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
             tin_s = ka * inputs[:, t_a, IDX_INP] + kb + kc * pred_t[:, 0]
             pred_t = torch.cat([tin_s.unsqueeze(1), pred_t[:, 1:]], dim=1)
 
+        if oanchor is not None:
+            # Round 8: T_outer anchored on Input_T, same reconstruction as
+            # T_inner above; the anchored value is what the position formula
+            # consumes and what feeds back into the AR window.
+            ka_o, kb_o, kc_o = oanchor
+            t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+            tout_s = ka_o * ref_o[:, t_a] + kb_o + kc_o * pred_t[:, 1]
+            pred_t = torch.cat([pred_t[:, :1], tout_s.unsqueeze(1), pred_t[:, 2:]], dim=1)
+
         if OTHER_CH_MODE == 'pos_head':
             # T_avg reconstruction (and any gates), the same helper as the
             # forward_direct path, applied per step as (B, 1, C). T_inner
@@ -477,7 +538,7 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
             # profile for the case gate.
             pred_t = apply_other_anchor(
                 model, pred_t.unsqueeze(1), None,
-                inp_t=inputs[:, :, IDX_INP]).squeeze(1)
+                inp_t=inputs[:, :, IDX_INP], case_gate=case_gate).squeeze(1)
 
         preds.append(pred_t)
 

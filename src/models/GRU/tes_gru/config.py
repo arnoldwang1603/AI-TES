@@ -72,7 +72,10 @@ LATEST_PARAMS = dict(
     # convergence than the 1200-ep evidence base predicted (seed7 best at
     # epoch 748 hit the 800 wall); 1000 restores headroom while still saving
     # ~2x vs the old 1200-ep/no-ES protocol.
-    max_epochs=1000,
+    # MAX_EPOCHS env override exists for SMOKE TESTS ONLY (a 2-epoch run to
+    # exercise a new code path end to end). run_round8.py refuses to reuse
+    # any done-flagged dir trained with a cap other than 1000.
+    max_epochs=int(os.environ.get("MAX_EPOCHS", "1000")),
     batch_size=16,
     # Stop after this many consecutive epochs without a val improvement.
     # 150 > 2 full ReduceLROnPlateau cycles (patience=50), so training
@@ -185,6 +188,54 @@ assert SLIDING_PAD_MODE in ("variable", "init", "zero"), \
 TINNER_MODE = os.environ.get("TINNER_MODE", "anchor")   # "arfed" | "anchor" | "output_only"
 assert TINNER_MODE in ("arfed", "anchor", "output_only"), \
     f"TINNER_MODE must be arfed/anchor/output_only, got {TINNER_MODE!r}"
+
+# ------------------------------------------------------------
+# T_outer reference (2026-09-12, Round 8) -- Arnold, 2026-09-10 meeting
+# ------------------------------------------------------------
+# "Use T_input again as T_outer's reference as well, exactly what you do for
+# the inner surface": every change is triggered by the input, so the input
+# should be the fundamental reference, and unlike the round-4 initial-value
+# anchor it is time-dependent.
+#   "abs"           (default) head 1 is T_outer directly
+#   "anchor_input"  T_outer(t+1) = Input_T(t+ANCHOR_LEAD) + delta_o, with
+#                   delta_o z-scored on the train set -- the T_inner anchor
+#                   applied verbatim to T_outer
+# Measured on the training set before launch: the residual T_outer - Input_T
+# has std 97 C against 116 C for T_outer itself (-16%), while the round-4
+# initial-value anchor removed 50% and still lost; and T_outer(0) == Input_T(0)
+# in every run, so that round-4 anchor already WAS "Input_T at t=0". The
+# expectation is a null or a loss. It runs anyway so the answer is a
+# measurement, not an argument.
+#   "anchor_ema"    same reconstruction, but the reference is an exponential
+#                   moving average of the input temperature with time
+#                   constant TOUTER_TAU steps (e[0] = x[0]; causal; affine-
+#                   equivariant, so the raw-degree fit and the scaled-space
+#                   use agree exactly). Scanned on the training set before
+#                   launch (2026-09-12): residual std vs T_outer's own 115.8
+#                       raw Input_T(t)  97.2   lag 720 steps  39.8
+#                       EMA tau=480     38.3   EMA tau=720    21.3
+#                       EMA tau=1000     9.4   EMA tau=1200    7.3  <- best
+#                       EMA tau=1500    12.0   EMA tau=2000   20.5
+#                   i.e. the outer wall is a first-order low-pass of the
+#                   inlet (fitted slope 1.001), and the reference removes
+#                   94% of T_outer's variance -- the T_inner anchor removes
+#                   99%, the round-4 initial-value anchor removed 50%.
+TOUTER_MODE = os.environ.get("TOUTER_MODE", "abs")
+assert TOUTER_MODE in ("abs", "anchor_input", "anchor_ema"), TOUTER_MODE
+TOUTER_TAU = int(os.environ.get("TOUTER_TAU", "1200"))      # steps of 10 s
+assert 1 <= TOUTER_TAU <= 100000
+# TOUTER_SCALE widens the outer head's usable range the way ANCHOR_SCALE does
+# for the inner one: the train-set residual has std 7.3 C but a maximum of
+# 46 C (6.3 sigma), which a unit head cannot reach. Kept separate from
+# ANCHOR_SCALE so the two anchors are scaled independently.
+TOUTER_SCALE = float(os.environ.get("TOUTER_SCALE", "1.0"))
+assert 0.1 <= TOUTER_SCALE <= 20.0
+# The EMA is seeded at T_outer(0), the GIVEN initial condition, not at
+# Input_T(0): identical on the base data (they are equal in every run) and
+# right for data where the tank does not start at the inlet temperature.
+# (exclusivity against OTHER_CH_MODE's own T_outer re-parametrisations --
+#  "persistence" and the round-4 "anchor" -- is asserted where OTHER_CH_MODE
+#  is defined, further down)
 
 # ------------------------------------------------------------
 # Anchor lead (2026-07-23)
@@ -476,10 +527,13 @@ assert 0 <= INPUT_LOOKAHEAD <= 30
 #   "zero"   a constant-zero column. The control: one more input column
 #            shifts the RNG stream at init exactly like the extra output
 #            channel did in round 6, so "the flag helps" needs this null.
-# forward_direct only (asserted below, where VARIANTS is in scope).
+# forward_direct and abs_sliding (round 8 extended it to the AR path: the
+# sliding window carries the column as its last feature); asserted below,
+# where VARIANTS is in scope.
 CASE_FLAG_INPUT = os.environ.get("CASE_FLAG_INPUT", "").strip().lower()
 assert CASE_FLAG_INPUT in ("", "case", "phase", "zero"), CASE_FLAG_INPUT
 INPUT_DIMS['forward_direct'] = 2 + INPUT_LOOKAHEAD + (1 if CASE_FLAG_INPUT else 0)
+INPUT_DIMS['abs_sliding'] += 1 if CASE_FLAG_INPUT else 0
 
 # EXCLUDE_BOTH_PHASE (Arnold, 2026-09-05): drop every run the case detector
 # fires on -- from train, val AND test -- and rerun. Under this flag no gate
@@ -664,11 +718,22 @@ _parts = [f"2026-08-06_{_VTAG}", f"W{WINDOW_SIZE}",
 if INPUT_LOOKAHEAD:
     _parts.append(f"la{INPUT_LOOKAHEAD}")
 if CASE_FLAG_INPUT:
-    assert list(VARIANTS) == ["forward_direct"], \
-        "CASE_FLAG_INPUT is a forward_direct-only knob (got %r)" % (VARIANTS,)
+    assert all(v in ("forward_direct", "abs_sliding") for v in VARIANTS), \
+        "CASE_FLAG_INPUT supports forward_direct / abs_sliding only (got %r)" % (VARIANTS,)
     _parts.append("fi" + CASE_FLAG_INPUT[0])          # fic / fip / fiz
 if EXCLUDE_BOTH_PHASE:
     _parts.append("xb")
+if TOUTER_MODE != "abs":
+    assert OTHER_CH_MODE in ("abs", "pos_head", "anchor_avg", "anchor_avg_grad"), \
+        "TOUTER_MODE=anchor_input re-parametrises head 1; OTHER_CH_MODE=%r does too" % (OTHER_CH_MODE,)
+    _parts.append("To-ai" if TOUTER_MODE == "anchor_input"   # T_outer anchored on Input_T
+                  else "To-em%d" % TOUTER_TAU)             # ... on its EMA(tau)
+    if TOUTER_SCALE != 1.0:
+        _parts.append("os%g" % TOUTER_SCALE)
+if LATEST_PARAMS['max_epochs'] != 1000:
+    # A MAX_EPOCHS smoke run gets its own directory, so it can never share a
+    # RUN_NAME with (and be resumed as) a real seed (2026-09-12 review).
+    _parts.append("ep%d" % LATEST_PARAMS['max_epochs'])
 if PHYSICS_BOUND_WEIGHT:
     _parts.append(f"pb{PHYSICS_BOUND_WEIGHT:g}")
 if ANCHOR_SCALE != 1.0:

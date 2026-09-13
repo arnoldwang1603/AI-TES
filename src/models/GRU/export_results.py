@@ -57,6 +57,8 @@ def _family_core(c):
         base = mode
         if c.get("case_flag_input"):
             base += "_flag_input"
+        if c.get("touter_mode", "abs") != "abs":
+            base += "_touter_anchor"
         if (c.get("pos_gap_floor", 0) or c.get("pos_case_gate")
                 or c.get("pos_temp_gate", 0) or c.get("pos_abs_head")
                 or c.get("pos_learned_gate")):
@@ -106,6 +108,12 @@ def leaf_name(c, lp):
         p.append("w" + "-".join("{:g}".format(x) for x in w))
     if c.get("tinner_mode") != "anchor":
         p.append("Tin-{}".format(c.get("tinner_mode")))
+    if c.get("touter_mode", "abs") != "abs":
+        p.append("To-ai" if c["touter_mode"] == "anchor_input"
+                 else "To-em{}".format(c.get("touter_tau", "")) if c["touter_mode"] == "anchor_ema"
+                 else "To-{}".format(c["touter_mode"]))
+        if c.get("touter_scale", 1.0) != 1.0:
+            p.append("os{:g}".format(c["touter_scale"]))
     return "_".join(p)
 
 
@@ -173,6 +181,15 @@ def stats_row(rs, **extra):
 # export get written, so the README never explains something that is not there.
 # ---------------------------------------------------------------------------
 FAMILY_DOC = [
+    ("pos_head_touter_anchor", """The outer-surface temperature is predicted
+the way the inner one always has been: as an offset from a reference built
+from the inlet temperature, instead of as an absolute value (Arnold's
+request, 2026-09-10). Two references: the inlet temperature at that moment
+("To-ai" -- the offset is almost as wide as the temperature itself), and a
+slow running average of it ("To-emN" -- the outer wall follows the inlet
+like a low-pass filter, and this offset is only a few degrees wide)."""),
+    ("pos_head_touter_anchor_excursion_fix", """The outer-surface anchor above
+combined with a gate."""),
     ("pos_head_flag_input", """The network is TOLD which kind of run it is
 looking at: one extra input column, read off the input temperature curve,
 says whether the run both charges and discharges (or, in the per-timestep
@@ -265,7 +282,15 @@ starting point of training."""),
     ("xb", """runs with both a charging and a discharging phase were removed
 from training AND from the test set before this run (the 2026-09-05 sanity
 check). Scored on 49 test cases; not comparable with the others."""),
+    ("To-", """how the outer surface temperature is parametrised: "To-ai"
+means it is predicted as an offset from the inlet temperature at that moment
+(the inner surface's recipe); "To-emN" as an offset from a slow running
+average of the inlet temperature with time constant N steps (N=1200 is 3.3
+h; the outer wall follows the inlet like a low-pass filter, and this
+reference is within 7 degrees of it on average, against 97 for the raw
+inlet); absent means it is predicted directly."""),
     ("as", "the inner-surface correction head's output range, multiplied by N."),
+    ("os", "the outer-surface correction head's output range, multiplied by N."),
     ("w", """the relative weight of the three temperatures in the training
 objective, in the order inner / outer / average. The default is 1-6-3."""),
     ("Tin-", "how the inner surface temperature is parametrised."),
