@@ -32,6 +32,7 @@ references run: the literal request (To-ai) and the physical one (To-em1200).
 
 Stages:
   S1 combine  20 seeds, h128x2, 1-6-1:
+                w161                    the round-7 base, S2's null (resumes)
                 w161-cgate-ah           the round-7 winner (resumes from the
                                         round-7 dir on the lab server)
                 w161-fip-cgate-ah       the two survivors combined
@@ -196,6 +197,10 @@ def mins(h=128, l=2):
 
 STAGES = {
     "S1": [
+        # both references resume from the round-7 dirs when present, and
+        # train only if the runs/ folder was wiped -- the S2 arms are paired
+        # against w161, so it must exist next to them
+        ("w161", cfg(), S20, mins()),
         ("w161-cgate-ah", cah(), S20, mins()),
         ("w161-fip-cgate-ah", cah(CASE_FLAG_INPUT="phase"), S20, mins()),
         ("w161-fiz-cgate-ah", cah(CASE_FLAG_INPUT="zero"), S20, mins()),
