@@ -39,7 +39,15 @@ def family(c):
     fam = _family_core(c)
     # Round-7 sanity arms are scored on a REDUCED test set (both-phase runs
     # removed), so their numbers must never sit next to full-set ones.
-    return "sanity_xb_" + fam if c.get("exclude_both_phase") else fam
+    if c.get("exclude_both_phase"):
+        return "sanity_xb_" + fam
+    # Round-9 stratified-validation runs are a different training PROTOCOL
+    # (291/20 split instead of 296/15); same test set, so they are
+    # comparable, but they are filed as their own family so the protocol
+    # change is visible in every table.
+    if (c.get("data") or {}).get("val_split") == "stratified":
+        return "vs{}_".format((c.get("data") or {}).get("val_per_type", 2)) + fam
+    return fam
 
 
 def _family_core(c):
@@ -55,6 +63,10 @@ def _family_core(c):
     mode = c.get("other_ch_mode", "abs")
     if mode != "abs":
         base = mode
+        if c.get("model_split") == "independent":
+            base += "_independent"
+        elif c.get("model_split") == "avg_only":
+            base += "_avg_split"
         if c.get("case_flag_input"):
             base += "_flag_input"
         if c.get("touter_mode", "abs") != "abs":
@@ -91,6 +103,8 @@ def leaf_name(c, lp):
         p.append("afb")
     if c.get("pos_fit_clean"):
         p.append("cf")
+    if str(c.get("pos_time_prior", "0")) != "0":
+        p.append("tp")
     if (c.get("pos_abs_head") and not c.get("pos_temp_gate", 0)
             and not c.get("pos_learned_gate")
             and not c.get("pos_anchored_fallback")):
@@ -101,6 +115,10 @@ def leaf_name(c, lp):
         p.append("fi" + str(c["case_flag_input"])[0])
     if c.get("exclude_both_phase"):
         p.append("xb")
+    if c.get("model_split") == "independent":
+        p.append("ind")
+    elif c.get("model_split") == "avg_only":
+        p.append("inda")
     if c.get("anchor_scale", 1.0) != 1.0:
         p.append("as{:g}".format(c["anchor_scale"]))
     w = tuple(c.get("loss_weights") or ())
@@ -110,7 +128,8 @@ def leaf_name(c, lp):
         p.append("Tin-{}".format(c.get("tinner_mode")))
     if c.get("touter_mode", "abs") != "abs":
         p.append("To-ai" if c["touter_mode"] == "anchor_input"
-                 else "To-em{}".format(c.get("touter_tau", "")) if c["touter_mode"] == "anchor_ema"
+                 else "To-em{}{}".format(c.get("touter_tau", ""), "x" if c.get("touter_ema_form") == "exact" else "")
+                 if c["touter_mode"] == "anchor_ema"
                  else "To-{}".format(c["touter_mode"]))
         if c.get("touter_scale", 1.0) != 1.0:
             p.append("os{:g}".format(c["touter_scale"]))
@@ -190,6 +209,30 @@ slow running average of it ("To-emN" -- the outer wall follows the inlet
 like a low-pass filter, and this offset is only a few degrees wide)."""),
     ("pos_head_touter_anchor_excursion_fix", """The outer-surface anchor above
 combined with a gate."""),
+    ("pos_head_independent", """Three separate networks, one per temperature,
+instead of one network with three outputs (round 9, branch I). They are
+trained one after another -- inner surface, outer surface, then the average,
+each against the finished predictions of the others -- so no temperature's
+training can stop or reshape another's. The suspicion behind this: in round
+8 the outer-surface reference made the shared network stop training early,
+before the average-temperature part had converged."""),
+    ("pos_head_independent_excursion_fix", """The three-network setup above
+with a gate; the gate and its extra channel belong to the average-temperature
+network."""),
+    ("pos_head_independent_touter_anchor", """The three-network setup with
+the outer-surface reference, no gate."""),
+    ("pos_head_independent_touter_anchor_excursion_fix", """The three-network
+setup with the outer-surface reference AND a gate -- the round-8 combination
+that failed, retried where the reference cannot interfere with the
+average-temperature network's training."""),
+    ("pos_head_avg_split_excursion_fix", """Two networks instead of one: the two
+surfaces keep sharing one network (as in every earlier round), only the
+average temperature gets its own, trained afterwards against the finished
+surfaces. The three-network pilot showed the lone outer-surface network doing
+worse than the shared one, so this keeps the surfaces together and decouples
+only the average temperature's training and stopping."""),
+    ("pos_head_avg_split_touter_anchor_excursion_fix", """The two-network setup
+above with the outer-surface reference."""),
     ("pos_head_flag_input", """The network is TOLD which kind of run it is
 looking at: one extra input column, read off the input temperature curve,
 says whether the run both charges and discharges (or, in the per-timestep
@@ -272,6 +315,12 @@ surface predictions (their midpoint) instead of being a raw absolute
 temperature, so the fallback inherits the surfaces' accuracy."""),
     ("cf", """The position statistics are fitted with the excursion steps
 excluded, which sharpens the head's resolution in the normal regime."""),
+    ("tp", """the position gets a time prior: early in a run the true position
+is far below its later value (the heat has not penetrated yet) and climbs
+over the first ~200 steps in almost the same way in every run; that curve
+(the per-step median over the training runs) is fixed and the network
+predicts only the deviation from it. Aimed at the first ~200 steps, where
+the plain head overestimates T_avg."""),
     ("la", "the model additionally sees the input temperature N steps ahead."),
     ("fi", """the regime flag fed to the network as an extra input: "fic" is
 one value per run (both charging and discharging, or not), "fip" is per
@@ -282,13 +331,27 @@ starting point of training."""),
     ("xb", """runs with both a charging and a discharging phase were removed
 from training AND from the test set before this run (the 2026-09-05 sanity
 check). Scored on 49 test cases; not comparable with the others."""),
+    ("ind", """three separate networks, one per temperature, trained one
+after another (inner, outer, then average, each against the finished
+others), instead of one network with three outputs. The capacity tags (h, L)
+then describe EACH of the three."""),
+    ("inda", """two networks: the two surfaces share one (as before), the
+average temperature has its own, trained afterwards against the finished
+surfaces."""),
+    ("vs", """the validation set used to pick the best epoch: "vs2" means 2
+runs from each of the 10 case-type folders (20 in all, fixed once and
+recorded in splits/); absent means the original protocol, where the 15
+validation runs were all linear-charging cases."""),
     ("To-", """how the outer surface temperature is parametrised: "To-ai"
 means it is predicted as an offset from the inlet temperature at that moment
 (the inner surface's recipe); "To-emN" as an offset from a slow running
 average of the inlet temperature with time constant N steps (N=1200 is 3.3
 h; the outer wall follows the inlet like a low-pass filter, and this
 reference is within 7 degrees of it on average, against 97 for the raw
-inlet); absent means it is predicted directly."""),
+inlet); "To-emNx" is the same with the exact one-step solution of the wall's
+energy balance instead of its first-order approximation (identical to 0.04 %
+at N = 1200; kept for media with a short time constant); absent means it is
+predicted directly."""),
     ("as", "the inner-surface correction head's output range, multiplied by N."),
     ("os", "the outer-surface correction head's output range, multiplied by N."),
     ("w", """the relative weight of the three temperatures in the training
@@ -316,10 +379,13 @@ def _wrap(text, indent=""):
 def write_readme(dst, runs, fams_present, index, with_plots):
     """A legend for the folder: what each configuration actually means."""
     leaves = " ".join(r["leaf"] for r in runs)
+    # "vs" is carried as the family prefix (vs2_...), never as a leaf token
+    has_vs = any(re.match(r"vs\d+_", f) for f in fams_present)
     used = [(k, t) for k, t in KNOB_DOC
             if k == "h"
             or (k == "L" and re.search(r"\bL\d", leaves))
-            or (k not in ("h", "L") and k in leaves)]
+            or (k == "vs" and has_vs)
+            or (k not in ("h", "L", "vs") and k in leaves)]
     best = index[0]
     n_cases = best.get("test_cases") or 70
     out = ["# What is in this folder", ""]
@@ -362,9 +428,16 @@ def write_readme(dst, runs, fams_present, index, with_plots):
                                   best["config"], best["overall_mean"],
                                   best["overall_sd"], best["seeds"])),
             "", "## The families", ""]
+    # A "vsN_" prefix marks the validation protocol, not the arm: the arm's
+    # text applies to the prefixed family too (the sanity_xb_ families have
+    # their own entries).
+    documented = {n for n, _ in FAMILY_DOC}
     for name, text in FAMILY_DOC:
-        if name in fams_present:
-            out += ["**{}**".format(name), "", _wrap(text), ""]
+        hits = sorted(f for f in fams_present
+                      if f == name or (re.match(r"vs\d+_", f) and f[f.index("_") + 1:] == name
+                                       and f not in documented))
+        for f in hits:
+            out += ["**{}**".format(f), "", _wrap(text), ""]
     out += ["## Reading a configuration name", "",
             _wrap("A name lists only what differs from the defaults, which are: "
                   "the direct (non-autoregressive) rollout, the inner surface "

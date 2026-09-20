@@ -28,11 +28,19 @@ temperature** (`Input Temperature`), and the three temperatures we predict:
 | `T_outer` | outer wall | medium |
 | `T_avg` | average temperature of the storage material | hardest, and the one the application cares about |
 
-311 runs are used for training (5% of them held out for validation) and a
+311 runs are used for training, and a
 **fixed set of 70 runs is the test set** — never trained on, unchanged since
 the project started, so a number from any round is comparable with any other.
 Data lives in `AI-TES/data/` (`Latest Database (Use this for training)` and
 `Test_70_cases`).
+
+A few of the 311 training runs are held out as the **validation set**: the
+model never trains on them, and they decide when training stops and which
+epoch's weights are kept. Rounds 4-8 used the first 15 files in path order,
+which (found 2026-09-16) are all linear-charging runs. From round 9 the
+validation set is 2 runs from each of the 10 case-type folders (20 runs,
+list frozen in `splits/stratified_v2_s42.json`, tag `vs2` in the run name).
+Numbers from the two protocols are comparable only within a protocol.
 
 ### What the model sees and produces
 
@@ -112,16 +120,23 @@ answers are in "Methods, plainly" below.
     export_results.py       package a finished round for the shared drive
     ensemble_eval.py        seed-ensemble scores (the deployment metric)
     sanity_compare.py       two configurations on their common cases, paired by seed
+    eval_checkpoint.py      re-score a finished run's best or final checkpoint, no retraining
+    splits/                 the frozen validation lists (round 9 on)
     runs/<name>_seed<N>/    one directory per run: metrics, plots, predictions
+    ../../../../calit2-thermal-wiki/HANDOVER.md   state of the work for whoever picks it up next (house rules,
+                            open questions, plan) -- lives in the wiki with the results and notes
 
 Every knob is an environment variable read in `config.py`, and `run_roundN.py`
 pins all of them for every arm, so nothing left over in your shell can leak
-into a run. To reproduce a round: `python run_round7.py` (`--dry-run` shows
+into a run. To reproduce a round: `python run_round9.py` (`--dry-run` shows
 the plan, `--stage S1` runs one stage). Runs are resumable — rerunning skips
 anything with a `done.flag`.
 
 Current defaults: GRU, hidden 128, 2 layers, dropout 0.3, lr 0.0025, batch 16,
-800 epochs with early stopping (patience 150), best-validation checkpoint.
+up to 1000 epochs with early stopping (patience 150; under the old validation
+set most runs stopped between 450 and 800; round 9 raises the cap to 2000
+because the new validation set keeps improving past 1000), best-validation
+checkpoint.
 
 ### Methods, plainly
 
@@ -154,6 +169,33 @@ destroys the runs it never touches, because the model cannot tell which
 meaning is wanted. That is round 6's `cgate` arm, and it is the plot that
 caused the 2026-09-05 misunderstanding.
 
+Two more things round 9 changes, which are about *how* the model is trained
+rather than what it predicts:
+
+- **Which runs decide when training stops.** Training stops when the error
+  on the validation runs stops improving, and the weights from the best
+  validation epoch are kept. Until round 8 those runs were all
+  linear-charging cases, so a model could be stopped while it was still
+  learning the discharge runs. Round 9 uses 2 validation runs of every case
+  type (tag `vs2`).
+- **One network per temperature** (tag `ind`). Rounds 1-8 used one network
+  with three outputs; the three temperatures share every internal weight and
+  one stopping decision. Round 9 also trains three separate networks, one
+  after another — inner wall, outer wall, then the average against the
+  finished walls — so no temperature can stop or distort another's training.
+  A two-network form (tag `inda`) keeps the two walls in one network and
+  separates only the average.
+- **Epoch cap 2000.** With the new validation set training keeps improving
+  past 1000 epochs, so the cap was raised for round 9; a run that reaches
+  the cap is reported as such.
+- **A time curve for the position** (tag `tp`). Early in a run the interior
+  is still cold, so the true position sits near the outer wall and climbs
+  over the first ~200 steps; the model's position started at its long-run
+  value instead, which is why the first minutes of `T_avg` were too high in
+  every charging case (worst where the walls part fast). The climb is the
+  same in every run, so it is now a fixed curve (the per-step median over
+  the training runs) and the network only predicts the deviation from it.
+
 ### Conventions for the entries below
 
 - One dated entry per change or run: *what* changed, *why*, the config delta,
@@ -180,8 +222,405 @@ caused the 2026-09-05 misunderstanding.
 | 2026-09-06 | 7 | combine the weight with the gates; tell the model its regime | `[CODE]` — see 2026-09-12 |
 | 2026-09-12 | 8 | combine the two survivors; give the outer wall a reference (the inlet, and a slow running average of it -- the physical one tracks the wall to 5 °C with no model at all); AR at 2 layers | `[CODE]` |
 | 2026-09-12 | 7 | (results) | the case gate with a plain 4th channel wins under the new weights: 0.72 °C, no blow-ups, the 12 hard cases halved; the regime flag helps the other 49 cases instead; removing both-phase runs from training hurts by 0.55 °C |
+| 2026-09-16 | 8 | (results) | the survivors do not stack (0.707 vs 0.718, noise); the outer-wall reference fits T_outer and breaks T_avg, worst on the gated cases; every anchored arm early-stops ~300 epochs sooner on a lower validation loss — and the validation set turns out to be 15 linear-charging runs |
+| 2026-09-19 | 9 | re-test rounds 4–8 — every configuration ever trained (146) and every loss-weight vector — with a validation set that contains every case type; one network per temperature (and a two-network form: walls shared, T_avg separate); a time curve for the position head (the first-50-step T_avg problem) | `[CODE]` — runner ready: everything by default, 218 GPU-h ≈ 108 h wall with 3 seeds in parallel, S1 decision arms first; 3-seed pilots: the validation set caused the round-8 collapse (1.53 → 0.89), the reference still costs T_avg on the switched cases; the time curve cuts the first-50-step error 1.24 → 0.48 with nothing worse |
 
 ---
+
+## 2026-09-19 — Round 9 `[CODE]` — a validation set that sees every case type; one network per temperature
+
+**In one line:** round 8 ended with a suspect rather than a verdict: every
+arm with the outer-wall reference stopped training ~300 epochs early on a
+lower validation loss and came out worse on the test set, and the validation
+set turned out to be 15 linear-charging runs. Round 9 changes the protocol
+(validation = 2 runs of each of the 10 case types) and re-runs the
+configuration each round hinged on, so every earlier conclusion is re-tested
+under the new protocol against its old-protocol twin (branch V). Then it asks
+the round-8 question the way it should have been asked: three separate
+networks, one per temperature, trained one after another so nothing one
+temperature does can stop another's training (branch I). Direct prediction
+only; AR stays parked. Decision 2026-09-17 (user), code 2026-09-17/19.
+
+**What was checked before coding.** (1) The "final" checkpoint every run
+saves (`gru_variant_<v>.pth`) is byte-identical to the best one — `train_model`
+restores the best weights before returning and main.py writes the file
+afterwards — so the cheap test "score the final-epoch weights" (HANDOVER,
+2026-09-16) is impossible with existing runs; verified on all 20 seeds of the
+round-8 EMA arm (max |Δ| = 0, re-scores identical to meta.json). The only test
+is to retrain. (2) The EMA reference's seed conversion bug (round-8 audit) is
+fixed and unit-tested; on the base data it changed nothing (both scalers span
+[1, 610]). (3) `fit_model_constants` was extracted from `train_model` so a
+saved run can be rebuilt and re-scored without retraining
+(`eval_checkpoint.py`; reproduces recorded metrics to 3 decimals, shared and
+independent models alike).
+
+**Code (`tes_gru`)**
+- `VAL_SPLIT=stratified`, `VAL_PER_TYPE` (config, data, runio): 2 runs per
+  case-type folder, drawn once with `SPLIT_SEED=42` and frozen in
+  `splits/stratified_v2_s42.json` (committed with the code; the lab server
+  reads it and draws nothing). 291 train / 20 val / 70 test; 6 of the 20
+  validation runs are both-phase runs (none were before). Tag `vs2`;
+  provenance `data.val_split`; export family prefix `vs2_`. Legacy mode is
+  untouched (296/15/70, same 15 files as before).
+- `MODEL_SPLIT=independent` (config, models, train, runio, export): a
+  wrapper of three complete `ThermalGRU`s (init encoder + GRU + head) behind
+  the shared model's interface — same `(B, T, OUTPUT_SIZE)` output, hidden
+  state a tuple — so rollout, anchors, position formula, gates and
+  evaluate.py are unchanged. The T_avg network owns the extra channels (4th
+  absolute head, learned gate). `train_model` runs three stages in channel
+  order, each with its own optimiser, plateau schedule, warm-up, early
+  stopping (patience 150) and best epoch; the finished networks are frozen
+  and kept in eval mode (dropout off) while the next trains, so the T_avg
+  network fits against the walls it will see at test time. Stage loss = the
+  configured weight on that stage's channel only (the 1-6-1 tag is inherited
+  for pairing; with one channel per network the relative weights do
+  nothing). One best checkpoint file holds every network's best state.
+  `train_history.json` gains `stages` (per-network best/total epoch, best
+  val); the top-level best_epoch indexes the concatenated curve, total_epoch
+  is the sum. Tag `ind`; provenance `model_split`; export family
+  `pos_head_independent[...]`, knob doc `ind`. In-run resume is off for
+  independent seeds (done.flag resume across seeds unchanged). Direct
+  prediction only. Parameter counts: shared h128×2 = 283k (GRU 150k); three
+  h128×2 = 848k (GRU 449k); three h64×2 = 414k (GRU 114k) — the init-encoder
+  MLPs are fixed-width and dominate the small nets, which is why the capacity
+  control matches the GRU, not the total.
+- Shared mode is bit-for-bit what it was: the loop was refactored into
+  `_train_stage` and a 2-epoch smoke run reproduces the pre-refactor numbers
+  exactly (46.814 / 81.197 / 58.557 on the fip arm).
+- `MODEL_SPLIT=avg_only` (tag `inda`): the two-network form of the same
+  wrapper — the walls keep one shared trunk (stage 1, loss on T_inner +
+  T_outer), T_avg has its own (stage 2). Added after the pilot showed the
+  lone T_outer net worse than the shared trunk's T_outer. The wrapper is
+  generic over channel groups (`MODEL_GROUPS` in config).
+- Validation loss = the exact mean over validation files (was the mean of
+  per-batch means: with 20 files and batch 16 the last four files weighed
+  1/8 each; the legacy 15-file set is one batch and is unchanged).
+  `train_history.json` also records `val_hist_ch`, the unweighted per-channel
+  validation MAE per epoch, so which channel drove an arm's stop can be read
+  off the run; meta.json carries flat `Best_Epoch_<net>` / `Total_Epoch_<net>`
+  for split models.
+- `MAX_EPOCHS=2000` for every round-9 arm (tag `ep2000`; the stale-dir guard
+  now refuses only ep < 151), see "Epoch cap" below.
+- `POS_TIME_PRIOR=median` (tag `tp`; config, train, rollout, evaluate,
+  runio, export, eval_checkpoint) — **the early-window fix.** Diagnosis on
+  the 20-seed cgate-ah ensemble (2026-09-19, prompted by the user: "the core
+  problem since round 5 is still there — T_avg in the first ~50 steps of
+  cases 15–24 / 58–65"): the head's position output is flat at ~0.24 from
+  t = 0, while the true position of a charging run starts near 0.05 and
+  climbs to ~0.25 over the first ~200 steps (the heat has not penetrated; the
+  bulk average sits at the cold outer wall). Error = Δpos × wall gap, so it
+  is worst where the gap opens fast: case 24 (gap 157 °C at step 50) carries
+  10.6 °C over the first 50 steps, cases 29 / 54–57 3–8 °C; cases 58–65 are
+  fine (< 0.8 °C, they are gated). The window is 3.5 % of the steps and 2.9 %
+  of the T_avg error (t < 200: 11.5 %) — a curve-shape problem more than a
+  score problem. On the 311 training runs the climb is the same in every
+  run: the per-step median position is 0.04 / 0.16 / 0.25 / 0.28 at steps
+  1 / 50 / 200 / 500, spread 0.037 around it in the first 200 steps against
+  0.08 for the flat mean (a √t least-squares fit over the whole run is too
+  flat — it is dominated by the plateau — so the prior is the nonparametric
+  per-step median). The head now predicts the residual from that curve;
+  mu/sd are the residual's; the step index comes from the scaled Time input
+  (column 0), direct and AR paths, train and test; gated cases are
+  unaffected. Offline, with the TRUE walls and the curve alone (network
+  output 0), the first-200-step T_avg error on the 49 non-gated test cases
+  is 0.51 °C against 2.64 for the flat mean and 1.39 for the trained
+  ensemble; the full-run error is not worse (1.55 vs 1.59); case 24's first
+  50 steps go from 13.7 (flat) / 10.6 (ensemble) to 0.2.
+- `TOUTER_EMA_FORM = euler | exact` (config, rollout, train, runio, export;
+  tag `To-em<τ>x` for exact). The user derived the reference from the outer
+  wall's lumped energy balance (2026-09-20, notebook pages b1–b3): ρcV
+  dT_out/dt = hA (T_in − T_out) → τ = ρcV/hA → integrating factor →
+  zero-order hold over one step gives the exact discrete form
+  T_out(t) = T_out(t−Δt)·e^(−Δt/τ) + T_in(t)·(1 − e^(−Δt/τ)); the Taylor step
+  e^(−Δt/τ) ≈ 1 − Δt/τ gives the forward-Euler EMA rounds 8–9 use. Both are
+  e_t = r·e_(t−1) + (1−r)·x_t with r = 1 − 1/τ (euler) or e^(−1/τ) (exact);
+  one function `config.touter_ema_r()` feeds the rollout, the training-time
+  twin and the preflight. At τ = 1200 the weights differ by 0.04 %; the
+  exact form is there for a medium with a short τ, where the Taylor step is
+  no longer small. Default euler, so no existing run name changes; the
+  derivation is in config.py next to the knob.
+- Runner: `--parallel N` (default 3) deals each arm's seeds round-robin to N
+  concurrent launcher processes on the one GPU, each with its own run dirs
+  and log; measured on the dev 4090: 3 → 2.03×, 4 → 2.27× the throughput of
+  one (the models are small; each process is launch-bound). GPU memory per
+  process 1.1–1.4 GB (shared models), 3.8 GB (three-network arms); the
+  preflight reads the free memory and lowers N if needed. An arm's verdict
+  is now its done.flags, not the exit code. Default stages: everything —
+  S1, S2, S1b, S1c — 218 GPU-h, ~108 h wall at 3 workers (user 2026-09-20:
+  "it is 7 days anyway, run it all").
+- `rollout.touter_reference`: the 1440-step Python loop that computed the
+  EMA reference per batch is replaced by its closed form (float64; equal to
+  the recurrence to 5×10⁻⁷ in scaled units, i.e. < 10⁻³ °C). The EMA arms
+  trained ~3× slower than the others in round 8 because of that loop (4.5 vs
+  1.5 s/epoch on the dev box); now they cost the same. The runner's preflight
+  re-checks closed form against recurrence every launch.
+- `eval_checkpoint.py`, `fit_model_constants`, `build_model` /
+  `model_parts` (models.py): the one place a model is built, used by
+  train.py and the re-scorer.
+
+**Runner `run_round9.py`** (S1 + S1b + S2 by default, 218 GPU-h at the 2000-epoch cap, ≈ 108 h wall with `--parallel 3` — in order S1 ~44 GPU-h (the decision arms: configs, the weight scans, the early-window pair), S2 ~24 (the split models), S1b ~105 (the 90 legacy configurations the old validation set measurably cut short), S1c ~44 (the 24 it did not); all on by default; the stages run in that order so the decision arms finish first, and `--stage S1` / `--stage S1,S2` run subsets; every launch imports `tes_gru.config` under each arm's knobs and refuses duplicate run names; `--stage S1` first if time is short; 20 seeds where the original had 20, 12 where it had 12 — the seed list every round has used, so each arm pairs per seed with its twin)
+
+| stage | arms | pairs with | question |
+|---|---|---|---|
+| S1 (branch V, `vs2`; 19 arms) | r4-abs-h128x5, r4-anchor_avg-h128x5; r5-abs-h128x2, r5-pos-h128x5, r5-pos-h128x2; r6-tg10s40, r6-cgate-afb, r6-cgate-ah, r6-ah; r7-w161, r7-w161-ah, r7-w161-cgate-ah, r7-w161-fip, r7-w161-fiz, r7-w161-tg30s30; r8-w161-fip-cgate-ah, r8-w161-fiz-cgate-ah, r8-w161-To-em1200, r8-w161-To-em1200-cgate-ah | its legacy-split twin (rounds 6–8 in `runs/`, rounds 4–5 in the wiki's result folders; r5-pos-h128x5 on its 10 seeds); the `ah` / `fiz` arms are the 4-channel and input-column nulls rounds 6–8 paired against | what the protocol change moved, per arm; and whether each round's conclusion (position head > direct, at 5 and at 2 layers; the fixed T_avg anchor loses; 1-6-1 > 1-6-3; each gate vs its 4-channel null; fip vs fiz; fip-cgate-ah vs fiz-cgate-ah; the two reference arms) still holds when early stopping can see a discharge. r5-abs-h128x2 is Arnold's 2026-09-17 "use the absolute value for T_avg as well" at the current capacity |
+| S1, part 3 (the early-window fix; 2 arms, new) | tp-w161, tp-w161-cgate-ah (20 seeds) | r7-w161, r7-w161-cgate-ah | does a fixed elapsed-time curve for the position (`POS_TIME_PRIOR=median`, tag `tp`) remove the first-200-step T_avg overestimate without costing anything later — the user's "core problem since round 5" (cases 15–24 / 58–65, first 50 steps); primary = first-200-step T_avg error on the 49 non-gated cases, paired; passes only with overall not worse and no veto |
+| S1b (the legacy configurations the old validation set demonstrably cut short; 90 arms, tier "keep" in `splits/round9_legacy_configs.json`) | the entire abs-model capacity, lookahead, weight and anchor-scale scans of rounds 4–5, the fixed anchors, the learned gates, the round-6 soft timestep gates and floors at 1-6-3, To-ai, os2, To-em900, the full stack — each with its legacy seed list | its legacy twin, per seed | tiered by a **measurement**, after the user pointed out (2026-09-20) that the first tiering did not follow its own criterion: for every legacy run, how much the training loss still fell in the 150 epochs after the checkpoint the old set picked (`legacy_post_checkpoint_train_drop`, median over seeds, stored in the manifest). Calibration on S1's twins: cgate-ah 12.8 % and w161 11.4 % (vs2 moved cgate-ah by +0.03 — nothing), To-em1200-cgate-ah 25.5 % (vs2: 1.53 → 0.89), abs-h128x5 31.4 %. Everything above the calibrated no-change point (12.8 %) is S1b: the abs scans sit at 32–56 % with best epochs 290–410, the learned gates at 33–48 %, the round-6 soft gates and floors at 13–30 %. The first, argued tiering had put exactly these in the archive and the least-cut-short arms (median 10 %) in "keep" — backwards |
+| S1c (the 24 legacy configurations the old set did not cut short; off by default) | drop ≤ 12.8 %: the 1-6-1 gate/flag family (cgate-afb, fip/fiz-cgate-afb, tg10s40, tg20/30, fic), the h192/h256 arms at 1-6-1 and 1-6-3 (best epochs 680–830, many at the 1000 cap), fl20/fl40/fl40s, the shared-channel cgate, To-em1500 | its legacy twin, per seed | these trained at least as long as the winner did, and vs2 did not move the winner; `--stage S1c` (~44 h) completes the record. The manifest is built from the runs' own `run_config.json`, so nothing is hand-picked; the 5 exclude-both-phase sanity arms (a different test set) and the 4 AR arms (user decision) are the only omissions |
+| S2 (branch I, `ind` / `inda`, `vs2`; 7 arms) | ind-w161, ind-w161-cgate-ah, ind-w161-To-em1200, ind-w161-To-em1200-cgate-ah; ind-h64-w161-cgate-ah; inda-w161-cgate-ah, inda-w161-To-em1200-cgate-ah | the S1 arm with the same knobs; the h64 control against ind-w161-cgate-ah; inda against both its shared and its ind twin | does one network per temperature beat the shared one, alone and on the winner; does the outer-wall reference help once it cannot stop T_avg's training; is any gain a GRU-capacity gain; does the wall pair want its shared trunk (`inda`: walls shared, T_avg separate — the pilot's suggestion) |
+| S1, part 2 (the weight scans; 14 arms) | r6-w1-6-0.5, r6-w1-6-6, r6-w1-6-10, r6-w1-3-3, r6-w1-4-3, r6-w1-8-3, r6-w2-6-3, r7-w1-8-1, r7-w1-8-2, r7-w1-10-1, r7-w1-12-1 (12 seeds, plain position head); r8-w163-To-em1200, r8-w131-To-em1200 (20 seeds); w166-cgate-ah (12 seeds, new: Arnold's "explore increasing the weight average" on the winner) | their round-6/7/8 twins (same base, same seeds); each vs r7-w161 on the common seeds, the EMA pair vs r8-w161-To-em1200, w166-cgate-ah vs r7-w161-cgate-ah and r6-cgate-ah | is 1-6-1 still the weight vector — the T_avg side (0.5 / 1 / 3 / 6 / 10) and the T_outer side (3 / 4 / 6 / 8 / 10 / 12) — now that early stopping sees every case type. The user's rule: everything decided under the old validation set is re-run, weights included; nothing carries over untested |
+
+**Decision rule, fixed before the run** (the round-7 statistic throughout:
+paired difference per seed, sign-flip p, 95 % bootstrap CI, blow-up seeds on
+either side counted and the comparison repeated without them, jump veto,
+ensemble deployment metric, simplicity order — which now reads "shared < inda
+< ind" and "no T_outer reference < reference"). The 3-seed pilot below was in
+hand when the numeric thresholds were set; the sweep's 20 seeds include those
+three, and every comparison is also reported on the 17 non-pilot seeds.
+- *Protocol effect* (S1 vs legacy twins): reported for every arm, sign not
+  assumed. What changes between the twins is the protocol as a whole — the
+  validation set, the training set (296 → 291; 13 of the 15 old validation
+  files move into training, so the scaler and the fitted constants move a
+  little) and the epoch cap (1000 → 2000, below). The rest-49 shift is the
+  sensitivity indicator for the training-set part.
+- *The specific hypothesis*, numeric, on the paired (To-em1200-cgate-ah −
+  cgate-ah) switched-21 T_avg under vs2 (legacy +3.40 [+1.76, +5.57]):
+  (a) "the validation set caused the round-8 collapse" if the vs2 CI's upper
+  bound is below +1.0 °C; (b) "the reference itself still costs T_avg" if the
+  vs2 CI excludes 0. Both can be true, and the pilot says they will be
+  (+0.69, seeds +1.04 / +0.64 / +0.38); then branch I asks whether the cost is
+  the coupling. Descriptive: the difference-in-differences per seed, and both
+  arms' best epochs with the count of seeds at the cap (censored).
+- *Branch I:* each split arm vs its S1 twin; ind-To-em1200-cgate-ah vs
+  ind-cgate-ah and inda-To-em1200-cgate-ah vs inda-cgate-ah (the round-8
+  question re-asked where the reference cannot stop T_avg's training); inda
+  vs ind on the same knobs; ind-h64-cgate-ah within noise of ind-cgate-ah
+  means an ind gain is not GRU capacity. "Independent" is tested as the whole
+  bundle (separate weights, stopping, optimiser, sequential training on
+  frozen walls), not attributed to one ingredient. The recipe changes only if
+  a vs2 arm beats the legacy cgate-ah ensemble (0.676) AND its own null, with
+  no veto.
+- *The early-window fix* (S1 part 3): tp-w161-cgate-ah vs r7-w161-cgate-ah
+  (and tp-w161 vs r7-w161), paired per seed: primary = T_avg |error| over
+  the first 200 steps on the 49 non-gated cases; the arm passes if that CI
+  is below zero AND the overall paired difference is not above zero AND no
+  veto. Secondary: the first 50 steps; cases 24 / 29 / 54–57 individually;
+  the switched 21 unchanged. Expected: the first-200-step error at least
+  halved; overall within noise or slightly better.
+- *Expected from the pilot:* the anchored arms recover most of their T_avg
+  loss under vs2 but stay behind cgate-ah on the switched cases; cgate-ah
+  itself moves little; ind beats shared on the 49 normal cases and loses on
+  the 21 switched and on T_outer; inda keeps the shared T_outer and the ind
+  rest-49 gain and is the arm to beat. If every split arm matches its shared
+  twin, one network was never the problem and the split is dropped.
+
+**Epoch cap 2000 (ep2000 tag).** Under vs2 the 1000 cap binds: in the pilot
+all three cgate-ah seeds and one of three EMA seeds were still improving on
+validation at epoch 1000 (best epochs 950–993; the plateau scheduler had the
+LR at 1e-5 and the running best still moved 1–3 % per 150 epochs), whereas
+the legacy set went flat by 600–800 (4 % of the round 6–8 runs hit 1000). A
+binding cap turns "stop when validation stops improving" into "train to the
+cap" and right-censors every best-epoch comparison, so every round-9 arm runs
+with MAX_EPOCHS=2000 (the July precedent: 800 → 1000 when a seed hit the
+wall). Cost ~1.5× per seed. Seeds at the cap are counted per arm and treated
+as censored.
+
+**Preflights** (every launch): package compiles under the server's Python;
+the split file is the committed one (10 types × 2, train/val disjoint) and
+`data.py` refuses a train_dir that differs from the frozen train list; stale-
+dir guard (ep < 151 smoke dirs, Total_Epoch < 151, `vs`/`ind` tags without
+matching provenance); no two arms of the plan share a run name; child process
+1 — the split resolves to 291/20/70 from the file and the numpy/torch case
+detectors agree on all 381 runs; child process 2 — EMA closed form vs
+recurrence for τ = 100…1500 (NaN fails), and the wrapper: three nets, no
+shared parameter, output layout, the stage loss vectors train.py uses summing
+to the weight vector. A check passes on its `CHECK_OK` line, not on its exit
+code (the Windows dev box exits 0xC0000409 at teardown after any CUDA model
+run — also the launcher; complete outputs, deterministic, not seen on Linux).
+
+**Adversarial review (2026-09-19, 4 lenses × 2 refuters; 33 findings, 11
+survived, 22 had one or both refuters cut off by the session limit and were
+judged by hand).** Acted on: the binding epoch cap (above); the vs2
+validation loss was a mean of two unequal batches (16 + 4 files: the last four
+carried 1/8 each) → now the exact mean over files (legacy 15-file set
+unchanged; the pilot ran with the old weighting); S3's w1-6-3 arm was
+byte-identical to S1's r6-cgate-ah → dropped, plus a unique-run-name assert;
+the 4-channel and input-column nulls (r6-ah, r7-w161-ah, r8-w161-fiz-cgate-ah)
+added so each round's own pairing is repeated; r5-abs-h128x2's legacy figure
+corrected to 1.37 (20 seeds; 1.11 was the n=6 false positive); hypothesis
+made numeric and censor-aware; the training-set change named in the protocol
+clause; `eval_checkpoint.py` overwrote the original run's `predictions.npz`
+(or left stray `runs/<name>/` dirs) through a module-global side write → off,
+and knobs absent from an older run_config are now reset to defaults instead
+of leaking from the shell; a stage with no validation improvement now raises
+instead of silently restoring the previous stage's file; `TOUTER_TAU ≥ 3`
+asserted (the closed form overflows below 2.6); the preflight's stage-mask
+check now exercises train.py's own helper; per-channel validation curves
+(`val_hist_ch`) and flat per-stage epochs in meta.json; the "weights do
+nothing in ind mode" claim corrected (they act only through the gradient
+clip, measured not to engage on the anchored arms); progress tail counts only
+the current launch; `Round*_upload/` ignored by git. Not acted on: a code
+stamp in run_config.json (pilot dirs are distinguishable by the missing
+ep2000 tag); caching the frozen nets' outputs per stage (the pilot's 7–9
+min/seed is budgeted as 3×).
+
+**Smoke tests (dev box, 2026-09-19)**: 2-epoch shared runs of
+r4-anchor_avg-h128x5, r7-w161-fip, r8-w161-To-em1200-cgate-ah under vs2 (the
+fip run reproduces the pre-refactor numbers exactly, before and after the
+review fixes); 3-epoch split runs of ind-w161, ind-w161-cgate-ah (4
+channels), ind-w161-To-em1200, ind-w161-To-em1200-cgate-ah at h64,
+inda-w161-To-em1200-cgate-ah (2 nets); provenance (`val_split`,
+`model_split`, `output_size`), `stages` / `val_hist_ch` in the history, flat
+stage keys in meta.json, one checkpoint with the parts, eval_checkpoint
+re-score identical to meta.json; all dirs deleted afterwards.
+
+**Dev-box pilot (3 seeds, 2026-09-19; 1000-epoch cap, batch-weighted
+validation — the two things the sweep changes).** r8-w161-To-em1200-cgate-ah,
+r7-w161-cgate-ah and ind-w161-To-em1200-cgate-ah under vs2, seeds 7/21/42;
+legacy twins from `calit2-thermal-wiki/round8`:
+
+| arm | overall | T_outer | T_avg | 12 hard | 21 switched | 49 rest | best/total epoch |
+|---|---|---|---|---|---|---|---|
+| To-em1200-cgate-ah, legacy | 1.533 (1.89 / 1.84 / 0.86) | 0.387 | 3.95 | 8.13 | 7.66 | 2.35 | 224 / 374 |
+| **To-em1200-cgate-ah, vs2** | **0.886** (0.90 / 0.90 / 0.86) | 0.327 | 2.05 | 2.10 | 1.44 | 2.32 | 674 / 776 (1 at cap) |
+| cgate-ah, legacy | 0.747 (0.67 / 0.85 / 0.72) | 0.483 | 1.48 | 1.31 | 1.15 | 1.62 | 618 / 768 |
+| cgate-ah, vs2 | 0.780 (0.73 / 0.73 / 0.87) | 0.384 | 1.69 | 1.07 | 0.76 | 2.08 | 955 / 1000 (3 at cap) |
+| ind-To-em1200-cgate-ah, vs2 | 0.919 (0.84 / 1.04 / 0.88) | 0.423 | 2.03 | 2.72 | 2.23 | 1.94 | stages: inner ~170 / outer 515–697 / avg 213–267 |
+
+Paired per seed: To-em1200-cgate-ah vs2 − legacy = −0.65 overall (−0.99 /
+−0.94 / −0.01), switched-21 −6.2 (−8.6 / −9.2 / −0.9) → the validation set
+caused the collapse. cgate-ah vs2 − legacy = +0.03 (noise), T_outer −0.10,
+switched −0.40, rest-49 +0.46 (all three seeds) — the protocol moves the
+winner's error from the switched to the normal cases. To-em1200-cgate-ah vs
+cgate-ah under vs2 = +0.11: T_outer −0.06 (3/3 better), switched +0.69 (3/3
+worse), rest-49 +0.23 — the reference still costs T_avg. ind vs shared
+(both vs2, EMA arm) = +0.03: rest-49 −0.38 (3/3), switched +0.79 (3/3),
+T_outer +0.10 (3/3, the lone T_outer net is worse than the shared trunk's) —
+hence the `inda` arms. n = 3; the sweep decides.
+
+**Dev-box pilot of the early-window fix (3 seeds, 2026-09-20; vs2, cap 2000,
+exact validation mean — the sweep's settings).** tp-w161-cgate-ah, seeds
+7/21/42, paired against the cgate-ah vs2 seeds above (which ran at cap 1000):
+
+| | overall | T_outer | T_avg | non-gated 49: t < 50 (signed) | t < 200 | all t | switched 21 | best / total epoch |
+|---|---|---|---|---|---|---|---|---|
+| cgate-ah vs2 | 0.780 | 0.384 | 1.685 | 1.24 (+0.92) | 1.28 | 2.08 | 0.76 | 955 / 1000 (at cap) |
+| **tp-w161-cgate-ah vs2** | **0.746** | 0.379 | 1.591 | **0.48** (+0.19) | **0.79** | 1.94 | 0.77 | 831–1210 / 981–1360 (stopped) |
+
+Paired per seed: non-gated t < 50 −0.76 (−0.83 / −0.85 / −0.59), t < 200
+−0.49 (3/3), non-gated all-t −0.14 (−0.13 / 0.00 / −0.28), switched 21
++0.01 (noise, as expected — the gate bypasses the position), T_outer 0.00,
+overall −0.03. Per case, first 50 steps: 24: 9.3 → 2.6; 29: 8.6 → 1.4; 55:
+3.3 → 0.6; 15 / 20 / 22: 1.3 / 1.0 / 0.7 → 0.3 / 0.2 / 0.1. The remaining
+early error sits on 54 / 56 (1.9 / 2.6): the sign of the mean is now
++0.19, so the systematic overestimate is gone and what is left is
+case-specific. Nothing got worse anywhere; the three seeds early-stopped at
+981 / 1102 / 1360 under the 2000 cap (none at the cap). n = 3; the sweep
+decides.
+
+## 2026-09-16 — Round 8 results `[DONE]` — the survivors do not stack; the outer-wall reference fits T_outer and breaks T_avg; the validation set is the suspect
+
+**In one line:** combining the phase flag with the case gate gives 0.707 vs
+0.718 — inside the seed noise, so `cgate-ah` alone stays the recipe. The
+outer-wall reference Arnold asked for fails in both forms: the instantaneous
+inlet (`To-ai`) blows up 11 of 20 seeds, and the smoothed inlet (`To-em1200`)
+leaves T_outer where it was and makes T_avg worse on every case subset; put on
+the winner it wrecks the 21 gated cases (0.86 → 4.26) with 4 blow-ups. The
+anchored arms all stop training ~300 epochs earlier than their un-anchored
+twins on a *lower* validation loss — and a code audit found the validation
+set has been 15 linear-charging runs since round 4. That is the lead round 9
+follows. Deployment stays the 20-seed `cgate-ah` ensemble, 0.676.
+
+Results in `calit2-thermal-wiki/round8` (rounds 6–8 in one folder, 20 seeds
+per arm); every number below recomputed from `meta.json` /
+`summary_errors.csv` / `train_history.json` (2026-09-16, re-checked
+2026-09-19).
+
+### The table
+
+| arm | overall | T_outer | T_avg | 12 hard | 21 switched | 49 rest | >1.5 °C | best epoch | val loss ×10³ |
+|---|---|---|---|---|---|---|---|---|---|
+| w161 (base) | 0.787 | 0.448 | 1.631 | 2.47 | 1.69 | 1.61 | 0/20 | 628 | 2.06 |
+| **w161-cgate-ah** (recipe) | **0.718** | 0.447 | 1.430 | 1.09 | 0.86 | 1.67 | 0/20 | 619 | 1.99 |
+| w161-fip-cgate-ah | 0.707 | 0.433 | 1.412 | 1.02 | 0.80 | 1.67 | 0/20 | 649 | 2.01 |
+| w161-To-ai | 1.668 | 2.218 | 2.560 | 3.27 | 2.62 | 2.53 | 11/20 | 294 | 2.30 |
+| w161-To-em900 | 0.931 | 0.443 | 2.067 | 2.58 | 1.80 | 2.18 | 0/20 | 354 | 0.88 |
+| w161-To-em1200 | 0.935 | 0.437 | 2.085 | 2.90 | 1.97 | 2.14 | 0/20 | 422 | 0.94 |
+| w161-To-em1500 | 0.912 | 0.352 | 2.138 | 3.12 | 2.06 | 2.17 | 0/20 | 452 | 1.23 |
+| w161-To-em1200-cgate-ah | 1.147 | 0.365 | 2.825 | 4.67 | 4.26 | 2.21 | 4/20 | 324 | 1.54 |
+| w161-fip-To-em1200-cgate-ah | 1.012 | 0.356 | 2.434 | 3.07 | 2.89 | 2.24 | 1/20 | 298 | 1.49 |
+| w161-To-em1200-os2 | 0.993 | 0.591 | 2.083 | 2.77 | 1.94 | 2.14 | 0/20 | 332 | 1.03 |
+| w163-To-em1200 | 0.989 | 0.515 | 2.162 | 2.65 | 1.83 | 2.30 | 0/20 | 349 | 1.64 |
+| w131-To-em1200 | 1.015 | 0.566 | 2.186 | 2.79 | 1.93 | 2.30 | 0/20 | 326 | 0.73 |
+
+Paired per seed (mean difference, 95 % bootstrap CI, sign-flip p):
+
+| comparison | overall | T_outer | 21 switched T_avg |
+|---|---|---|---|
+| fip-cgate-ah vs cgate-ah | −0.011 [−0.045, +0.018] p=0.50 | −0.014 ns | −0.06 ns |
+| fip-cgate-ah vs its null fiz-cgate-ah | −0.031 [−0.069, +0.006] | | |
+| To-ai vs w161 | +0.881 [+0.71, +1.09] | +1.770 | +0.93 |
+| To-em1200 vs w161 | +0.148 [+0.118, +0.175] | −0.011 [−0.061, +0.040] p=0.69 | +0.28 [+0.20, +0.36] |
+| To-em1500 vs w161 | +0.125 [+0.074, +0.194] | −0.096 [−0.128, −0.067] | +0.37 |
+| To-em1200-cgate-ah vs cgate-ah | +0.429 [+0.24, +0.67] | −0.083 [−0.109, −0.055] | +3.40 [+1.76, +5.57] |
+| os2 / w163 / w131 vs To-em1200 | +0.058 / +0.054 / +0.080, all CI above zero | +0.15 / +0.08 / +0.13 | ns |
+
+### Decision under the pre-registered rule
+
+1. **fip-cgate-ah: within noise, not adopted.** The expected −0.16 on the 49
+   untouched cases did not appear on top of the gate (r49 1.67 → 1.67); the
+   flag's round-7 effect came through the same channel the gate already
+   fixes. Simplicity clause → `cgate-ah` stays.
+2. **To-ai: refuted, as expected.** Its formula floor is 73 °C; 11 seeds above
+   1.5 °C. Arnold's literal reference is out.
+3. **To-em1200 alone: refuted.** T_outer does not move (−0.011, ns) — the
+   network already predicted T_outer to 0.45 without a reference, and the
+   reference's own floor is 5.3 — while T_avg gets worse on all three
+   subsets (+0.5 on the 49 untouched cases, not just the gated ones). τ = 900
+   / 1500 tell the same story; 1500 gains 0.10 on T_outer and loses more on
+   T_avg. Companion tests (os2, 1-6-3, 1-3-1) are all worse than 1-6-1 under
+   the anchor — the weight is not the lever here.
+4. **To-em1200 on the winner: refuted with a veto.** 4/20 blow-ups; the 21
+   switched cases go from 0.86 to 4.26. Same on the full stack (1/20, 2.89).
+5. **Deployment unchanged:** `cgate-ah`, 20-seed ensemble 0.676
+   (`ensemble_eval.py`, common seeds).
+
+### Why the reference failed — what the data say, and what they do not
+
+The T_avg damage is not where a bad T_outer reference would put it. The
+reference feeds T_avg only through the position formula, and T_outer itself
+is as good or better under every EMA arm; yet T_avg is worse everywhere, and
+worst exactly where the 4th channel does the work (the 21 switched cases
+under cgate-ah). Two facts point at training, not at the formula:
+
+- **Every anchored arm stops ~300 epochs earlier** (best epoch 294–452 vs
+  619–649 for the un-anchored twins) **on a lower validation loss** (0.9 vs
+  2.0 ×10⁻³ for To-em1200 vs w161). Lower validation, worse test.
+- **The validation set is 15 linear-charging runs.** `data.py` sorts the 311
+  training files by path and takes the first 5 % — all from
+  `Case 1 (linear charging)/`. Early stopping and best-checkpoint selection
+  have never seen a charge-then-discharge run, in any round since round 4.
+  The 4th channel is trained only on the ~107 gated runs, none of which are
+  in validation; when the reference makes T_outer easy the validation curve
+  bottoms out early, and the checkpoint is taken before that channel has
+  converged. (All rounds share this, so the internal comparisons of rounds
+  4–8 stand; the absolute numbers are "under this protocol".)
+
+Not proven: this is a hypothesis about early stopping, and the position
+formula could still be part of it. Round 9 tests it directly (a validation
+set with 2 runs of each case type, then the same arms again) — see the
+round-9 `[CODE]` entry.
+
+A second audit finding, fixed 2026-09-17 before any new run: the EMA
+reference at test time was seeded with T_outer(0) in T_outer's scaled units
+but run in Input_T's scaled units. On this dataset the two scalers coincide
+(all temperature columns span the same range) so round 8 is unaffected
+(mean |Δref| ≈ 5×10⁻⁵ °C); on data where they differ the seed would be off
+by tens of degrees. The conversion now goes through `model.touter_ref_affine`
+and is unit-tested.
+
+### AR
+Not run (user decision 2026-09-17). The S3 arms stay in `run_round8.py` for a
+single later run of the base arm and the direct winner, if the paper needs it.
 
 ## 2026-09-12 — Round 8 `[CODE]` — close the base-data line: combine the survivors, a physical outer-surface reference, a fair AR comparison
 

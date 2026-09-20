@@ -105,7 +105,8 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                 if TOUTER_MODE != "abs" else None
             if oanc is not None:
                 ka_o, kb_o, kc_o = oanc
-                inp_o = touter_reference(x[:, 1].unsqueeze(0), e0=init_cond_b[:, 0])[0]
+                inp_o = touter_reference(x[:, 1].unsqueeze(0), e0=init_cond_b[:, 0],
+                                         model=model)[0]
                 if ANCHOR_LEAD:
                     inp_o = torch.cat([inp_o[1:], inp_o[-1:]])
                 out[0, :, 1] = ka_o * inp_o.to(out.device) + kb_o + kc_o * out[0, :, 1]
@@ -113,7 +114,8 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             # layout is [T_outer, T_inner, T_avg, Input_T] at t=0, scaled.
             out = apply_other_anchor(
                 model, out, init_cond_b[:, :1].to(out.device),
-                inp_t=x[:, 1].unsqueeze(0).to(out.device))
+                inp_t=x[:, 1].unsqueeze(0).to(out.device),
+                time_s=x[:, 0].unsqueeze(0).to(out.device))
             pred_seq = out[0].cpu().numpy()
         elif is_inverse(variant):
             # Inverse rollout (single-case mirror of _rollout_inverse).
@@ -183,7 +185,7 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             oanchor = getattr(model, 'touter_anchor', None) \
                 if TOUTER_MODE != "abs" else None
             ref_o = (touter_reference(x[:, IDX_INP].unsqueeze(0).to(DEVICE),
-                                      e0=x[0:1, 1].to(DEVICE))[0]     # T_outer(0) GT
+                                      e0=x[0:1, 1].to(DEVICE), model=model)[0]   # T_outer(0) GT
                      if oanchor is not None else None)
             step_anchor = getattr(model, 'step_anchor', None) \
                 if OTHER_CH_MODE == "persistence" else None
@@ -259,7 +261,8 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                     pt = torch.tensor(pred, dtype=torch.float32,
                                       device=DEVICE).view(1, 1, -1)
                     pt = apply_other_anchor(
-                        model, pt, None, inp_t=inp_full, case_gate=case_gate)
+                        model, pt, None, inp_t=inp_full, case_gate=case_gate,
+                        time_s=x[t, 0].view(1, 1).to(DEVICE))
                     pred = pt.view(-1).cpu().numpy()
                 preds.append(pred)
 

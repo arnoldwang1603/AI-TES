@@ -105,6 +105,89 @@ class ThermalGRU(nn.Module):
         return self.fc(out), hidden
 
 
+class IndependentThermalGRU(nn.Module):
+    """MODEL_SPLIT=independent / avg_only: several complete ThermalGRUs
+    behind the ThermalGRU interface, one per output-channel group.
+
+    groups, e.g. ((0,), (1,), (2, 3)): parts[i] emits the channels of
+    groups[i], in order; the groups partition 0..output_size-1 in order.
+    independent = ((0,), (1,), (2..)): T_inner, T_outer, T_avg (+ the
+    absolute / gate channels). avg_only = ((0, 1), (2..)): the wall pair
+    shares one trunk, T_avg has its own. forward() concatenates the parts'
+    outputs into the (B, T, OUTPUT_SIZE) layout every caller expects, and the
+    hidden state is a tuple of the parts' hidden states, so the rollouts, the
+    anchors (which live as attributes on THIS object, fitted by
+    train.fit_model_constants) and evaluate.py run unchanged.
+
+    Which part trains is the training loop's business (train.py stages);
+    this class only guarantees that nothing is shared between the parts.
+    """
+
+    NAMES = ("T_inner", "T_outer", "T_avg")
+
+    def __init__(self, input_size, hidden_size=128, output_size=3,
+                 num_layers=5, dropout=0.3,
+                 encoder='point', window_size=WINDOW_SIZE, groups=None):
+        super().__init__()
+        assert output_size >= 3, output_size
+        groups = tuple(tuple(g) for g in (groups or ((0,), (1,), tuple(range(2, output_size)))))
+        assert [c for g in groups for c in g] == list(range(output_size)), groups
+        self.groups = groups
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.encoder_kind = encoder
+        # one label per part: "T_inner", "T_outer", "T_avg" or "T_inner+T_outer"
+        self.channel_names = tuple("+".join(self.NAMES[c] for c in g if c < 3) for g in groups)
+        self.parts = nn.ModuleList([
+            ThermalGRU(input_size, hidden_size=hidden_size, output_size=len(g),
+                       num_layers=num_layers, dropout=dropout,
+                       encoder=encoder, window_size=window_size)
+            for g in groups
+        ])
+
+    def init_hidden(self, batch_size, x0=None, x_window=None):
+        return tuple(p.init_hidden(batch_size, x0=x0, x_window=x_window)
+                     for p in self.parts)
+
+    def forward(self, x, hidden):
+        outs, hs = [], []
+        for p, h in zip(self.parts, hidden):
+            o, h2 = p(x, h)
+            outs.append(o)
+            hs.append(h2)
+        return torch.cat(outs, dim=-1), tuple(hs)
+
+
+def build_model(variant, params, encoder):
+    """The one place a model is constructed (train.py, eval_checkpoint.py):
+    ThermalGRU, or the multi-model wrapper under MODEL_SPLIT != shared."""
+    kw = dict(input_size=INPUT_DIMS[variant], output_size=OUTPUT_SIZE,
+              hidden_size=params['hidden_size'], num_layers=params['num_layers'],
+              dropout=params['dropout'], encoder=encoder, window_size=WINDOW_SIZE)
+    if MODEL_GROUPS is None:
+        return ThermalGRU(**kw)
+    return IndependentThermalGRU(groups=MODEL_GROUPS, **kw)
+
+
+def model_parts(model):
+    """The ThermalGRU(s) inside `model`: [model] for the shared model, the
+    parts for the wrapper. For init and parameter counting."""
+    return list(model.parts) if isinstance(model, IndependentThermalGRU) else [model]
+
+
+def stage_loss_weights(group, full_weights):
+    """Loss-weight vector (length 3, the rollout's channel layout) for one
+    training stage of a split model: the configured weight on the stage's
+    channels (channels >= 3 are consumed inside the rollout and carry no
+    loss of their own), zero elsewhere. Shared by train.py and the runner's
+    preflight, which checks the stage vectors sum to the full vector."""
+    w = torch.zeros(3)
+    for c in group:
+        if c < 3:
+            w[c] = float(full_weights[c])
+    return w
+
+
 # ============================================================
 # 5. Loss
 # ============================================================

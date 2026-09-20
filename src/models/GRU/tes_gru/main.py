@@ -140,7 +140,7 @@ def main():
 
             run_start = time.time()
             (model, test_sets, val_mae, best_epoch, total_epoch, param_breakdown,
-             train_hist, val_hist, lr_hist) = train_model(
+             train_hist, val_hist, lr_hist, stages) = train_model(
                 variant, train_dfs, val_dfs, test_dfs, scaler, LATEST_PARAMS,
             )
             train_time = time.time() - run_start
@@ -202,6 +202,13 @@ def main():
                     'val_history': val_hist,
                     'lr_history': lr_hist,
                 }
+                # MODEL_SPLIT != shared: each stage's own best / total epoch,
+                # flat so they reach meta.json and the export tables.
+                for st in (stages or []):
+                    tag = st['channel'].replace('+', '_')
+                    result_dict[f'Best_Epoch_{tag}'] = st['best_epoch']
+                    result_dict[f'Total_Epoch_{tag}'] = st['total_epoch']
+                    result_dict[f'Validation_MAE_{tag}'] = st['best_val']
                 # Per-channel metrics for ALL 4 possible channels (T_inner,
                 # T_outer, T_avg, Input_T). Non-predicted channels stay NaN.
                 for ch in ['T_inner', 'T_outer', 'T_avg', 'Input_T']:

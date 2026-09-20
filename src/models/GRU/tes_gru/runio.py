@@ -62,6 +62,7 @@ def save_run_config_snapshot():
         'touter_mode': TOUTER_MODE,
         'touter_tau': TOUTER_TAU,
         'touter_scale': TOUTER_SCALE,
+        'touter_ema_form': TOUTER_EMA_FORM,
         'anchor_lead': ANCHOR_LEAD,
         'loss_weights': LOSS_WEIGHTS,
         'physics_bound_weight': PHYSICS_BOUND_WEIGHT,
@@ -82,6 +83,8 @@ def save_run_config_snapshot():
         'case_flag_input': CASE_FLAG_INPUT,
         'exclude_both_phase': EXCLUDE_BOTH_PHASE,
         'output_size': OUTPUT_SIZE,
+        'model_split': MODEL_SPLIT,
+        'pos_time_prior': POS_TIME_PRIOR,
         'variants': VARIANTS,
         'input_dims': INPUT_DIMS,
         'latest_params': LATEST_PARAMS,
@@ -89,6 +92,8 @@ def save_run_config_snapshot():
             'train_subdir': TRAIN_SUBDIR,
             'test_subdir': TEST_SUBDIR,
             'manual_split_enabled': MANUAL_SPLIT_ENABLED,
+            'val_split': VAL_SPLIT,
+            'val_per_type': VAL_PER_TYPE,
             'outer_test_frac': OUTER_TEST_FRAC,
             'inner_val_frac': INNER_VAL_FRAC,
             'split_seed': SPLIT_SEED,
@@ -152,7 +157,8 @@ def remove_resume_state(variant):
 
 
 def save_train_history(variant, train_hist, val_hist, lr_hist,
-                       best_epoch, total_epoch, val_mae, param_breakdown):
+                       best_epoch, total_epoch, val_mae, param_breakdown,
+                       stages=None, val_hist_ch=None):
     var_dir = variant_dir(variant)
     os.makedirs(var_dir, exist_ok=True)
     payload = {
@@ -166,6 +172,19 @@ def save_train_history(variant, train_hist, val_hist, lr_hist,
         'param_breakdown': param_breakdown,
         'saved_at': time.strftime('%Y-%m-%d %H:%M:%S'),
     }
+    if val_hist_ch is not None:
+        # Per-epoch UNWEIGHTED validation MAE per channel (T_inner, T_outer,
+        # T_avg; scaled units), the exact mean over validation files -- so
+        # which channel drove the stopping decision can be read off the run
+        # (round 9's question). val_hist itself stays the weighted scalar
+        # the stop is decided on.
+        payload['val_hist_ch'] = [list(map(float, v)) for v in val_hist_ch]
+    if stages is not None:
+        # MODEL_SPLIT != shared: the stages' own numbers. The top-level
+        # histories are the stages concatenated; best_epoch is the last
+        # stage's best epoch offset by the earlier stages' lengths, so it
+        # indexes the concatenated curve; total_epoch is the sum.
+        payload['stages'] = stages
     path = os.path.join(var_dir, "train_history.json")
     with open(path, "w") as f:
         json.dump(_to_jsonable(payload), f, indent=2)

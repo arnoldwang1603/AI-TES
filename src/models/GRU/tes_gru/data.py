@@ -1,6 +1,7 @@
 """Variant-aware Dataset and the data loader / manual split."""
 import os
 import glob
+import json
 import random
 
 import numpy as np
@@ -410,9 +411,68 @@ def load_all_data():
         print(f"      train ({n_train:>3}) = "
               f"{n_train / n_trainval * 100:5.1f}% of train+val   "
               f"(target {(1 - INNER_VAL_FRAC) * 100:.0f}%)")
+    elif VAL_SPLIT == "stratified":
+        # Round 9 (2026-09-17): VAL_PER_TYPE validation runs from EACH
+        # case-type folder (the immediate subfolder of train_dir), drawn
+        # once with SPLIT_SEED and frozen in splits/<name>.json; test_dir is
+        # taken whole. Paths in the file are relative to train_dir, posix.
+        split_dir = os.path.join(BASE_DIR, "splits")
+        split_name = "stratified_v{}_s{}.json".format(VAL_PER_TYPE, SPLIT_SEED)
+        split_path = os.path.join(split_dir, split_name)
+        rel = lambda p: os.path.relpath(p, train_dir).replace(os.sep, "/")
+        by_type = {}
+        for p in raw_train_paths:
+            by_type.setdefault(rel(p).split("/")[0], []).append(p)
+        if os.path.isfile(split_path):
+            spec = json.load(open(split_path, encoding="utf-8"))
+            val_rel = set(spec["val"])
+            missing = sorted(val_rel - {rel(p) for p in raw_train_paths})
+            if missing:
+                raise RuntimeError("split file {} names {} files not in train_dir, "
+                                   "e.g. {}".format(split_path, len(missing), missing[:3]))
+            # The frozen TRAIN list must match the disk too: a file added to
+            # or removed from train_dir since the draw would silently change
+            # the training set of every run.
+            on_disk = sorted(rel(p) for p in raw_train_paths if rel(p) not in val_rel)
+            if on_disk != sorted(spec["train"]):
+                extra = sorted(set(on_disk) - set(spec["train"]))
+                gone = sorted(set(spec["train"]) - set(on_disk))
+                raise RuntimeError("split file {}: training list differs from train_dir "
+                                   "({} extra on disk e.g. {}; {} missing e.g. {})".format(
+                                       split_path, len(extra), extra[:2], len(gone), gone[:2]))
+            src = "read"
+        else:
+            rng = random.Random(SPLIT_SEED)
+            val_rel = set()
+            for t in sorted(by_type):
+                files = sorted(rel(p) for p in by_type[t])
+                if len(files) < VAL_PER_TYPE + 5:
+                    raise RuntimeError("case type {!r} has only {} runs".format(t, len(files)))
+                val_rel.update(rng.sample(files, VAL_PER_TYPE))
+            os.makedirs(split_dir, exist_ok=True)
+            spec = {"val_split": "stratified", "val_per_type": VAL_PER_TYPE,
+                    "split_seed": SPLIT_SEED, "train_subdir": TRAIN_SUBDIR,
+                    "types": sorted(by_type), "val": sorted(val_rel),
+                    "train": sorted(rel(p) for p in raw_train_paths if rel(p) not in val_rel)}
+            json.dump(spec, open(split_path, "w", encoding="utf-8"), indent=1)
+            src = "drawn and written"
+        val_paths = sorted(p for p in raw_train_paths if rel(p) in val_rel)
+        actual_train_paths = sorted(p for p in raw_train_paths if rel(p) not in val_rel)
+        test_paths = raw_test_paths
+        assert len(val_paths) == len(val_rel) == VAL_PER_TYPE * len(by_type)
+        assert not (set(val_paths) & set(actual_train_paths))
+
+        print("\nSTRATIFIED split ({} per case type, seed {}; {} {}):".format(
+            VAL_PER_TYPE, SPLIT_SEED, split_name, src))
+        for t in sorted(by_type):
+            n_v = sum(1 for p in by_type[t] if rel(p) in val_rel)
+            print("  {:<48} train {:>3}  val {}".format(t[:48], len(by_type[t]) - n_v, n_v))
+        print("  train: {}, val: {}, test: {}".format(
+            len(actual_train_paths), len(val_paths), len(test_paths)))
     else:
         # Folder-as-given (legacy behaviour). 95/5 split inside train_dir;
-        # test_dir is taken whole.
+        # test_dir is taken whole. NOTE (2026-09-16 audit): sorted, the first
+        # 5% are all linear-charging runs; see VAL_SPLIT in config.py.
         val_split = int(0.05 * len(raw_train_paths))
         val_paths = raw_train_paths[:val_split]
         actual_train_paths = raw_train_paths[val_split:]

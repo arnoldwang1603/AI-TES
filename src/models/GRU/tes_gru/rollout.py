@@ -85,31 +85,71 @@ def _input_case_gate(inp_t):
             & (kk > 0.02 * T) & (kk < 0.98 * T))
 
 
-def touter_reference(inp_seq, e0=None):
-    """(B, T) exogenous input temperature -> (B, T) reference for the round-8
-    T_outer anchor. "anchor_input": the input itself. "anchor_ema": its
-    exponential moving average with time constant TOUTER_TAU steps, seeded
-    at e0 = T_outer(0), the given initial condition (falls back to x[0]).
-    Causal (uses inputs up to t only) and affine-equivariant, so train.py's
-    fit on raw degrees and this scaled-space use agree exactly. No gradient
-    flows through it (inputs and initial condition are constants)."""
+def touter_reference(inp_seq, e0=None, model=None):
+    """(B, T) exogenous input temperature (Input_T's MinMax scale) -> (B, T)
+    reference for the round-8 T_outer anchor, in the SAME scale. "anchor_input":
+    the input itself. "anchor_ema": its exponential moving average with time
+    constant TOUTER_TAU steps, seeded at e0 = T_outer(0), the given initial
+    condition (falls back to x[0]).
+
+    e0 arrives in T_outer's scaled space (init_conds / the window's column 1)
+    and is converted into Input_T's scaled space before seeding, using the
+    scaler constants train.py stores in model.touter_ref_affine. The two
+    columns' scalers coincided on the base data ([1, 610] both), which is
+    why the unconverted seed went unnoticed in round 8 (audit 2026-09-16);
+    on any other data the raw-degree fit in train.py and this rollout would
+    disagree. Causal and affine-equivariant; no gradient flows through it."""
     if TOUTER_MODE != "anchor_ema":
         return inp_seq
-    a = 1.0 / float(TOUTER_TAU)
-    e = torch.empty_like(inp_seq)
-    e[:, 0] = inp_seq[:, 0] if e0 is None else e0.detach().to(inp_seq.device)
-    for t in range(1, inp_seq.shape[1]):
-        e[:, t] = e[:, t - 1] + a * (inp_seq[:, t] - e[:, t - 1])
-    return e
+    r = touter_ema_r()                  # 1 - 1/tau (euler) or exp(-1/tau) (exact), config.py
+    a = 1.0 - r
+    if e0 is None:
+        seed = inp_seq[:, 0]
+    else:
+        seed = e0.detach().to(inp_seq.device)
+        aff = getattr(model, 'touter_ref_affine', None) if model is not None else None
+        if aff is None:
+            raise RuntimeError("touter_reference: e0 given but model.touter_ref_affine "
+                               "is missing -- the T_outer anchor was not fitted")
+        (s_o, m_o), (s_i, m_i) = aff
+        seed = ((seed - m_o) / s_o) * s_i + m_i          # T_outer scale -> Input_T scale
+    # Closed form of the recurrence e_t = r e_{t-1} + a x_t (a = 1 - r), i.e.
+    # e_t = r^t (e_0 + a * sum_{k=1..t} r^-k x_k), evaluated in float64 so
+    # the r^-k weights (e^1.2 at tau=1200 over 1440 steps; up to ~1e6 for a
+    # tau of 100) cost no precision. Replaces a 1440-step Python loop of GPU
+    # ops per batch (2026-09-19; equal to the loop to 1e-6 in scaled units,
+    # checked in run_round9's preflight). The derivation of r is in config.py.
+    T = inp_seq.shape[1]
+    k = torch.arange(T, device=inp_seq.device, dtype=torch.float64)
+    x = inp_seq.detach().to(torch.float64)
+    x = torch.cat([torch.zeros_like(x[:, :1]), x[:, 1:]], dim=1)   # x_0 unused: e_0 = seed
+    inner = seed.to(torch.float64).unsqueeze(1) + a * torch.cumsum(x * (r ** -k), dim=1)
+    e = (r ** k) * inner
+    return e.to(inp_seq.dtype)
 
 
-def apply_other_anchor(model, pred, t_outer0_s, inp_t=None, case_gate=None):
+def pos_time_curve(model, time_s):
+    """The position time prior at the given scaled elapsed times (any
+    shape): the per-step median table fitted in train.py, indexed by step
+    number recovered from the scaled Time input, clamped to the table."""
+    curve = model.pos_time_prior
+    s_t, m_t, dt = model.pos_time_affine
+    k = torch.round((time_s.detach().to(torch.float64) - m_t) / s_t / dt)
+    k = k.clamp(0, curve.numel() - 1).to(torch.long)
+    return curve.to(time_s.device)[k]
+
+
+def apply_other_anchor(model, pred, t_outer0_s, inp_t=None, case_gate=None,
+                       time_s=None):
     """Reconstruct T_outer / T_avg from their fixed-reference anchors.
 
     pred: (..., 3) raw head outputs in scaled space, channels
           (T_inner, T_outer, T_avg). T_inner must already be final (its own
           anchor applied) because T_avg's reference uses it.
     t_outer0_s: T_outer at t=0 in scaled space, broadcastable to pred[..., 1].
+    time_s: the scaled elapsed time of each predicted step (input column 0),
+          same shape as pred[..., 2]; required when the model carries a
+          position time prior (POS_TIME_PRIOR), ignored otherwise.
 
     Returns a new tensor; no-op (returns pred) when the anchor is disabled.
     """
@@ -118,6 +158,10 @@ def apply_other_anchor(model, pred, t_outer0_s, inp_t=None, case_gate=None):
         if ph is None:
             return pred
         p_mu, p_sd, (s_i, m_i), (s_o, m_o), (s_a, m_a) = ph
+        tp = getattr(model, 'pos_time_prior', None)
+        if tp is not None and time_s is None:
+            raise RuntimeError("apply_other_anchor: the model has a position time "
+                               "prior but the caller passed no time_s")
         t_in, t_out = pred[..., 0], pred[..., 1]
         # References detached: the T_avg objective must not reshape the
         # T_inner / T_outer heads (same rule as the anchor path).
@@ -136,6 +180,11 @@ def apply_other_anchor(model, pred, t_outer0_s, inp_t=None, case_gate=None):
             else:
                 den = sign * torch.clamp(gap.abs(), min=POS_GAP_FLOOR)
         pos = p_mu + p_sd * pred[..., 2]
+        if tp is not None:
+            # Round 9: the head's output is the residual from the fitted
+            # elapsed-time curve (heat-penetration shape), so the early
+            # climb of the position is carried by the curve, not learned.
+            pos = pos + pos_time_curve(model, time_s)
         t_avg = (to_raw + pos * den) * s_a + m_a
 
         # Fallback estimate. Its own channel when one exists: channel 2
@@ -272,7 +321,7 @@ def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
             if TOUTER_MODE != "abs" else None
         if oanc is not None:
             ka_o, kb_o, kc_o = oanc
-            inp_o = touter_reference(inputs[:, :, 1], e0=init_conds[:, 0])
+            inp_o = touter_reference(inputs[:, :, 1], e0=init_conds[:, 0], model=model)
             if ANCHOR_LEAD:
                 inp_o = torch.cat([inp_o[:, 1:], inp_o[:, -1:]], dim=1)
             tout = ka_o * inp_o + kb_o + kc_o * out[..., 1]
@@ -281,7 +330,7 @@ def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
         # available in init_conds[:, 0] (scaled). Applied after the T_inner
         # anchor because T_avg's reference consumes the final T_inner.
         out = apply_other_anchor(model, out, init_conds[:, :1].to(out.device),
-                                 inp_t=inputs[:, :, 1])
+                                 inp_t=inputs[:, :, 1], time_s=inputs[:, :, 0])
         return out
 
     if variant == 'abs_sliding':
@@ -421,7 +470,8 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
     oanchor = getattr(model, 'touter_anchor', None) \
         if TOUTER_MODE != "abs" else None
     # The T_outer reference depends only on the exogenous input: one pass.
-    ref_o = (touter_reference(inputs[:, :, IDX_INP], e0=inputs[:, 0, 1])   # T_outer(0) GT
+    ref_o = (touter_reference(inputs[:, :, IDX_INP], e0=inputs[:, 0, 1],   # T_outer(0) GT
+                              model=model)
              if oanchor is not None else None)
     step_anchor = getattr(model, 'step_anchor', None) \
         if OTHER_CH_MODE == "persistence" else None
@@ -538,7 +588,8 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
             # profile for the case gate.
             pred_t = apply_other_anchor(
                 model, pred_t.unsqueeze(1), None,
-                inp_t=inputs[:, :, IDX_INP], case_gate=case_gate).squeeze(1)
+                inp_t=inputs[:, :, IDX_INP], case_gate=case_gate,
+                time_s=inputs[:, t:t + 1, 0]).squeeze(1)
 
         preds.append(pred_t)
 

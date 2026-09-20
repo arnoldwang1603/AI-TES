@@ -19,45 +19,18 @@ from .runio import *
 # ============================================================
 # 8. Training (variant-aware)
 # ============================================================
-def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
-    print(f"\n--- Building datasets for variant '{variant}' ---")
-    train_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
-                      for df, fn in train_dfs]
-    val_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
-                    for df, fn in val_dfs]
-    test_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
-                     for df, fn in test_dfs]
+def fit_model_constants(model, variant, train_dfs, scaler):
+    """Fit every data-derived constant the reconstructions need and attach it
+    to the model: the T_inner anchor (KA/KB/KC), the persistence and the
+    round-4 fixed-reference anchors, the position head (mu/sd + affine
+    triples), the anchored-fallback midpoint stats, and the round-8 T_outer
+    reference (KA/KB/KC + the two scalers the EMA seed crosses between).
 
-    pin = (DEVICE.type == "cuda")
-    train_loader = DataLoader(ConcatDataset(train_datasets),
-                              batch_size=params['batch_size'], shuffle=True,
-                              pin_memory=pin, num_workers=0)
-    val_loader = DataLoader(ConcatDataset(val_datasets),
-                            batch_size=params['batch_size'],
-                            pin_memory=pin, num_workers=0)
-
-    model = ThermalGRU(
-        input_size=INPUT_DIMS[variant],
-        output_size=OUTPUT_SIZE,
-        hidden_size=params['hidden_size'],
-        num_layers=params['num_layers'],
-        dropout=params['dropout'],
-        encoder=variant_to_encoder(variant),
-        window_size=WINDOW_SIZE,
-    ).to(DEVICE)
-
-    # ---- Modern RNN init: orthogonal weight_hh for the main GRU
-    # (Chen 2019). PyTorch's default uniform init is suboptimal for
-    # stacked depth >= 3. Done BEFORE any resume-from-checkpoint so a
-    # resumed run uses the saved (already-trained) weights.
-    if ORTHOGONAL_INIT_RECURRENT:
-        apply_orthogonal_init_gru(model.gru)
-        # Also apply to the small window-encoder GRU if this variant uses it.
-        if getattr(model, 'encoder_kind', 'point') == 'window':
-            apply_orthogonal_init_gru(model.init_encoder.encoder_gru)
-        print(f"[{variant}] orthogonal init applied to main GRU "
-              f"(and window encoder if present)")
-
+    Split out of train_model (2026-09-19) so a saved checkpoint can be
+    evaluated without retraining: build the model, call this with the SAME
+    train_dfs/scaler the run used, load the state_dict, run test_model.
+    Nothing here depends on the weights; it is a pure function of the
+    training data and the config."""
     # ---- T_inner anchor reparameterization (TINNER_MODE == "anchor") ----
     # The head's channel 0 predicts a z-scored residual
     #     delta(t+1) = T_inner_raw(t+1) - Input_T_raw(t)
@@ -144,6 +117,53 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                 if ok.sum():
                     ps.append((ta[ok] - to[ok]) / gap[ok])
         ps = np.concatenate(ps) if ps else np.array([0.27])
+        model.pos_time_prior = None
+        if POS_TIME_PRIOR == "median":
+            # Elapsed-time prior: the per-step MEDIAN of the training runs'
+            # position (usable steps only), indexed by step number; the head
+            # then predicts the residual, so mu/sd become the residual's.
+            # The step index at apply time comes from the scaled Time input
+            # (column 0): k = (t_s - m_t) / s_t / dt.
+            i_t = ThermalDataset.BASE_COLS.index("Time (s)")
+            s_t, m_t = float(scaler.scale_[i_t]), float(scaler.min_[i_t])
+            rows, dts = [], []
+            for df, _ in train_dfs:
+                d = df.copy()
+                d.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
+                ti = d["T_inner (C)"].values; to = d["T_outer (C)"].values
+                ta = d["T_avg (C)"].values; gap = ti - to
+                ok = np.abs(gap) > 5.0
+                if POS_FIT_CLEAN:
+                    ok &= ((ta <= np.maximum(ti, to) + 0.5)
+                           & (ta >= np.minimum(ti, to) - 0.5))
+                p = np.where(ok, (ta - to) / np.where(ok, gap, 1.0), np.nan)
+                rows.append(p)
+                tv = d["Time (s)"].values
+                dts.append(float(np.median(np.diff(tv))) if len(tv) > 1 else 10.0)
+            L = max(len(r) for r in rows)
+            Mx = np.full((len(rows), L), np.nan)
+            for r_i, r in enumerate(rows):
+                Mx[r_i, :len(r)] = r
+            with np.errstate(all="ignore"):
+                curve = np.nanmedian(Mx, axis=0)
+            n_ok = np.sum(~np.isnan(Mx), axis=0)
+            idx = np.arange(L)
+            good = ~np.isnan(curve)
+            if not good.all():
+                # steps no run has a usable gap at (typically the first
+                # few, before the walls part) take the nearest fitted value
+                curve = np.interp(idx, idx[good], curve[good])
+            dt = float(np.median(dts))
+            resid = Mx - curve[None, :]
+            ps = resid[~np.isnan(resid)]                 # what the head predicts
+            model.pos_time_prior = torch.tensor(curve, dtype=torch.float32)
+            model.pos_time_affine = (s_t, m_t, dt)
+            print(f"[{variant}] position time prior (median over {len(rows)} runs, {L} steps, "
+                  f"dt={dt:g}s): pos at step 1/50/200/500/last = "
+                  + "/".join("{:.3f}".format(curve[k]) for k in (0, min(49, L - 1), min(199, L - 1), min(499, L - 1), L - 1))
+                  + f"; usable runs at step 1/50: {n_ok[0]}/{n_ok[min(49, L - 1)]}; "
+                  f"residual mean={ps.mean():+.4f} sd={ps.std():.4f} "
+                  f"(t<200: {np.nanstd(resid[:, :200]):.4f})")
         p_mu = float(ps.mean())
         # Widen beyond the raw spread so the head can reach the tails; the
         # between-case spread is what the fixed-w anchor could not follow.
@@ -192,6 +212,8 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
             _tags += " (learned gate, bias {:g})".format(POS_GATE_BIAS)
         if OUTPUT_SIZE != 3:
             _tags += " [{} output channels]".format(OUTPUT_SIZE)
+        if POS_TIME_PRIOR != "0":
+            _tags += " (time prior {}: head = residual)".format(POS_TIME_PRIOR)
         print(f"[{variant}] T_avg position head{_tags}: pos mean={p_mu:.4f} "
               f"raw sd={ps.std():.4f} -> head sd={p_sd:.4f} "
               f"(covers pos {p_mu-3*p_sd:.3f}..{p_mu+3*p_sd:.3f} at 3 sigma)")
@@ -285,12 +307,13 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         def _ema(x, tau, e0):
             # numpy twin of rollout.touter_reference (raw degrees; the EMA is
             # affine-equivariant so the scaled-space reconstruction matches);
-            # seeded at T_outer(0), the given initial condition
-            a = 1.0 / float(tau)
+            # seeded at T_outer(0), the given initial condition. Same r as the
+            # rollout (config.touter_ema_r: euler or exact form).
+            r = touter_ema_r()
             e = np.empty_like(x, dtype=float)
             e[0] = e0
             for t in range(1, len(x)):
-                e[t] = e[t - 1] + a * (x[t] - e[t - 1])
+                e[t] = r * e[t - 1] + (1.0 - r) * x[t]
             return e
         deltas_o, absol_o = [], []
         for df, _ in train_dfs:
@@ -314,28 +337,148 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         kb_o = -ka_o * m_inp + s_to * do_mean + m_to
         kc_o = s_to * do_std
         model.touter_anchor = (ka_o, kb_o, kc_o)
+        # Scaler constants for the two columns the EMA seed crosses between
+        # (T_outer(0) is given in T_outer's scale, the EMA runs in Input_T's).
+        model.touter_ref_affine = ((s_to, m_to), (s_inp, m_inp))
         print("[{}] T_outer anchor on {}: delta mean={:+.2f} C std={:.2f} C (x{:g} range) "
               "(T_outer itself: std {:.2f} C)  ->  KA={:.5f} KB={:+.5f} KC={:.6f}".format(
-                  variant, ("EMA(tau=%d) of Input_T" % TOUTER_TAU
+                  variant, ("EMA(tau=%d, %s) of Input_T" % (TOUTER_TAU, TOUTER_EMA_FORM)
                             if TOUTER_MODE == 'anchor_ema' else "Input_T"),
                   do_mean, do_std, TOUTER_SCALE, float(np.concatenate(absol_o).std()),
                   ka_o, kb_o, kc_o))
     else:
         model.touter_anchor = None
+        model.touter_ref_affine = None
+
+    return model
+
+
+def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
+    print(f"\n--- Building datasets for variant '{variant}' ---")
+    train_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
+                      for df, fn in train_dfs]
+    val_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
+                    for df, fn in val_dfs]
+    test_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
+                     for df, fn in test_dfs]
+
+    pin = (DEVICE.type == "cuda")
+    train_loader = DataLoader(ConcatDataset(train_datasets),
+                              batch_size=params['batch_size'], shuffle=True,
+                              pin_memory=pin, num_workers=0)
+    val_loader = DataLoader(ConcatDataset(val_datasets),
+                            batch_size=params['batch_size'],
+                            pin_memory=pin, num_workers=0)
+
+    model = build_model(variant, params, variant_to_encoder(variant)).to(DEVICE)
+    parts = model_parts(model)      # [model], or the three nets of the wrapper
+
+    # ---- Modern RNN init: orthogonal weight_hh for the main GRU
+    # (Chen 2019). PyTorch's default uniform init is suboptimal for
+    # stacked depth >= 3. Done BEFORE any resume-from-checkpoint so a
+    # resumed run uses the saved (already-trained) weights.
+    if ORTHOGONAL_INIT_RECURRENT:
+        for part in parts:
+            apply_orthogonal_init_gru(part.gru)
+            # Also apply to the small window-encoder GRU if this variant uses it.
+            if getattr(part, 'encoder_kind', 'point') == 'window':
+                apply_orthogonal_init_gru(part.init_encoder.encoder_gru)
+        print(f"[{variant}] orthogonal init applied to main GRU "
+              f"(and window encoder if present)"
+              + (f" -- {len(parts)} independent nets" if len(parts) > 1 else ""))
+
+    fit_model_constants(model, variant, train_dfs, scaler)
 
     # ---- Trainable parameter counts (broken down) ----
     def _count(module):
         return sum(p.numel() for p in module.parameters() if p.requires_grad)
 
     n_params_total = _count(model)
-    n_params_gru = _count(model.gru)
-    n_params_fc = _count(model.fc)
-    n_params_encoder = _count(model.init_encoder)
+    n_params_gru = sum(_count(part.gru) for part in parts)
+    n_params_fc = sum(_count(part.fc) for part in parts)
+    n_params_encoder = sum(_count(part.init_encoder) for part in parts)
     print(f"[{variant}] trainable params: total={n_params_total:,}  "
           f"gru={n_params_gru:,}  fc={n_params_fc:,}  "
           f"encoder({model.encoder_kind})={n_params_encoder:,}")
 
-    optimizer = optim.Adam(model.parameters(), lr=params['lr'])
+    os.makedirs(checkpoints_dir(), exist_ok=True)
+    ckpt_path = os.path.join(checkpoints_dir(), f"best_gru_variant_{variant}.pth")
+    full_weights = torch.tensor(LOSS_WEIGHTS, dtype=torch.float32)
+
+    if MODEL_GROUPS is not None:
+        # One stage per part, in channel order (independent: T_inner,
+        # T_outer, T_avg; avg_only: walls, T_avg). The finished nets are
+        # frozen (no grad, eval mode) while the next trains; every stage has
+        # its own optimiser, scheduler, early stopping and best epoch;
+        # ckpt_path always holds the best state of every part so far. Loss =
+        # the configured weights on that stage's channels only.
+        stages, train_hist, val_hist, lr_hist, val_hist_ch = [], [], [], [], []
+        best_epoch = total_epoch = 0
+        best_val = float('nan')
+        for k, part in enumerate(parts):
+            w = stage_loss_weights(model.groups[k], full_weights)
+            label = f"{variant}/{model.channel_names[k]}"
+            for j, other in enumerate(parts):
+                other.requires_grad_(j == k)
+            r = _train_stage(model, variant, params, train_loader, val_loader,
+                             ckpt_path, label, w, trainable=list(part.parameters()),
+                             frozen=[q for j, q in enumerate(parts) if j != k],
+                             resume_ok=False)
+            if r['best_epoch'] == 0:
+                raise RuntimeError(f"[{label}] stage recorded no validation improvement "
+                                   f"(best_val={r['best_val']}); refusing to continue")
+            stages.append({'channel': model.channel_names[k],
+                           'best_epoch': r['best_epoch'], 'total_epoch': r['total_epoch'],
+                           'best_val': r['best_val']})
+            if k == len(parts) - 1:
+                best_epoch = total_epoch + r['best_epoch']   # index into the concatenated curve
+                best_val = r['best_val']
+            total_epoch += r['total_epoch']
+            train_hist += r['train_hist']; val_hist += r['val_hist']; lr_hist += r['lr_hist']
+            val_hist_ch += r['val_hist_ch']
+        for part in parts:
+            part.requires_grad_(True)
+        print(f"[{variant}] {MODEL_SPLIT} stages: " + ", ".join(
+            f"{st['channel']} best ep{st['best_epoch']}/{st['total_epoch']} (val {st['best_val']:.6f})"
+            for st in stages))
+    else:
+        stages = None
+        r = _train_stage(model, variant, params, train_loader, val_loader,
+                         ckpt_path, variant, full_weights,
+                         trainable=list(model.parameters()), frozen=[],
+                         resume_ok=True)
+        best_val, best_epoch, total_epoch = r['best_val'], r['best_epoch'], r['total_epoch']
+        train_hist, val_hist, lr_hist = r['train_hist'], r['val_hist'], r['lr_hist']
+        val_hist_ch = r['val_hist_ch']
+
+    param_breakdown = {
+        'total': n_params_total,
+        'gru': n_params_gru,
+        'fc': n_params_fc,
+        'encoder': n_params_encoder,
+    }
+
+    # ---- Persist full training history (always overwrites; small file) ----
+    save_train_history(
+        variant, train_hist, val_hist, lr_hist,
+        best_epoch=best_epoch, total_epoch=total_epoch,
+        val_mae=best_val, param_breakdown=param_breakdown, stages=stages,
+        val_hist_ch=val_hist_ch,
+    )
+
+    return (model, test_datasets, best_val, best_epoch, total_epoch,
+            param_breakdown, train_hist, val_hist, lr_hist, stages)
+
+
+def _train_stage(model, variant, params, train_loader, val_loader, ckpt_path,
+                 label, weights, trainable, frozen, resume_ok):
+    """One early-stopped training run of `trainable` (a parameter list) with
+    the per-channel loss `weights`; `frozen` modules are kept in eval mode
+    (dropout off) while `model.train()` is on. Saves the FULL model state to
+    ckpt_path at every validation improvement and restores it at the end.
+    Shared mode calls this once with everything trainable; independent mode
+    once per net. Resume-from-interruption only when resume_ok."""
+    optimizer = optim.Adam(trainable, lr=params['lr'])
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min',
         factor=params['sched_factor'], patience=params['sched_patience'],
@@ -345,14 +488,13 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
     best_epoch = 0           # 1-based epoch at which best_val was achieved
     total_epoch = 0          # 1-based final epoch reached (early-stop or max_epochs)
     early = 0
-    os.makedirs(checkpoints_dir(), exist_ok=True)
-    ckpt_path = os.path.join(checkpoints_dir(), f"best_gru_variant_{variant}.pth")
 
     train_hist, val_hist, lr_hist = [], [], []
+    val_hist_ch = []         # per-epoch unweighted validation MAE per channel
     start_epoch = 0          # epoch index from which to (re)start the loop
 
     # ---- Resume from saved state if available ----
-    if RESUME_ENABLED:
+    if RESUME_ENABLED and resume_ok:
         resume = load_resume_state(variant)
         if resume is not None:
             try:
@@ -366,6 +508,7 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                 train_hist = list(resume['train_hist'])
                 val_hist = list(resume['val_hist'])
                 lr_hist = list(resume['lr_hist'])
+                val_hist_ch = list(resume.get('val_hist_ch', []))
                 start_epoch = resume['epoch']  # epochs already completed
                 # Restore RNG state for deterministic continuation.
                 random.setstate(resume['rng_python'])
@@ -378,11 +521,11 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                     try:
                         torch.cuda.set_rng_state_all(resume['rng_torch_cuda'])
                     except Exception as e:
-                        print(f"[{variant}] WARNING: could not restore CUDA RNG: {e}")
-                print(f"[{variant}] RESUMED from epoch {start_epoch} "
+                        print(f"[{label}] WARNING: could not restore CUDA RNG: {e}")
+                print(f"[{label}] RESUMED from epoch {start_epoch} "
                       f"(best_val={best_val:.6f} @ ep{best_epoch})")
             except Exception as e:
-                print(f"[{variant}] WARNING: resume_state.pt found but could not be "
+                print(f"[{label}] WARNING: resume_state.pt found but could not be "
                       f"loaded ({e}). Starting fresh.")
                 start_epoch = 0
                 best_val = float('inf')
@@ -391,6 +534,7 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                 early = 0
                 train_hist, val_hist, lr_hist = [], [], []
 
+    raw_affine = getattr(model, 'raw_affine', None)
     for epoch in range(start_epoch, params['max_epochs']):
         # Teacher-forcing probability for this epoch (decay 0.5 -> 0 over
         # the first TF_DECAY_EPOCHS, then 0 thereafter).
@@ -410,6 +554,8 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
 
         # ---- train ----
         model.train()
+        for m in frozen:
+            m.eval()
         tloss = 0.0
         for batch in train_loader:
             inputs, targets, _, init_conds, win_obs, *_ = [
@@ -420,12 +566,12 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
             preds = run_rollout_train(model, variant, inputs, targets,
                                        init_conds, win_obs,
                                        tf_prob=tf_prob_train)
-            loss = weighted_loss(preds, targets, raw_affine=getattr(model, 'raw_affine', None))
+            loss = weighted_loss(preds, targets, weights=weights, raw_affine=raw_affine)
             loss.backward()
             # ---- Gradient clipping (Pascanu 2013) ----
             if GRADIENT_CLIP_NORM is not None and GRADIENT_CLIP_NORM > 0:
                 torch.nn.utils.clip_grad_norm_(
-                    model.parameters(), max_norm=GRADIENT_CLIP_NORM,
+                    trainable, max_norm=GRADIENT_CLIP_NORM,
                 )
             optimizer.step()
             tloss += loss.item()
@@ -433,8 +579,13 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         train_hist.append(avg_train)
 
         # ---- val (always full autoregressive, tf_prob=0) ----
+        # Exact mean over validation FILES: each batch's mean loss is
+        # weighted by its size. With batch 16 the legacy 15-file set is one
+        # batch (unchanged); the 20-file stratified set is 16 + 4, where the
+        # old per-batch average gave the last four files 1/8 each.
         model.eval()
-        vloss = 0.0
+        vloss, n_val = 0.0, 0
+        vch = torch.zeros(3, dtype=torch.float64)
         with torch.no_grad():
             for batch in val_loader:
                 inputs, targets, _, init_conds, win_obs, *_ = [
@@ -444,10 +595,14 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                 preds = run_rollout_train(model, variant, inputs, targets,
                                           init_conds, win_obs,
                                           tf_prob=0.0)
-                vloss += weighted_loss(preds, targets,
-                                       raw_affine=getattr(model, 'raw_affine', None)).item()
-        avg_val = vloss / max(1, len(val_loader))
+                nb = int(inputs.shape[0])
+                vloss += weighted_loss(preds, targets, weights=weights,
+                                       raw_affine=raw_affine).item() * nb
+                vch += (preds - targets).abs().mean(dim=(0, 1)).double().cpu()[:3] * nb
+                n_val += nb
+        avg_val = vloss / max(1, n_val)
         val_hist.append(avg_val)
+        val_hist_ch.append((vch / max(1, n_val)).tolist())
 
         # ReduceLROnPlateau only runs AFTER warmup is over.
         if not in_warmup:
@@ -467,13 +622,13 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
 
         if (epoch + 1) % 10 == 0:
             phase = 'warmup' if in_warmup else 'main  '
-            print(f"[{variant}] epoch {epoch + 1:>4} ({phase}): "
+            print(f"[{label}] epoch {epoch + 1:>4} ({phase}): "
                   f"train={avg_train:.4f}  val={avg_val:.4f}  "
                   f"lr={cur_lr:.2e}  tf={tf_prob_train:.3f}  "
                   f"best={best_val:.4f} @ ep{best_epoch}")
 
         # ---- Periodic resume-state save (atomic) ----
-        if (epoch + 1) % CHECKPOINT_EVERY_N_EPOCHS == 0:
+        if resume_ok and (epoch + 1) % CHECKPOINT_EVERY_N_EPOCHS == 0:
             try:
                 save_resume_state(variant, {
                     'variant': variant,
@@ -488,6 +643,7 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                     'train_hist': train_hist,
                     'val_hist': val_hist,
                     'lr_hist': lr_hist,
+                    'val_hist_ch': val_hist_ch,
                     'rng_python': random.getstate(),
                     'rng_numpy': np.random.get_state(),
                     'rng_torch': torch.get_rng_state(),
@@ -495,32 +651,23 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
                                        if torch.cuda.is_available() else None),
                 })
             except Exception as e:
-                print(f"[{variant}] WARNING: resume save failed at epoch "
+                print(f"[{label}] WARNING: resume save failed at epoch "
                       f"{epoch + 1}: {e}")
 
         if early >= params['early_stop_patience']:
-            print(f"[{variant}] early stop at epoch {epoch + 1}")
+            print(f"[{label}] early stop at epoch {epoch + 1}")
             break
 
+    if best_epoch == 0:
+        # No epoch ever improved on inf: NaN/inf validation loss throughout.
+        # Nothing was saved for this stage; do not restore silently.
+        raise RuntimeError(f"[{label}] no validation improvement in {total_epoch} epochs "
+                           f"(best_val={best_val}) -- checkpoint not written")
     model.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
-    print(f"[{variant}] restored best (val={best_val:.6f} @ ep{best_epoch} / "
+    print(f"[{label}] restored best (val={best_val:.6f} @ ep{best_epoch} / "
           f"{total_epoch} total) from {ckpt_path}")
-
-    param_breakdown = {
-        'total': n_params_total,
-        'gru': n_params_gru,
-        'fc': n_params_fc,
-        'encoder': n_params_encoder,
-    }
-
-    # ---- Persist full training history (always overwrites; small file) ----
-    save_train_history(
-        variant, train_hist, val_hist, lr_hist,
-        best_epoch=best_epoch, total_epoch=total_epoch,
-        val_mae=best_val, param_breakdown=param_breakdown,
-    )
-
-    return (model, test_datasets, best_val, best_epoch, total_epoch,
-            param_breakdown, train_hist, val_hist, lr_hist)
+    return dict(best_val=best_val, best_epoch=best_epoch, total_epoch=total_epoch,
+                train_hist=train_hist, val_hist=val_hist, lr_hist=lr_hist,
+                val_hist_ch=val_hist_ch)
 
 

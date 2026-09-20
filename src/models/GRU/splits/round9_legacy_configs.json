@@ -1,0 +1,3543 @@
+{
+ "built": "2026-09-20",
+ "source": "calit2-thermal-wiki: Round_4_Results/runs, Round_5_Results/runs, round6/runs, round8 (rounds 6-8)",
+ "rule": "every distinct forward_direct configuration with a done.flag on the full 70-case test set that run_round9 S1 does not already contain (the 5 exclude-both-phase sanity arms and the 4 AR arms are not included); env = knobs that differ from run_round9.BASE (with config.py's implied POS_ABS_HEAD applied); seeds = the legacy seed list, so each arm pairs per seed with its twin",
+ "configs": [
+  {
+   "name": "L-w1-3-3_abs_h128x5dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,3,3",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 304.5,
+   "legacy_post_checkpoint_train_drop": 0.469,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-4-4_abs_h128x5dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,4,4",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 318.5,
+   "legacy_post_checkpoint_train_drop": 0.4205,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x2dp0.1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 370.5,
+   "legacy_post_checkpoint_train_drop": 0.3853,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x3dp0.1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 356.0,
+   "legacy_post_checkpoint_train_drop": 0.4726,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x3dp0.3",
+   "rounds": [
+    "r4",
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 391.5,
+   "legacy_post_checkpoint_train_drop": 0.4347,
+   "legacy_runs_at_cap": "0/16"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x3dp0.3_la1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "INPUT_LOOKAHEAD": "1",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 367.5,
+   "legacy_post_checkpoint_train_drop": 0.353,
+   "legacy_runs_at_cap": "0/8"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x5dp0.1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 410.0,
+   "legacy_post_checkpoint_train_drop": 0.3573,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x5dp0.3_la1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "INPUT_LOOKAHEAD": "1",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 354.5,
+   "legacy_post_checkpoint_train_drop": 0.3765,
+   "legacy_runs_at_cap": "0/20"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x5dp0.3_la3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "INPUT_LOOKAHEAD": "3",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 373.0,
+   "legacy_post_checkpoint_train_drop": 0.3804,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x5dp0.3_la5",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "INPUT_LOOKAHEAD": "5",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 315.5,
+   "legacy_post_checkpoint_train_drop": 0.4571,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-3_abs_h256x2dp0.1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "HIDDEN_SIZE": "256",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 384.5,
+   "legacy_post_checkpoint_train_drop": 0.4455,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h256x2dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 363.0,
+   "legacy_post_checkpoint_train_drop": 0.4024,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h256x3dp0.1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "HIDDEN_SIZE": "256",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 397.5,
+   "legacy_post_checkpoint_train_drop": 0.3454,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h256x3dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 384.5,
+   "legacy_post_checkpoint_train_drop": 0.447,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h256x5dp0.1",
+   "rounds": [
+    "r4",
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "HIDDEN_SIZE": "256",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 403.0,
+   "legacy_post_checkpoint_train_drop": 0.3454,
+   "legacy_runs_at_cap": "0/26"
+  },
+  {
+   "name": "L-w1-6-3_abs_h256x5dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 393.5,
+   "legacy_post_checkpoint_train_drop": 0.3653,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h64x2dp0.1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "HIDDEN_SIZE": "64",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 292.5,
+   "legacy_post_checkpoint_train_drop": 0.4092,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h64x2dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "64",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 320.5,
+   "legacy_post_checkpoint_train_drop": 0.4102,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h64x3dp0.1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "HIDDEN_SIZE": "64",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 288.0,
+   "legacy_post_checkpoint_train_drop": 0.4685,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h64x3dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "64",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 361.0,
+   "legacy_post_checkpoint_train_drop": 0.4123,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h64x3dp0.3_la1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "64",
+    "INPUT_LOOKAHEAD": "1",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 430.0,
+   "legacy_post_checkpoint_train_drop": 0.3548,
+   "legacy_runs_at_cap": "0/8"
+  },
+  {
+   "name": "L-w1-6-3_abs_h64x5dp0.1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.1",
+    "HIDDEN_SIZE": "64",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 403.5,
+   "legacy_post_checkpoint_train_drop": 0.3457,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_abs_h64x5dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    7,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "64",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 385.0,
+   "legacy_post_checkpoint_train_drop": 0.288,
+   "legacy_runs_at_cap": "0/6"
+  },
+  {
+   "name": "L-w1-6-3_anchor_h128x5dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "anchor"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 330.0,
+   "legacy_post_checkpoint_train_drop": 0.3795,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-5_abs_h128x5dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,5",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 354.0,
+   "legacy_post_checkpoint_train_drop": 0.363,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-6_abs_h128x5dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,6",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 320.0,
+   "legacy_post_checkpoint_train_drop": 0.3661,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-6_abs_h128x5dp0.3_la1",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "INPUT_LOOKAHEAD": "1",
+    "LOSS_WEIGHTS": "1,6,6",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 311.5,
+   "legacy_post_checkpoint_train_drop": 0.356,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-8_abs_h128x5dp0.3",
+   "rounds": [
+    "r4"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,8",
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 343.5,
+   "legacy_post_checkpoint_train_drop": 0.3234,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x1dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "NUM_LAYERS": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 375.5,
+   "legacy_post_checkpoint_train_drop": 0.4051,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x1dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "NUM_LAYERS": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 375.5,
+   "legacy_post_checkpoint_train_drop": 0.4051,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x2dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 350.0,
+   "legacy_post_checkpoint_train_drop": 0.4135,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x2dp0.3_as12",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "ANCHOR_SCALE": "12",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 375.0,
+   "legacy_post_checkpoint_train_drop": 0.4304,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x2dp0.3_as3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "ANCHOR_SCALE": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 359.5,
+   "legacy_post_checkpoint_train_drop": 0.4488,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x2dp0.3_as6",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "ANCHOR_SCALE": "6",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 366.0,
+   "legacy_post_checkpoint_train_drop": 0.4696,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x2dp0.3_la1_as12",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "ANCHOR_SCALE": "12",
+    "INPUT_LOOKAHEAD": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 373.0,
+   "legacy_post_checkpoint_train_drop": 0.3424,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x2dp0.3_la1_as3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "ANCHOR_SCALE": "3",
+    "INPUT_LOOKAHEAD": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 391.5,
+   "legacy_post_checkpoint_train_drop": 0.4367,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x2dp0.3_la1_as6",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "ANCHOR_SCALE": "6",
+    "INPUT_LOOKAHEAD": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 307.5,
+   "legacy_post_checkpoint_train_drop": 0.3724,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h128x3dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 394.5,
+   "legacy_post_checkpoint_train_drop": 0.4068,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h160x1dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "160",
+    "NUM_LAYERS": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 314.0,
+   "legacy_post_checkpoint_train_drop": 0.3881,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h160x1dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "160",
+    "NUM_LAYERS": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 314.0,
+   "legacy_post_checkpoint_train_drop": 0.3881,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h160x2dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "160",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 297.5,
+   "legacy_post_checkpoint_train_drop": 0.4618,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h160x2dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "160",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 331.0,
+   "legacy_post_checkpoint_train_drop": 0.4537,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h160x3dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "160",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 387.0,
+   "legacy_post_checkpoint_train_drop": 0.4096,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h160x3dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "160",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 410.5,
+   "legacy_post_checkpoint_train_drop": 0.3768,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h192x1dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "192",
+    "NUM_LAYERS": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 338.0,
+   "legacy_post_checkpoint_train_drop": 0.5402,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h192x1dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "192",
+    "NUM_LAYERS": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 338.0,
+   "legacy_post_checkpoint_train_drop": 0.5402,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h192x2dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "192",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 329.0,
+   "legacy_post_checkpoint_train_drop": 0.3943,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h192x2dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "192",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 413.0,
+   "legacy_post_checkpoint_train_drop": 0.3901,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h192x3dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "192",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 387.5,
+   "legacy_post_checkpoint_train_drop": 0.3556,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h192x3dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "192",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 380.0,
+   "legacy_post_checkpoint_train_drop": 0.3728,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h96x1dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "96",
+    "NUM_LAYERS": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 357.0,
+   "legacy_post_checkpoint_train_drop": 0.463,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h96x1dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "96",
+    "NUM_LAYERS": "1",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 357.0,
+   "legacy_post_checkpoint_train_drop": 0.463,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h96x2dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "96",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 314.0,
+   "legacy_post_checkpoint_train_drop": 0.5592,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h96x2dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "96",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 349.5,
+   "legacy_post_checkpoint_train_drop": 0.3953,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h96x3dp0.2",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "DROPOUT": "0.2",
+    "HIDDEN_SIZE": "96",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 357.5,
+   "legacy_post_checkpoint_train_drop": 0.4103,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_abs_h96x3dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    21,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "96",
+    "NUM_LAYERS": "3",
+    "OTHER_CH_MODE": "abs"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 337.5,
+   "legacy_post_checkpoint_train_drop": 0.4546,
+   "legacy_runs_at_cap": "0/10"
+  },
+  {
+   "name": "L-w1-6-3_anchor_avg_grad_h128x5dp0.3",
+   "rounds": [
+    "r5"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "NUM_LAYERS": "5",
+    "OTHER_CH_MODE": "anchor_avg_grad"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 415.0,
+   "legacy_post_checkpoint_train_drop": 0.2824,
+   "legacy_runs_at_cap": "0/12"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_cf",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_FIT_CLEAN": "1"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 513.0,
+   "legacy_post_checkpoint_train_drop": 0.1899,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_cgate",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_CASE_GATE": "1"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 636.0,
+   "legacy_post_checkpoint_train_drop": 0.0522,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_cgate_lg",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_CASE_GATE": "1",
+    "POS_LEARNED_GATE": "1"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 494.5,
+   "legacy_post_checkpoint_train_drop": 0.2922,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl10",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_GAP_FLOOR": "10"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 497.0,
+   "legacy_post_checkpoint_train_drop": 0.1464,
+   "legacy_runs_at_cap": "2/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl20",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_GAP_FLOOR": "20"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 585.5,
+   "legacy_post_checkpoint_train_drop": 0.099,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl20s",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_FLOOR_SOFT": "1",
+    "POS_GAP_FLOOR": "20"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 531.5,
+   "legacy_post_checkpoint_train_drop": 0.1772,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl40",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_GAP_FLOOR": "40"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 596.5,
+   "legacy_post_checkpoint_train_drop": 0.082,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl40_cgate_ah",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_CASE_GATE": "1",
+    "POS_GAP_FLOOR": "40"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 520.0,
+   "legacy_post_checkpoint_train_drop": 0.1491,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl40_lg",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_GAP_FLOOR": "40",
+    "POS_LEARNED_GATE": "1"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 464.5,
+   "legacy_post_checkpoint_train_drop": 0.3633,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl40_tg30s30",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_GAP_FLOOR": "40",
+    "POS_TEMP_GATE": "30",
+    "POS_TEMP_SOFT": "30"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 488.5,
+   "legacy_post_checkpoint_train_drop": 0.184,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl40s",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_FLOOR_SOFT": "1",
+    "POS_GAP_FLOOR": "40"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 561.0,
+   "legacy_post_checkpoint_train_drop": 0.1227,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl80",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_GAP_FLOOR": "80"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 597.5,
+   "legacy_post_checkpoint_train_drop": 0.1592,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_fl80s",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_FLOOR_SOFT": "1",
+    "POS_GAP_FLOOR": "80"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 490.0,
+   "legacy_post_checkpoint_train_drop": 0.3596,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_lg",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_LEARNED_GATE": "1"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 322.5,
+   "legacy_post_checkpoint_train_drop": 0.4477,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_lgb0",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_GATE_BIAS": "0",
+    "POS_LEARNED_GATE": "1"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 365.0,
+   "legacy_post_checkpoint_train_drop": 0.3341,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_lgb10",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_GATE_BIAS": "10",
+    "POS_LEARNED_GATE": "1"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 400.0,
+   "legacy_post_checkpoint_train_drop": 0.3762,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_lgb4",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_GATE_BIAS": "4",
+    "POS_LEARNED_GATE": "1"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 344.0,
+   "legacy_post_checkpoint_train_drop": 0.4764,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_lgp",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_LEARNED_GATE": "1",
+    "POS_LEARNED_POOL": "1"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 341.5,
+   "legacy_post_checkpoint_train_drop": 0.4583,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg10",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "10"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 463.0,
+   "legacy_post_checkpoint_train_drop": 0.1729,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg20",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "20"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 545.5,
+   "legacy_post_checkpoint_train_drop": 0.1521,
+   "legacy_runs_at_cap": "2/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg20s20",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "20",
+    "POS_TEMP_SOFT": "20"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 529.5,
+   "legacy_post_checkpoint_train_drop": 0.1633,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg30",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "30"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 525.0,
+   "legacy_post_checkpoint_train_drop": 0.1241,
+   "legacy_runs_at_cap": "2/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg30s15",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "30",
+    "POS_TEMP_SOFT": "15"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 487.5,
+   "legacy_post_checkpoint_train_drop": 0.1434,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg30s30",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "30",
+    "POS_TEMP_SOFT": "30"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 466.5,
+   "legacy_post_checkpoint_train_drop": 0.2635,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg30s30_afb",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_ANCHORED_FALLBACK": "1",
+    "POS_TEMP_GATE": "30",
+    "POS_TEMP_SOFT": "30"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 480.0,
+   "legacy_post_checkpoint_train_drop": 0.2275,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg30s30_cgate",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_CASE_GATE": "1",
+    "POS_TEMP_GATE": "30",
+    "POS_TEMP_SOFT": "30"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 498.5,
+   "legacy_post_checkpoint_train_drop": 0.2012,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg30s60",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "30",
+    "POS_TEMP_SOFT": "60"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 402.5,
+   "legacy_post_checkpoint_train_drop": 0.264,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg50",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "50"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 457.5,
+   "legacy_post_checkpoint_train_drop": 0.2184,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x2dp0.3_tg50s50",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "50",
+    "POS_TEMP_SOFT": "50"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 423.5,
+   "legacy_post_checkpoint_train_drop": 0.2974,
+   "legacy_runs_at_cap": "0/40"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h128x3dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "NUM_LAYERS": "3"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 634.5,
+   "legacy_post_checkpoint_train_drop": 0.1103,
+   "legacy_runs_at_cap": "2/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h192x2dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "192"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 478.0,
+   "legacy_post_checkpoint_train_drop": 0.1802,
+   "legacy_runs_at_cap": "0/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h192x3dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "192",
+    "NUM_LAYERS": "3"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 781.0,
+   "legacy_post_checkpoint_train_drop": 0.0902,
+   "legacy_runs_at_cap": "8/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h192x5dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "192",
+    "NUM_LAYERS": "5"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 789.0,
+   "legacy_post_checkpoint_train_drop": 0.0887,
+   "legacy_runs_at_cap": "12/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h256x2dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 533.5,
+   "legacy_post_checkpoint_train_drop": 0.1386,
+   "legacy_runs_at_cap": "2/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h256x3dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "NUM_LAYERS": "3"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 816.5,
+   "legacy_post_checkpoint_train_drop": 0.0471,
+   "legacy_runs_at_cap": "12/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h256x5dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "NUM_LAYERS": "5"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 831.0,
+   "legacy_post_checkpoint_train_drop": 0.0689,
+   "legacy_runs_at_cap": "12/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h96x2dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "96"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 431.0,
+   "legacy_post_checkpoint_train_drop": 0.2704,
+   "legacy_runs_at_cap": "0/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h96x3dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "96",
+    "NUM_LAYERS": "3"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 600.5,
+   "legacy_post_checkpoint_train_drop": 0.1375,
+   "legacy_runs_at_cap": "0/24"
+  },
+  {
+   "name": "L-w1-6-3_pos_head_h96x5dp0.3",
+   "rounds": [
+    "r6",
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "96",
+    "NUM_LAYERS": "5"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 511.5,
+   "legacy_post_checkpoint_train_drop": 0.1773,
+   "legacy_runs_at_cap": "0/24"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_To-ai",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "TOUTER_MODE": "anchor_input"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 257.5,
+   "legacy_post_checkpoint_train_drop": 0.3095,
+   "legacy_runs_at_cap": "0/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_To-em1200_os2",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "TOUTER_MODE": "anchor_ema",
+    "TOUTER_SCALE": "2"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 286.0,
+   "legacy_post_checkpoint_train_drop": 0.2634,
+   "legacy_runs_at_cap": "0/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_To-em1500",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "TOUTER_MODE": "anchor_ema",
+    "TOUTER_TAU": "1500"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 449.5,
+   "legacy_post_checkpoint_train_drop": 0.1002,
+   "legacy_runs_at_cap": "0/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_To-em900",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "TOUTER_MODE": "anchor_ema",
+    "TOUTER_TAU": "900"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 334.5,
+   "legacy_post_checkpoint_train_drop": 0.2408,
+   "legacy_runs_at_cap": "0/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_cgate_afb",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "POS_ABS_HEAD": "1",
+    "POS_ANCHORED_FALLBACK": "1",
+    "POS_CASE_GATE": "1"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 634.0,
+   "legacy_post_checkpoint_train_drop": 0.1253,
+   "legacy_runs_at_cap": "1/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_fic",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "CASE_FLAG_INPUT": "case",
+    "LOSS_WEIGHTS": "1,6,1"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 632.5,
+   "legacy_post_checkpoint_train_drop": 0.1098,
+   "legacy_runs_at_cap": "1/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_fip_To-em1200_cgate_ah",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "CASE_FLAG_INPUT": "phase",
+    "LOSS_WEIGHTS": "1,6,1",
+    "POS_ABS_HEAD": "1",
+    "POS_CASE_GATE": "1",
+    "TOUTER_MODE": "anchor_ema"
+   },
+   "tier": "keep",
+   "legacy_best_epoch_median": 247.5,
+   "legacy_post_checkpoint_train_drop": 0.3042,
+   "legacy_runs_at_cap": "0/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_fip_cgate_afb",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "CASE_FLAG_INPUT": "phase",
+    "LOSS_WEIGHTS": "1,6,1",
+    "POS_ABS_HEAD": "1",
+    "POS_ANCHORED_FALLBACK": "1",
+    "POS_CASE_GATE": "1"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 635.5,
+   "legacy_post_checkpoint_train_drop": 0.0937,
+   "legacy_runs_at_cap": "1/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_fiz_cgate_afb",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "CASE_FLAG_INPUT": "zero",
+    "LOSS_WEIGHTS": "1,6,1",
+    "POS_ABS_HEAD": "1",
+    "POS_ANCHORED_FALLBACK": "1",
+    "POS_CASE_GATE": "1"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 629.5,
+   "legacy_post_checkpoint_train_drop": 0.1208,
+   "legacy_runs_at_cap": "0/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_tg10s40",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "10",
+    "POS_TEMP_SOFT": "40"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 629.0,
+   "legacy_post_checkpoint_train_drop": 0.1224,
+   "legacy_runs_at_cap": "1/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_tg10s40_cgate_afb",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "POS_ABS_HEAD": "1",
+    "POS_ANCHORED_FALLBACK": "1",
+    "POS_CASE_GATE": "1",
+    "POS_TEMP_GATE": "10",
+    "POS_TEMP_SOFT": "40"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 706.5,
+   "legacy_post_checkpoint_train_drop": 0.0963,
+   "legacy_runs_at_cap": "2/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_tg20",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "20"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 627.0,
+   "legacy_post_checkpoint_train_drop": 0.118,
+   "legacy_runs_at_cap": "1/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h128x2dp0.3_tg30",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    31,
+    37,
+    41,
+    42,
+    43,
+    53,
+    59,
+    61,
+    67,
+    123
+   ],
+   "env": {
+    "LOSS_WEIGHTS": "1,6,1",
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "30"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 628.0,
+   "legacy_post_checkpoint_train_drop": 0.1258,
+   "legacy_runs_at_cap": "1/20"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h192x2dp0.3",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "192",
+    "LOSS_WEIGHTS": "1,6,1"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 679.0,
+   "legacy_post_checkpoint_train_drop": 0.1011,
+   "legacy_runs_at_cap": "1/12"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h256x3dp0.3",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "LOSS_WEIGHTS": "1,6,1",
+    "NUM_LAYERS": "3"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 820.5,
+   "legacy_post_checkpoint_train_drop": 0.0575,
+   "legacy_runs_at_cap": "4/12"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h256x3dp0.3_ah",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "LOSS_WEIGHTS": "1,6,1",
+    "NUM_LAYERS": "3",
+    "POS_ABS_HEAD": "1"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 796.0,
+   "legacy_post_checkpoint_train_drop": 0.0716,
+   "legacy_runs_at_cap": "2/12"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h256x3dp0.3_cgate_afb",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "LOSS_WEIGHTS": "1,6,1",
+    "NUM_LAYERS": "3",
+    "POS_ABS_HEAD": "1",
+    "POS_ANCHORED_FALLBACK": "1",
+    "POS_CASE_GATE": "1"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 677.0,
+   "legacy_post_checkpoint_train_drop": 0.0868,
+   "legacy_runs_at_cap": "2/12"
+  },
+  {
+   "name": "L-w1-6-1_pos_head_h256x3dp0.3_tg10s40",
+   "rounds": [
+    "r678"
+   ],
+   "seeds": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    29,
+    42,
+    123
+   ],
+   "env": {
+    "HIDDEN_SIZE": "256",
+    "LOSS_WEIGHTS": "1,6,1",
+    "NUM_LAYERS": "3",
+    "POS_ABS_HEAD": "1",
+    "POS_TEMP_GATE": "10",
+    "POS_TEMP_SOFT": "40"
+   },
+   "tier": "archive",
+   "legacy_best_epoch_median": 718.0,
+   "legacy_post_checkpoint_train_drop": 0.1112,
+   "legacy_runs_at_cap": "2/12"
+  }
+ ],
+ "tiers": {
+  "how": "measured, not chosen (2026-09-20, after the user asked why the tiering did not follow its own criterion). For every configuration's legacy runs: legacy_post_checkpoint_train_drop = median over seeds of (train_loss[best_epoch] - min(train_loss[best_epoch:])) / train_loss[best_epoch], i.e. how much the TRAINING loss still fell in the 150 epochs after the checkpoint the old validation set picked. Validation said stop while training was still moving; the larger this is, the more the old set cut the run short. Calibration on the S1 twins: cgate-ah 12.8% (vs2 moved it +0.03, nothing), w161 11.4%, To-em1200-cgate-ah 25.5% (vs2 took it from 1.53 to 0.89), abs-h128x5 31.4%.",
+  "keep": "drop > 12.8% (above the calibrated no-change point) -> stage S1b, default ON: the configurations the old validation set demonstrably stopped early. 90 configs / 1170 runs / ~105 h: the whole abs-model capacity, lookahead, weight and anchor-scale scans of rounds 4-5 (drops 32-56%, best epochs 290-410), the learned gates (33-48%), the round-6 soft gates and floors at 1-6-3 (13-30%), To-ai, os2, the full stack, To-em900.",
+  "archive": "drop <= 12.8% -> stage S1c, default OFF: trained at least as long as the winner did, and vs2 did not move the winner. 24 configs / ~44 h: the 1-6-1 gate/flag family (cgate-afb, fip/fiz-cgate-afb, tg10s40, tg20/30, fic), the h192/h256 capacity arms at 1-6-1 and 1-6-3 (best epochs 680-830, many at the 1000 cap), fl20/fl40/fl40s, the shared-channel cgate, To-em1500. Run with --stage S1c to complete the record."
+ }
+}

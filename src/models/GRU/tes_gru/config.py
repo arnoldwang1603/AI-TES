@@ -72,9 +72,22 @@ LATEST_PARAMS = dict(
     # convergence than the 1200-ep evidence base predicted (seed7 best at
     # epoch 748 hit the 800 wall); 1000 restores headroom while still saving
     # ~2x vs the old 1200-ep/no-ES protocol.
-    # MAX_EPOCHS env override exists for SMOKE TESTS ONLY (a 2-epoch run to
-    # exercise a new code path end to end). run_round8.py refuses to reuse
-    # any done-flagged dir trained with a cap other than 1000.
+    # MAX_EPOCHS env override: smoke tests (a 2-epoch run to exercise a new
+    # code path end to end), and since round 9 the cap itself. Any cap other
+    # than 1000 is folded into the run name ("ep<N>"), so a smoke run can
+    # never be resumed as a real seed and a run under a raised cap never
+    # shares a directory with a 1000-cap one; the runners refuse to reuse a
+    # finished dir whose cap or Total_Epoch is below 151 (unreachable for a
+    # real run under patience 150).
+    # 2026-09-19: under the stratified validation set (round 9, VAL_SPLIT)
+    # the 1000 cap BINDS: in the dev-box pilot all three cgate-ah seeds and
+    # one of three EMA-anchor seeds were still improving on validation at
+    # epoch 1000 (best epoch 950-993; the plateau scheduler had the LR at
+    # 1e-5 and the running best still moved 1-3% per 150 epochs). The old
+    # validation set (15 linear-charging runs) went flat by ~600-800 epochs,
+    # which is what the 1000 figure was sized to. run_round9.py therefore
+    # pins MAX_EPOCHS=2000 for every arm, so "stop when validation stops
+    # improving" keeps its meaning; the cost is ~1.5x per seed.
     max_epochs=int(os.environ.get("MAX_EPOCHS", "1000")),
     batch_size=16,
     # Stop after this many consecutive epochs without a val improvement.
@@ -208,7 +221,8 @@ assert TINNER_MODE in ("arfed", "anchor", "output_only"), \
 # measurement, not an argument.
 #   "anchor_ema"    same reconstruction, but the reference is an exponential
 #                   moving average of the input temperature with time
-#                   constant TOUTER_TAU steps (e[0] = x[0]; causal; affine-
+#                   constant TOUTER_TAU steps (e[0] = T_outer(0), the given
+#                   initial condition, converted into Input_T's scale; causal; affine-
 #                   equivariant, so the raw-degree fit and the scaled-space
 #                   use agree exactly). Scanned on the training set before
 #                   launch (2026-09-12): residual std vs T_outer's own 115.8
@@ -223,13 +237,47 @@ assert TINNER_MODE in ("arfed", "anchor", "output_only"), \
 TOUTER_MODE = os.environ.get("TOUTER_MODE", "abs")
 assert TOUTER_MODE in ("abs", "anchor_input", "anchor_ema"), TOUTER_MODE
 TOUTER_TAU = int(os.environ.get("TOUTER_TAU", "1200"))      # steps of 10 s
-assert 1 <= TOUTER_TAU <= 100000
+# >= 3: the closed-form EMA (rollout.touter_reference) weights the inputs by
+# (1 - 1/tau)^-k over k <= 1439, which overflows float64 below tau = 2.6.
+assert 3 <= TOUTER_TAU <= 100000, TOUTER_TAU
 # TOUTER_SCALE widens the outer head's usable range the way ANCHOR_SCALE does
 # for the inner one: the train-set residual has std 7.3 C but a maximum of
 # 46 C (6.3 sigma), which a unit head cannot reach. Kept separate from
 # ANCHOR_SCALE so the two anchors are scaled independently.
 TOUTER_SCALE = float(os.environ.get("TOUTER_SCALE", "1.0"))
 assert 0.1 <= TOUTER_SCALE <= 20.0
+# ------------------------------------------------------------
+# Where the EMA reference comes from (user's derivation, 2026-09-20, pages
+# b1-b3 of the notebook), kept here so the formula can be swapped when the
+# medium changes:
+#   energy balance of the outer wall, lumped:  rho c V dT_out/dt = h A (T_in - T_out)
+#   units: rho c V [J/K], h A [J/s/K]  ->  tau = rho c V / (h A)  [s]
+#   =>  tau dT_out/dt + T_out = T_in                      (first-order standard form)
+#   integrating factor e^(t/tau):  d/dt [T_out e^(t/tau)] = (1/tau) e^(t/tau) T_in
+#   integrate over one step (t - dt, t):
+#     T_out(t) = T_out(t-dt) e^(-dt/tau) + e^(-t/tau) (1/tau) INT_{t-dt}^{t} e^(s/tau) T_in(s) ds
+#   zero-order hold, T_in(s) = T_in(t) over the step (dt = 10 s):
+#     T_out(t) = T_out(t-dt) e^(-dt/tau) + T_in(t) (1 - e^(-dt/tau))     [EXACT, "the red line"]
+#   and because dt/tau = 1/1200 is small, e^(-dt/tau) ~= 1 - dt/tau:
+#     R(t) = R(t-1) + (1/tau) (T_in(t) - R(t-1))                        [EULER, rounds 8-9]
+# Both are the recurrence e_t = r e_{t-1} + (1 - r) x_t with
+#   r = 1 - 1/TAU              (euler)     TAU in steps
+#   r = exp(-1/TAU)            (exact)
+# At tau = 1200 steps the two differ by 0.04% in the weight (0.000833 vs
+# 0.000833); the exact form matters for a medium with a small tau (tau of a
+# few steps), where the Taylor step is no longer small. Default euler so
+# every round-8/9 EMA arm keeps its formula; the exact form gets its own
+# tag ("To-em<tau>x") and is never mixed into an existing run name.
+TOUTER_EMA_FORM = os.environ.get("TOUTER_EMA_FORM", "euler")
+assert TOUTER_EMA_FORM in ("euler", "exact"), TOUTER_EMA_FORM
+
+
+def touter_ema_r():
+    """The recurrence weight r of the EMA reference (e_t = r e_{t-1} + (1-r) x_t),
+    shared by rollout.touter_reference, train.py's raw-degree twin and the
+    runner's preflight, so the three can never disagree on the form."""
+    import math
+    return math.exp(-1.0 / TOUTER_TAU) if TOUTER_EMA_FORM == "exact" else 1.0 - 1.0 / TOUTER_TAU
 # The EMA is seeded at T_outer(0), the GIVEN initial condition, not at
 # Input_T(0): identical on the base data (they are equal in every run) and
 # right for data where the tank does not start at the inlet temperature.
@@ -664,6 +712,38 @@ POS_FIT_CLEAN = os.environ.get("POS_FIT_CLEAN", "0") not in ("0", "", "false", "
 POS_ABS_HEAD = (os.environ.get("POS_ABS_HEAD", "0") not in ("0", "", "false", "False")
                 or POS_TEMP_GATE > 0 or POS_LEARNED_GATE
                 or POS_ANCHORED_FALLBACK)
+# Round 9 (2026-09-19, user: "the core problem since round 5 is still
+# there -- T_avg in the first ~50 steps"): the position head's early-time
+# error. Measured on the 20-seed cgate-ah ensemble: the head's pos output is
+# ~flat at 0.24 from t=0, while the true position of a charging run starts
+# near 0.05 and climbs to ~0.25 over the first ~200 steps (the heat has not
+# penetrated; the bulk average sits at the cold outer wall). Error =
+# delta-pos x wall gap, so it is worst where the gap opens fast (case 24:
+# gap 157 C at step 50 -> 10.6 C). On the 311 training runs the climb is a
+# near-universal function of elapsed time (heat-penetration depth ~
+# sqrt(alpha t)): the per-step median position over the runs is 0.04 / 0.16
+# / 0.25 / 0.28 at steps 1 / 50 / 200 / 500, and the spread around it in
+# the first 200 steps is 0.037 against 0.08 for the flat mean. With the
+# TRUE walls and that curve alone (no network) the first-200-step T_avg
+# error on the 49 non-gated test cases is 0.5 C against 2.6 for the flat
+# mean and 1.4 for the trained ensemble; the full-run error does not get
+# worse (1.55 vs 1.59).
+# POS_TIME_PRIOR = median  the head predicts the RESIDUAL from that curve:
+#                          pos = c[t] + mu + sd*z, c the per-step median of
+#                          the training runs' position (usable steps only,
+#                          |gap| > 5 C, gaps interpolated), mu/sd the
+#                          residual's -- the anchor idea (T_inner, T_outer)
+#                          applied to the position's time axis. Step index
+#                          from the scaled Time input (column 0). Direct and
+#                          AR paths, train and test; gated cases unaffected
+#                          (the gate takes T_avg from the absolute channel).
+#                = 0       the flat prior of rounds 5-8 (pos = mu + sd*z).
+POS_TIME_PRIOR = os.environ.get("POS_TIME_PRIOR", "0")
+assert POS_TIME_PRIOR in ("0", "median"), POS_TIME_PRIOR
+if POS_TIME_PRIOR != "0":
+    assert OTHER_CH_MODE == "pos_head", "POS_TIME_PRIOR needs OTHER_CH_MODE=pos_head"
+    assert not POS_GAP_FLOOR, "POS_TIME_PRIOR is fitted on the plain (unfloored) position"
+
 # Output channels the head emits (the rollout always returns 3): the 4th is
 # the absolute T_avg fallback, the 5th is the learned handover weight.
 if OTHER_CH_MODE == "pos_head" and POS_LEARNED_GATE:
@@ -672,6 +752,57 @@ elif OTHER_CH_MODE == "pos_head" and POS_ABS_HEAD:
     OUTPUT_SIZE = 4
 else:
     OUTPUT_SIZE = 3
+
+# ------------------------------------------------------------
+# Round 9 (2026-09-17 decision): one network per temperature.
+# ------------------------------------------------------------
+# MODEL_SPLIT = shared       one GRU trunk + one linear head emits every
+#                            channel (rounds 1-8).
+#             = independent  three complete models (init encoder + GRU +
+#                            head), one for T_inner, one for T_outer, one
+#                            for T_avg (the T_avg model also owns the extra
+#                            channels: the 4th absolute head, the learned
+#                            gate). Trained in three stages: T_inner, then
+#                            T_outer, then T_avg -- each with its own
+#                            optimiser, LR schedule, early stopping and best
+#                            checkpoint, the finished models frozen (eval
+#                            mode, no dropout) while the next one trains. So
+#                            the T_avg model is fitted against the walls it
+#                            will actually see at test time, and no channel's
+#                            gradient or validation curve can stop another's
+#                            training -- the coupling suspected behind the
+#                            round-8 T_outer-anchor failure.
+#             = avg_only     two models: the two walls share one trunk as in
+#                            rounds 1-8 (stage 1, loss on T_inner + T_outer),
+#                            T_avg has its own (stage 2, trained against the
+#                            frozen walls). The dev-box pilot (2026-09-19, 3
+#                            seeds) showed the lone T_outer net WORSE than the
+#                            shared trunk's T_outer (0.42 vs 0.33) while the
+#                            lone T_avg net was better on the 49 normal cases;
+#                            this keeps the wall pair's shared trunk and
+#                            decouples only T_avg's training and stopping.
+#   The per-stage loss is the configured LOSS_WEIGHTS entry of that stage's
+#   channel(s); with one channel per stage the relative weights act only
+#   through the gradient clip (GRADIENT_CLIP_NORM, measured not to engage on
+#   the anchored arms), so the weight tag is kept mainly so an independent
+#   arm pairs by name with its shared twin.
+#   The rollout, the anchors and the position formula are unchanged: the
+#   wrapper returns the same (B, T, OUTPUT_SIZE) layout. HIDDEN_SIZE /
+#   NUM_LAYERS / DROPOUT apply to each of the three (three h128x2 nets carry
+#   ~3x the parameters of one; HIDDEN_SIZE=64 is the parameter-matched
+#   control, see run_round9.py). Direct prediction only (the AR path feeds
+#   predictions back through one input row and has not been exercised with
+#   the wrapper). In-run resume is off for this mode (a killed seed restarts
+#   from scratch; done.flag resume across seeds is unaffected).
+MODEL_SPLIT = os.environ.get("MODEL_SPLIT", "shared")
+assert MODEL_SPLIT in ("shared", "independent", "avg_only"), MODEL_SPLIT
+# Output-channel groups, one model (and one training stage) per group.
+MODEL_GROUPS = {"shared": None,
+                "independent": ((0,), (1,), tuple(range(2, OUTPUT_SIZE))),
+                "avg_only": ((0, 1), tuple(range(2, OUTPUT_SIZE)))}[MODEL_SPLIT]
+if MODEL_SPLIT != "shared":
+    assert all(v == "forward_direct" for v in VARIANTS), \
+        "MODEL_SPLIT=%s supports forward_direct only (got %r)" % (MODEL_SPLIT, VARIANTS)
 
 # ------------------------------------------------------------
 # Output layout
@@ -705,6 +836,27 @@ else:
 # RUN_NAME_BASE between invocations -- each (seed, variant) tracks its
 # own resume/done state. To start a fresh experiment, change RUN_NAME_BASE.
 # Convention: prefix with the date (YYYY-MM-DD) so chronology is obvious.
+# ------------------------------------------------------------
+# Validation split (2026-09-17, Round 9)
+# ------------------------------------------------------------
+# "legacy"      the protocol every round through 8 used: sort the training
+#               files by path, the first 5% (15 of 311) are validation. Sorted,
+#               those 15 are ALL in "Case 1 (linear charging)/", so early
+#               stopping and checkpoint selection never saw a charge-then-
+#               discharge run (audit 2026-09-16; the leading hypothesis for
+#               the round-8 T_outer-anchor failure).
+# "stratified"  VAL_PER_TYPE files from EACH case-type folder under the
+#               training dir, drawn once with SPLIT_SEED, written to
+#               splits/<name>.json on first use and READ from there after
+#               that, so every seed of every arm sees the same lists. Test
+#               set untouched.
+# The tag "vs<N>" enters RUN_NAME so old- and new-protocol runs never share a
+# directory; export_results files them under separate families.
+VAL_SPLIT = os.environ.get("VAL_SPLIT", "legacy")
+assert VAL_SPLIT in ("legacy", "stratified"), VAL_SPLIT
+VAL_PER_TYPE = int(os.environ.get("VAL_PER_TYPE", "2"))
+assert 1 <= VAL_PER_TYPE <= 5
+
 _LW = "-".join(f"{w:g}" for w in LOSS_WEIGHTS)
 _VTAG = "-".join(VARIANTS)
 # Run-name scheme (2026-08-06 rebuild): only the knobs that VARY between runs
@@ -727,7 +879,7 @@ if TOUTER_MODE != "abs":
     assert OTHER_CH_MODE in ("abs", "pos_head", "anchor_avg", "anchor_avg_grad"), \
         "TOUTER_MODE=anchor_input re-parametrises head 1; OTHER_CH_MODE=%r does too" % (OTHER_CH_MODE,)
     _parts.append("To-ai" if TOUTER_MODE == "anchor_input"   # T_outer anchored on Input_T
-                  else "To-em%d" % TOUTER_TAU)             # ... on its EMA(tau)
+                  else "To-em%d%s" % (TOUTER_TAU, "x" if TOUTER_EMA_FORM == "exact" else ""))  # ... on its EMA(tau); x = exact discretisation
     if TOUTER_SCALE != 1.0:
         _parts.append("os%g" % TOUTER_SCALE)
 if LATEST_PARAMS['max_epochs'] != 1000:
@@ -751,9 +903,17 @@ if POS_ANCHORED_FALLBACK:
     _parts.append("afb")
 if POS_FIT_CLEAN:
     _parts.append("cf")
+if POS_TIME_PRIOR != "0":
+    _parts.append("tp")                      # time prior on the position head
 if (POS_ABS_HEAD and not POS_TEMP_GATE and not POS_LEARNED_GATE
         and not POS_ANCHORED_FALLBACK):
     _parts.append("ah")
+if MODEL_SPLIT == "independent":
+    _parts.append("ind")
+elif MODEL_SPLIT == "avg_only":
+    _parts.append("inda")
+if VAL_SPLIT == "stratified":
+    _parts.append("vs%d" % VAL_PER_TYPE)
 if SLIDING_PAD_MODE != "variable":
     _parts.append(SLIDING_PAD_MODE)
 RUN_NAME_BASE = "_".join(_parts)

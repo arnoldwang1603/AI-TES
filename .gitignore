@@ -16,3 +16,6 @@ src/models/GRU/sweep_logs/
 .idea/
 .DS_Store
 Thumbs.db
+
+# exports for the shared drive (hundreds of MB; never committed)
+**/Round*_upload/
