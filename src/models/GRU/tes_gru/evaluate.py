@@ -36,6 +36,32 @@ def _mape(y_true, y_pred, eps=1e-6):
     return float(np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100.0)
 
 
+def _compute_eval_offsets(t, x_case, idx_inp, default_w):
+    """Computes the list of temporal offsets relative to step t during inference."""
+    mode = DYNAMIC_WINDOW_MODE
+    if mode == "step":
+        w = WINDOW_EARLY if t < WINDOW_SPLIT_STEP else WINDOW_LATE
+        return list(range(-(w - 1), 1))
+    elif mode == "ramp":
+        frac = min(1.0, float(t) / max(1.0, float(WINDOW_RAMP_STEPS)))
+        w = int(WINDOW_MIN + frac * (WINDOW_MAX - WINDOW_MIN))
+        return list(range(-(w - 1), 1))
+    elif mode == "flux_adaptive":
+        t_prev = max(0, t - 1)
+        v_in = abs(x_case[t, idx_inp].item() - x_case[t_prev, idx_inp].item())
+        w = int(round(WINDOW_MAX - (WINDOW_MAX - WINDOW_MIN) * np.tanh(v_in / max(1e-4, FLUX_SCALE))))
+        w = max(WINDOW_MIN, min(WINDOW_MAX, w))
+        return list(range(-(w - 1), 1))
+    elif mode == "dilated":
+        k_tokens = WINDOW_TOKENS
+        d = 1 if t <= 10 else (2 if t <= 30 else 4)
+        return [-(k_tokens - 1 - i) * d for i in range(k_tokens)]
+    elif mode == "asymmetric":
+        return list(range(-(WINDOW_SLOW - 1), 1))
+    else:
+        return list(range(-(default_w - 1), 1))
+
+
 def test_model(variant, model, test_datasets, output_dir, set_name):
     model.eval()
     os.makedirs(output_dir, exist_ok=True)
@@ -83,31 +109,34 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
 
         seq_len = x.shape[0]
 
+        # For temporal Soft-Start transition blending: stack initial conditions at t=0
+        # in the predicted channel order [T_inner, T_outer, T_avg]
+        t0_state = np.array([init_cond[1].item(), init_cond[0].item(), init_cond[2].item()])
+
         if variant == 'forward_direct':
             # Exogenous-only seq2seq: inputs [Time, Input_T] are the given
-            # boundary condition; one forward pass, no AR (mirrors
-            # run_rollout_train's forward_direct branch).
+            # boundary condition; one forward pass, no AR.
             with torch.no_grad():
                 out, _ = model(x.unsqueeze(0), hidden)
             pred_seq = out[0].cpu().numpy()
         elif is_inverse(variant):
-            # Inverse rollout (single-case mirror of _rollout_inverse).
-            # All inputs are GT exogenous (no AR); single forward pass for
-            # non-sliding inverse variants, per-step window build for
-            # inverse_abs_sliding.
+            # Inverse rollout: all inputs are GT exogenous (no AR)
             if variant != 'inverse_abs_sliding':
                 with torch.no_grad():
                     out, _ = model(x.unsqueeze(0), hidden)
                 pred_seq = out[0].cpu().numpy()
             else:
-                # Sequence-input sliding (single-case mirror of
-                # _rollout_inverse for inverse_abs_sliding -- Arnold's
-                # 2026-05-25 spec). Per rollout step, feed GRU a (1, W, 2)
-                # sequence of [Time(k), T_avg(k)] for k in [t-W+1, t];
-                # zero-pad k < 0. Carry hidden state. Last output = pred t+1.
                 W = WINDOW_SIZE
                 preds = []
                 cur_h = hidden
+
+                # Recurrent Hidden-State Warmup (Arm K)
+                warmup_steps = getattr(model, 'warmup_steps', 0)
+                if warmup_steps > 0:
+                    warmup_seq = x[:1, :2].unsqueeze(0).repeat(1, warmup_steps, 1)
+                    with torch.no_grad():
+                        _, cur_h = model.gru(warmup_seq, cur_h)
+
                 for t in range(seq_len):
                     window_steps = []
                     for offset in range(-(W - 1), 1):
@@ -120,38 +149,23 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                             else:  # "init": repeat t=0 observation (Time, T_avg)
                                 window_steps.append([x[0, 0].item(), x[0, 1].item()])
                         else:
-                            window_steps.append(
-                                [x[k, 0].item(), x[k, 1].item()]
-                            )
+                            window_steps.append([x[k, 0].item(), x[k, 1].item()])
                     window = torch.tensor(
                         window_steps, dtype=torch.float32
                     ).unsqueeze(0).to(DEVICE)   # (1, W, 2)
                     with torch.no_grad():
                         out, cur_h = model(window, cur_h)
-                    preds.append(out[0, -1].cpu().numpy())   # last step
+                    preds.append(out[0, -1].cpu().numpy())
                 pred_seq = np.array(preds)
         elif variant == 'abs_sliding':
-            # Sequence-input sliding (single-case mirror of _rollout_sliding
-            # -- Arnold's 2026-05-25 spec). Per rollout step t, feed GRU a
-            # (1, W, 5) sequence:
-            #   window[k] = [Time(t-W+1+k),
-            #                T_outer_AR(t-W+1+k),
-            #                T_inner_AR(t-W+1+k),
-            #                T_avg_AR(t-W+1+k),
-            #                Input_T(t-W+1+k)]
-            # Zero-pad k < 0. Hidden state carries over. Last-step output =
-            # prediction for t+1. Test time: tf_prob = 0 (no teacher forcing).
             W = WINDOW_SIZE
-            # Column layout mirrors data.py / _rollout_sliding:
-            #   arfed/anchor: [Time, T_outer, T_inner, T_avg, Input_T] (5-d)
-            #   output_only : [Time, T_outer, T_avg, Input_T]          (4-d)
             out_only = (TINNER_MODE == "output_only")
             if out_only:
                 IDX_AVG, IDX_INP = 2, 3
             else:
                 IDX_AVG, IDX_INP = 3, 4
             feat_dim = x.shape[1]
-            outer_hist = [float(x[0, 1].item())]   # k=0: GT initial
+            outer_hist = [float(x[0, 1].item())]   # k=0: T_outer GT initial
             inner_hist = None if out_only else [float(x[0, 2].item())]
             avg_hist = [float(x[0, IDX_AVG].item())]
             anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
@@ -160,9 +174,20 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
 
             preds = []
             cur_h = hidden
+
+            # Recurrent Hidden-State Warmup (Arm K)
+            warmup_steps = getattr(model, 'warmup_steps', 0)
+            if warmup_steps > 0:
+                warmup_seq = x[:1, :feat_dim].unsqueeze(0).repeat(1, warmup_steps, 1)
+                with torch.no_grad():
+                    _, cur_h = model.gru(warmup_seq, cur_h)
+
             for t in range(seq_len):
+                # Dynamic lookback offset computation (Arms Q, R, S, T, U)
+                offsets = _compute_eval_offsets(t, x, IDX_INP, W)
+
                 window_steps = []
-                for offset in range(-(W - 1), 1):
+                for offset in offsets:
                     k = t + offset
                     if k < 0:
                         if SLIDING_PAD_MODE == "variable":
@@ -173,41 +198,58 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                             window_steps.append(
                                 [x[0, j].item() for j in range(feat_dim)])
                     else:
+                        # Arm U: Asymmetric lookback clamping for fast channels
+                        k_fast = k
+                        if DYNAMIC_WINDOW_MODE == "asymmetric" and offset < -(WINDOW_FAST - 1):
+                            k_fast = max(0, t - (WINDOW_FAST - 1))
+
                         if out_only:
                             window_steps.append([
-                                x[k, 0].item(),     # Time(k)      GT
-                                outer_hist[k],      # T_outer(k)   AR
-                                avg_hist[k],        # T_avg(k)     AR
-                                x[k, IDX_INP].item(),  # Input_T(k) GT
+                                x[k_fast, 0].item(),        # Time (Fast)
+                                outer_hist[k],              # T_outer (Slow)
+                                avg_hist[k],                # T_avg (Slow)
+                                x[k_fast, IDX_INP].item(),  # Input_T (Fast)
                             ])
                         else:
                             window_steps.append([
-                                x[k, 0].item(),     # Time(k)      GT
-                                outer_hist[k],      # T_outer(k)   AR
-                                inner_hist[k],      # T_inner(k)   AR
-                                avg_hist[k],        # T_avg(k)     AR
-                                x[k, IDX_INP].item(),  # Input_T(k) GT
+                                x[k_fast, 0].item(),        # Time (Fast)
+                                outer_hist[k],              # T_outer (Slow)
+                                inner_hist[k_fast],         # T_inner (Fast)
+                                avg_hist[k],                # T_avg (Slow)
+                                x[k_fast, IDX_INP].item(),  # Input_T (Fast)
                             ])
                 window = torch.tensor(
                     window_steps, dtype=torch.float32
-                ).unsqueeze(0).to(DEVICE)   # (1, W, feat_dim)
+                ).unsqueeze(0).to(DEVICE)   # (1, W_dyn, feat_dim)
 
                 with torch.no_grad():
                     out, cur_h = model(window, cur_h)
-                pred = out[0, -1].cpu().numpy().copy()   # last step's output
+                pred = out[0, -1].cpu().numpy().copy()
+
                 if step_anchor is not None:
                     (kb_o, kc_o), (kb_a, kc_a) = step_anchor
                     pred[1] = outer_hist[t] + kb_o + kc_o * pred[1]
                     pred[2] = avg_hist[t] + kb_a + kc_a * pred[2]
+
                 if anchor is not None:
-                    # Reconstruct T_inner from the z-scored residual head,
-                    # anchored on GT Input_T(t) -- mirrors _rollout_sliding.
                     ka, kb, kc = anchor
                     t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
                     pred[0] = ka * float(x[t_a, IDX_INP].item()) + kb + kc * pred[0]
+
+                # Arm N: Convex Spatial Bounding for T_avg
+                if USE_SPATIAL_ANCHOR:
+                    beta = 1.0 / (1.0 + np.exp(-np.clip(pred[2], -50.0, 50.0)))
+                    pred[2] = pred[1] + beta * (pred[0] - pred[1])
+
+                # Soft-Start Blending (Arms G & J)
+                soft_start_tau = getattr(model, 'soft_start_tau', None)
+                if soft_start_tau is not None and soft_start_tau > 0.0:
+                    step = t + 1
+                    alpha = np.exp(-step / soft_start_tau)
+                    pred = alpha * t0_state + (1.0 - alpha) * pred
+
                 preds.append(pred)
 
-                # pred channels (per VARIANT_OUTPUT_CHANNELS) = [T_inner, T_outer, T_avg]
                 outer_hist.append(float(pred[1]))
                 avg_hist.append(float(pred[2]))
                 if inner_hist is not None:
@@ -215,22 +257,11 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             pred_seq = np.array(preds)
         else:
             # Unified per-step rollout for delta / abs+delta / abs / abs_window.
-            # Maintains two-step AR history for T_outer / T_inner / T_avg so
-            # dT slots can be derived from the AR chain (never future GT).
-            # Test time: tf_prob = 0 (no teacher forcing).
-            #
-            #   cur_X    : AR-fed T_X at the current step t
-            #              (= prediction from step t-1, or initial GT at t=0)
-            #   prev_X   : AR-fed T_X at step t-1
-            #              (= cur_X from previous iteration)
-            #
-            # The 'delta' variant has no abs T_X slots in x, so initial
-            # values come from init_cond rather than x[0].
             if variant == 'delta':
-                cur_outer = float(init_cond[0].item())   # T_outer(0)
-                cur_inner = float(init_cond[1].item())   # T_inner(0)
-                cur_avg = float(init_cond[2].item())     # T_avg(0)
-            else:  # abs+delta / abs / abs_window
+                cur_outer = float(init_cond[0].item())
+                cur_inner = float(init_cond[1].item())
+                cur_avg = float(init_cond[2].item())
+            else:
                 cur_outer = float(x[0, 1].item())
                 cur_inner = float(x[0, 2].item())
                 cur_avg = float(x[0, 3].item())
@@ -238,6 +269,15 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
 
             preds = []
             cur_h = hidden
+
+            # Recurrent Hidden-State Warmup
+            warmup_steps = getattr(model, 'warmup_steps', 0)
+            if warmup_steps > 0:
+                feat_dim = x.shape[1]
+                warmup_seq = x[:1, :feat_dim].unsqueeze(0).repeat(1, warmup_steps, 1)
+                with torch.no_grad():
+                    _, cur_h = model.gru(warmup_seq, cur_h)
+
             for t in range(seq_len):
                 x_t = x[t].clone()
                 dT_outer = cur_outer - prev_outer
@@ -245,24 +285,17 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                 dT_avg = cur_avg - prev_avg
 
                 if variant == 'delta':
-                    # 5-d: [Time, dT_outer, dT_inner, dT_avg, dInput_T]
                     x_t[1] = dT_outer
                     x_t[2] = dT_inner
                     x_t[3] = dT_avg
-                    # idx 4 dInput_T stays GT
                 elif variant == 'abs+delta':
-                    # 9-d: [Time, T_outer, T_inner, T_avg, Input_T,
-                    #       dT_outer, dT_inner, dT_avg, dInput_T]
                     x_t[1] = cur_outer
                     x_t[2] = cur_inner
                     x_t[3] = cur_avg
-                    # idx 4 Input_T stays GT
                     x_t[5] = dT_outer
                     x_t[6] = dT_inner
                     x_t[7] = dT_avg
-                    # idx 8 dInput_T stays GT
                 else:  # abs / abs_window
-                    # 5-d: [Time, T_outer, T_inner, T_avg, Input_T]
                     x_t[1] = cur_outer
                     x_t[2] = cur_inner
                     x_t[3] = cur_avg
@@ -270,10 +303,20 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                 x_in = x_t.unsqueeze(0).unsqueeze(0).to(DEVICE)
                 with torch.no_grad():
                     out, cur_h = model(x_in, cur_h)
-                pred = out[0, 0].cpu().numpy()
+                pred = out[0, 0].cpu().numpy().copy()
+
+                if USE_SPATIAL_ANCHOR:
+                    beta = 1.0 / (1.0 + np.exp(-np.clip(pred[2], -50.0, 50.0)))
+                    pred[2] = pred[1] + beta * (pred[0] - pred[1])
+
+                soft_start_tau = getattr(model, 'soft_start_tau', None)
+                if soft_start_tau is not None and soft_start_tau > 0.0:
+                    step = t + 1
+                    alpha = np.exp(-step / soft_start_tau)
+                    pred = alpha * t0_state + (1.0 - alpha) * pred
+
                 preds.append(pred)
 
-                # Shift AR history forward.
                 prev_outer, prev_inner, prev_avg = cur_outer, cur_inner, cur_avg
                 cur_outer = float(pred[1])
                 cur_inner = float(pred[0])
@@ -288,8 +331,6 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         n = len(pred_seq)
         total_steps_predicted += n
 
-        # Predictions correspond to steps t=1..n. Targets / actuals also at t=1..n.
-        # ft[1:n+1] is the time at those steps (length n).
         sl = slice(1, n + 1) if len(ft) >= n + 1 else slice(0, n)
 
         time_axis = ft[sl]
@@ -298,31 +339,26 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         actual_avg = ft_avg[sl]
         actual_input_temp = ft_inp[sl]
 
-        # Scaler columns layout (set in ThermalDataset.BASE_COLS):
-        # 0=Time, 1=T_outer, 2=T_inner, 3=T_avg, 4=Input_T.
         SCALER_COL = {
             'Time': 0, 'T_outer': 1, 'T_inner': 2,
             'T_avg': 3, 'Input_T': 4,
         }
         ALL_CHANNELS = ['T_inner', 'T_outer', 'T_avg', 'Input_T']
 
-        # Build dummy_actual (all GT) and dummy_pred (GT in non-predicted
-        # columns, model outputs in predicted columns). Variant determines
-        # which of the 4 channels is predicted (3 of them).
         dummy_actual = np.column_stack([
             time_axis, actual_outer, actual_inner, actual_avg,
             actual_input_temp,
         ])
         dummy_pred = dummy_actual.copy()
 
-        channel_names = VARIANT_OUTPUT_CHANNELS[variant]   # 3 strings
+        channel_names = VARIANT_OUTPUT_CHANNELS[variant]
         for ch_idx, ch_name in enumerate(channel_names):
             dummy_pred[:, SCALER_COL[ch_name]] = pred_seq[:, ch_idx]
 
         inv_pred = ds.scaler.inverse_transform(dummy_pred)
         inv_actual = ds.scaler.inverse_transform(dummy_actual)
 
-        # ---- Metrics (in deg C; per channel; NaN for non-predicted) ----
+        # ---- Metrics ----
         win = max(10, n // 10)
         metric_row = {
             'Case': case_id,
@@ -348,14 +384,12 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                 metric_row[f'MAPE_{ch_name} (%)'] = _mape(g, p)
                 metric_row[f'R2_{ch_name}']       = _r2(g, p)
             else:
-                # Channel not predicted by this variant -> NaN
                 for k in (f'MAE_{ch_name} (C)', f'RMSE_{ch_name} (C)',
                           f'MaxErr_{ch_name} (C)',
                           f'EarlyMAE_{ch_name} (C)', f'LateMAE_{ch_name} (C)',
                           f'MAPE_{ch_name} (%)', f'R2_{ch_name}'):
                     metric_row[k] = float('nan')
 
-        # Overall MAPE / R^2 (concatenate ONLY predicted channels)
         concat_g = np.concatenate(
             [inv_actual[:, SCALER_COL[c]] for c in channel_names])
         concat_p = np.concatenate(
@@ -363,7 +397,6 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         metric_row['MAPE_Overall (%)'] = _mape(concat_g, concat_p)
         metric_row['R2_Overall']       = _r2(concat_g, concat_p)
 
-        # Stash raw arrays for replotting (saved to predictions.npz at end).
         raw_predictions.append({
             'case_id': case_id,
             'inv_actual': inv_actual.astype(np.float32),
@@ -374,18 +407,11 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         summary.append(metric_row)
 
         # ---- Plot ----
-        # Plot only the channels this variant predicts (actual vs pred).
-        # Channel -> color map for visual consistency across variants.
         CH_COLOR = {
             'T_inner': 'red',     'T_outer': 'blue',
             'T_avg':   'green',   'Input_T': 'purple',
         }
         plt.figure(figsize=(12, 6))
-        # Prepend the t=0 row (Arnold 2026-07-23): predictions cover t=1..n,
-        # so plotting from t=1 hid the shared starting point and made a
-        # one-step-lagged prediction look like it started somewhere else.
-        # t=0 is the GIVEN initial condition, identical for actual and pred.
-        # Plot-only -- inv_actual / inv_pred (and every metric) are untouched.
         row0 = ds.scaler.inverse_transform(np.column_stack([
             ft[:1], ft_out[:1], ft_in[:1], ft_avg[:1], ft_inp[:1],
         ]).astype(np.float64))
@@ -403,7 +429,7 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         plt.ylabel("Temperature (C)")
         plt.title(f"[{variant}] Prediction - {case_id}")
         plt.legend(fontsize=8)
-        # Composite info text from whatever channels exist
+
         info_lines = [f"Channels: {'|'.join(channel_names)}"]
         for ch in channel_names:
             mae_v = metric_row[f'MAE_{ch} (C)']
@@ -424,12 +450,6 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
 
     summary_df = pd.DataFrame(summary)
     avg_row = {'Case': 'AVERAGE', 'CaseFile': ''}
-    # Build AVERAGE row column-by-column. Only numeric columns get .mean();
-    # string columns (e.g. 'OutputChannels' = 'T_inner|T_outer|T_avg', added
-    # 2026-05-20 to label which channels the variant predicts) would raise
-    # TypeError on .mean(). For non-numeric columns we copy the first row's
-    # value, which is the canonical value for this variant since all 70 test
-    # cases share the same channel layout. (Bug found by santhosh on 2026-05-25.)
     for col in summary_df.columns:
         if col in ('Case', 'CaseFile'):
             continue
@@ -439,12 +459,9 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             avg_row[col] = summary_df[col].iloc[0]
     summary_df = pd.concat([summary_df, pd.DataFrame([avg_row])], ignore_index=True)
 
-    # Filename simplified to `summary_errors.csv` since the directory is
-    # already variant-scoped under runs/<RUN_NAME>/variants/<variant>/.
     csv_path = os.path.join(output_dir, "summary_errors.csv")
     summary_df.to_csv(csv_path, index=False, float_format='%.4f')
 
-    # Inference-speed aggregates (excludes the AVERAGE row).
     avg_ms_per_case = float(np.mean(per_case_infer_ms))
     total_infer_s = float(np.sum(per_case_infer_ms)) / 1000.0
     cases_per_sec = (len(per_case_infer_ms) / total_infer_s) if total_infer_s > 0 else float('nan')
@@ -452,7 +469,6 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                        if total_steps_predicted > 0 else float('nan'))
 
     print(f"\n[{variant}] summary -> {csv_path}")
-    # Only print metrics for the channels this variant actually predicts.
     channel_names = VARIANT_OUTPUT_CHANNELS[variant]
 
     def _fmt(val, fmt='.4f'):
@@ -476,8 +492,6 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
           f"{_fmt(avg_row['MAPE_Overall (%)'], '.3f')}%")
     print(f"[{variant}] avg R^2   {r2_parts}  Overall="
           f"{_fmt(avg_row['R2_Overall'])}")
-    # Early / Late MAE is reported on the FIRST predicted channel (most
-    # informative for AR-drift diagnosis on the hardest channel).
     primary_ch = channel_names[0] if not is_inverse(variant) else 'T_inner'
     if primary_ch in channel_names:
         print(f"[{variant}] avg Early/Late MAE  {primary_ch} "
@@ -495,7 +509,6 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         'total_steps_predicted': total_steps_predicted,
     }
 
-    # Persist raw predictions so plots can be regenerated without re-running inference
     if SAVE_PREDICTIONS:
         try:
             save_predictions_npz(variant, raw_predictions)
@@ -505,5 +518,3 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             print(f"[{variant}] WARNING: predictions.npz save failed: {e}")
 
     return summary_df, speed_stats
-
-

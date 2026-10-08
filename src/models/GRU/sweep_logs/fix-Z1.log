@@ -1,0 +1,206 @@
+
+===== arm Z1 {'ANCHOR_LEAD': '1', 'LOSS_WEIGHTS': '1,6,3', 'PHYSICS_BOUND_WEIGHT': '0', 'OTHER_CH_MODE': 'abs', 'EARLY_LOSS_WEIGHT': '3.6', 'EARLY_LOSS_TAU': '6.0', 'EARLY_SMOOTH_TO_WEIGHT': '0.08', 'EARLY_SMOOTH_TA_WEIGHT': '0.16', 'EARLY_SMOOTH_TAU': '6.0', 'PINN_NORM': 'weighted'} launched 2026-09-22 12:21:47 =====
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 23.6 GB
+============================================================
+LOADING ALL DATA (ONE TIME ONLY)
+============================================================
+Data source: NEW (2026-04-26 upload)
+  train_dir = /home/cymaker/gru_project/data_temp/training_data/Latest Database (Use this for training)
+  test_dir  = /home/cymaker/gru_project/data_temp/tests/70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 70
+
+FOLDER-AS-GIVEN split (legacy):
+  train: 296, val: 15, test: 70
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+
+Data loaded successfully.
+  Training samples  : 296
+  Validation samples: 15
+  Test samples      : 70
+============================================================
+
+######################################################################
+# SEED 1/1  seed=7  RUN_NAME=2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7
+######################################################################
+
+############################################################
+INPUT-FEATURE ABLATION  -  4 variants, latest hyperparameters
+  hidden=128  layers=5  dropout=0.3  lr=0.0025
+  batch=16  max_epochs=1000  early_stop=150
+  Variants: ['abs_sliding']
+  Window size (abs_window only): 10
+  Sliding pad mode: variable
+  T_inner mode: anchor  (anchor_lead=1)
+  Loss weights (Ti,To,Ta): [1.0, 6.0, 3.0]   physics bound w=0.0
+  T_outer/T_avg mode: abs
+  Run name: 2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7
+  All artifacts will be written under: /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7
+############################################################
+Run config snapshot -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/run_config.json
+
+============================================================
+VARIANT: abs_sliding  (input_size=5, encoder=point)
+============================================================
+
+--- Building datasets for variant 'abs_sliding' ---
+[abs_sliding] orthogonal init applied to main GRU (and window encoder if present)
+[abs_sliding] early-horizon loss multiplier active: weight=3.6, tau=6
+[abs_sliding] transient-localized PINN smoothness active: to_weight=0.08, ta_weight=0.16, tau=6
+[abs_sliding] physics affine registered for PINN regularizations.
+[abs_sliding] PINN_NORM=weighted: decayed penalties averaged over the decay window, not the full horizon
+[abs_sliding] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[abs_sliding] T_inner anchor on Input_T: delta mean=-0.154 C std=0.667 C  ->  KA=1.00000 KB=-0.00025 KC=0.001096
+[abs_sliding] trainable params: total=680,067  gru=448,128  fc=387  encoder(point)=231,552
+[abs_sliding] epoch   10 (warmup): train=0.7269  val=0.2777 | PINN: smooth_to=0.55622 smooth_ta=0.38846 (pinn_w=0.10665) | PHYS: data=6.2021e-01 pinn=1.0665e-01 ratio=0.1720 k=1.0000e+00  lr=4.17e-04  tf=0.455  best=0.2777 @ ep10
+[abs_sliding] epoch   20 (warmup): train=0.5135  val=0.4607 | PINN: smooth_to=0.31483 smooth_ta=0.19396 (pinn_w=0.05622) | PHYS: data=4.5723e-01 pinn=5.6220e-02 ratio=0.1230 k=1.0000e+00  lr=8.33e-04  tf=0.405  best=0.2777 @ ep10
+[abs_sliding] epoch   30 (warmup): train=0.4642  val=0.2178 | PINN: smooth_to=0.18187 smooth_ta=0.27547 (pinn_w=0.05863) | PHYS: data=4.0558e-01 pinn=5.8625e-02 ratio=0.1445 k=1.0000e+00  lr=1.25e-03  tf=0.355  best=0.2178 @ ep30
+[abs_sliding] epoch   40 (warmup): train=0.3507  val=0.4997 | PINN: smooth_to=0.12559 smooth_ta=0.06854 (pinn_w=0.02101) | PHYS: data=3.2971e-01 pinn=2.1013e-02 ratio=0.0637 k=1.0000e+00  lr=1.67e-03  tf=0.305  best=0.2049 @ ep32
+[abs_sliding] epoch   50 (warmup): train=0.3128  val=0.5895 | PINN: smooth_to=0.04779 smooth_ta=0.05863 (pinn_w=0.01320) | PHYS: data=2.9962e-01 pinn=1.3204e-02 ratio=0.0441 k=1.0000e+00  lr=2.08e-03  tf=0.255  best=0.1854 @ ep45
+[abs_sliding] epoch   60 (warmup): train=0.2739  val=0.1533 | PINN: smooth_to=0.03871 smooth_ta=0.07703 (pinn_w=0.01542) | PHYS: data=2.5844e-01 pinn=1.5422e-02 ratio=0.0597 k=1.0000e+00  lr=2.50e-03  tf=0.205  best=0.1533 @ ep60
+[abs_sliding] epoch   70 (main  ): train=0.1194  val=0.0445 | PINN: smooth_to=0.00804 smooth_ta=0.00865 (pinn_w=0.00203) | PHYS: data=1.1733e-01 pinn=2.0271e-03 ratio=0.0173 k=1.0000e+00  lr=2.50e-03  tf=0.155  best=0.0258 @ ep68
+[abs_sliding] epoch   80 (main  ): train=0.0554  val=0.0703 | PINN: smooth_to=0.00426 smooth_ta=0.00404 (pinn_w=0.00099) | PHYS: data=5.4407e-02 pinn=9.8761e-04 ratio=0.0182 k=1.0000e+00  lr=2.50e-03  tf=0.105  best=0.0226 @ ep72
+[abs_sliding] epoch   90 (main  ): train=0.0496  val=0.0823 | PINN: smooth_to=0.00175 smooth_ta=0.00145 (pinn_w=0.00037) | PHYS: data=4.9275e-02 pinn=3.7201e-04 ratio=0.0075 k=1.0000e+00  lr=2.50e-03  tf=0.055  best=0.0226 @ ep72
+[abs_sliding] epoch  100 (main  ): train=0.0438  val=0.0203 | PINN: smooth_to=0.00154 smooth_ta=0.00251 (pinn_w=0.00052) | PHYS: data=4.3238e-02 pinn=5.2492e-04 ratio=0.0121 k=1.0000e+00  lr=2.50e-03  tf=0.005  best=0.0124 @ ep97
+[abs_sliding] epoch  110 (main  ): train=0.0374  val=0.0363 | PINN: smooth_to=0.00115 smooth_ta=0.00076 (pinn_w=0.00021) | PHYS: data=3.7211e-02 pinn=2.1443e-04 ratio=0.0058 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0123 @ ep106
+[abs_sliding] epoch  120 (main  ): train=0.0238  val=0.0118 | PINN: smooth_to=0.00064 smooth_ta=0.00051 (pinn_w=0.00013) | PHYS: data=2.3641e-02 pinn=1.3332e-04 ratio=0.0056 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0118 @ ep120
+[abs_sliding] epoch  130 (main  ): train=0.0407  val=0.0270 | PINN: smooth_to=0.00081 smooth_ta=0.00059 (pinn_w=0.00016) | PHYS: data=4.0492e-02 pinn=1.5912e-04 ratio=0.0039 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0093 @ ep127
+[abs_sliding] epoch  140 (main  ): train=0.0659  val=0.0329 | PINN: smooth_to=0.00141 smooth_ta=0.00106 (pinn_w=0.00028) | PHYS: data=6.5602e-02 pinn=2.8316e-04 ratio=0.0043 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0093 @ ep127
+[abs_sliding] epoch  150 (main  ): train=0.0357  val=0.0124 | PINN: smooth_to=0.00068 smooth_ta=0.00052 (pinn_w=0.00014) | PHYS: data=3.5533e-02 pinn=1.3742e-04 ratio=0.0039 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0076 @ ep145
+[abs_sliding] epoch  160 (main  ): train=0.0240  val=0.0219 | PINN: smooth_to=0.00055 smooth_ta=0.00064 (pinn_w=0.00015) | PHYS: data=2.3814e-02 pinn=1.4636e-04 ratio=0.0061 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0066 @ ep158
+[abs_sliding] epoch  170 (main  ): train=0.0348  val=0.0564 | PINN: smooth_to=0.00123 smooth_ta=0.00101 (pinn_w=0.00026) | PHYS: data=3.4576e-02 pinn=2.5985e-04 ratio=0.0075 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0066 @ ep158
+[abs_sliding] epoch  180 (main  ): train=0.0351  val=0.0272 | PINN: smooth_to=0.00046 smooth_ta=0.00059 (pinn_w=0.00013) | PHYS: data=3.4980e-02 pinn=1.3146e-04 ratio=0.0038 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0066 @ ep158
+[abs_sliding] epoch  190 (main  ): train=0.0310  val=0.0227 | PINN: smooth_to=0.00185 smooth_ta=0.00122 (pinn_w=0.00034) | PHYS: data=3.0624e-02 pinn=3.4280e-04 ratio=0.0112 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0066 @ ep158
+[abs_sliding] epoch  200 (main  ): train=0.0255  val=0.0173 | PINN: smooth_to=0.00030 smooth_ta=0.00029 (pinn_w=0.00007) | PHYS: data=2.5453e-02 pinn=7.0021e-05 ratio=0.0028 k=1.0000e+00  lr=2.50e-03  tf=0.000  best=0.0066 @ ep158
+[abs_sliding] epoch  210 (main  ): train=0.0153  val=0.0103 | PINN: smooth_to=0.00035 smooth_ta=0.00035 (pinn_w=0.00008) | PHYS: data=1.5226e-02 pinn=8.3987e-05 ratio=0.0055 k=1.0000e+00  lr=1.25e-03  tf=0.000  best=0.0066 @ ep158
+[abs_sliding] epoch  220 (main  ): train=0.0156  val=0.0116 | PINN: smooth_to=0.00023 smooth_ta=0.00028 (pinn_w=0.00006) | PHYS: data=1.5556e-02 pinn=6.3801e-05 ratio=0.0041 k=1.0000e+00  lr=1.25e-03  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  230 (main  ): train=0.0144  val=0.0099 | PINN: smooth_to=0.00016 smooth_ta=0.00027 (pinn_w=0.00006) | PHYS: data=1.4371e-02 pinn=5.5907e-05 ratio=0.0039 k=1.0000e+00  lr=1.25e-03  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  240 (main  ): train=0.0142  val=0.0151 | PINN: smooth_to=0.00013 smooth_ta=0.00032 (pinn_w=0.00006) | PHYS: data=1.4184e-02 pinn=6.1688e-05 ratio=0.0043 k=1.0000e+00  lr=1.25e-03  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  250 (main  ): train=0.0127  val=0.0115 | PINN: smooth_to=0.00014 smooth_ta=0.00020 (pinn_w=0.00004) | PHYS: data=1.2652e-02 pinn=4.3640e-05 ratio=0.0034 k=1.0000e+00  lr=1.25e-03  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  260 (main  ): train=0.0139  val=0.0163 | PINN: smooth_to=0.00019 smooth_ta=0.00030 (pinn_w=0.00006) | PHYS: data=1.3793e-02 pinn=6.3911e-05 ratio=0.0046 k=1.0000e+00  lr=1.25e-03  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  270 (main  ): train=0.0133  val=0.0056 | PINN: smooth_to=0.00013 smooth_ta=0.00022 (pinn_w=0.00005) | PHYS: data=1.3220e-02 pinn=4.5881e-05 ratio=0.0035 k=1.0000e+00  lr=6.25e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  280 (main  ): train=0.0084  val=0.0086 | PINN: smooth_to=0.00007 smooth_ta=0.00015 (pinn_w=0.00003) | PHYS: data=8.3927e-03 pinn=2.9821e-05 ratio=0.0036 k=1.0000e+00  lr=6.25e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  290 (main  ): train=0.0118  val=0.0092 | PINN: smooth_to=0.00008 smooth_ta=0.00019 (pinn_w=0.00004) | PHYS: data=1.1718e-02 pinn=3.7546e-05 ratio=0.0032 k=1.0000e+00  lr=6.25e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  300 (main  ): train=0.0083  val=0.0043 | PINN: smooth_to=0.00009 smooth_ta=0.00017 (pinn_w=0.00004) | PHYS: data=8.2320e-03 pinn=3.5480e-05 ratio=0.0043 k=1.0000e+00  lr=6.25e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  310 (main  ): train=0.0091  val=0.0050 | PINN: smooth_to=0.00009 smooth_ta=0.00021 (pinn_w=0.00004) | PHYS: data=9.0686e-03 pinn=3.9926e-05 ratio=0.0044 k=1.0000e+00  lr=6.25e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  320 (main  ): train=0.0075  val=0.0074 | PINN: smooth_to=0.00006 smooth_ta=0.00015 (pinn_w=0.00003) | PHYS: data=7.4396e-03 pinn=2.9118e-05 ratio=0.0039 k=1.0000e+00  lr=3.13e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  330 (main  ): train=0.0072  val=0.0055 | PINN: smooth_to=0.00006 smooth_ta=0.00017 (pinn_w=0.00003) | PHYS: data=7.1537e-03 pinn=3.1517e-05 ratio=0.0044 k=1.0000e+00  lr=3.13e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  340 (main  ): train=0.0068  val=0.0059 | PINN: smooth_to=0.00006 smooth_ta=0.00014 (pinn_w=0.00003) | PHYS: data=6.8160e-03 pinn=2.6782e-05 ratio=0.0039 k=1.0000e+00  lr=3.13e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  350 (main  ): train=0.0076  val=0.0048 | PINN: smooth_to=0.00006 smooth_ta=0.00017 (pinn_w=0.00003) | PHYS: data=7.5836e-03 pinn=3.1875e-05 ratio=0.0042 k=1.0000e+00  lr=3.13e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] epoch  360 (main  ): train=0.0058  val=0.0055 | PINN: smooth_to=0.00007 smooth_ta=0.00016 (pinn_w=0.00003) | PHYS: data=5.7275e-03 pinn=3.0285e-05 ratio=0.0053 k=1.0000e+00  lr=3.13e-04  tf=0.000  best=0.0038 @ ep211
+[abs_sliding] early stop at epoch 361
+[abs_sliding] restored best (val=0.003762 @ ep211 / 361 total) from /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/checkpoints/best_gru_variant_abs_sliding.pth
+[abs_sliding] PINN diagnostic plot saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/variants/abs_sliding/pinn_vs_data_loss.png
+
+============================================================
+[abs_sliding] Testing on variant_abs_sliding: 70 cases
+============================================================
+  [abs_sliding] 1/70: tests/70_cases/(67) Discharge 2- Erick.csv
+  [abs_sliding] 2/70: tests/70_cases/(68) Discharge 3- Erick.csv
+  [abs_sliding] 3/70: tests/70_cases/(69) Discharge 4- Erick.csv
+  [abs_sliding] 4/70: tests/70_cases/(70) Discharge 1- Erick.csv
+  [abs_sliding] 5/70: tests/70_cases/Case (1).csv
+  [abs_sliding] 6/70: tests/70_cases/Case (10).csv
+  [abs_sliding] 7/70: tests/70_cases/Case (11).csv
+  [abs_sliding] 8/70: tests/70_cases/Case (12).csv
+  [abs_sliding] 9/70: tests/70_cases/Case (13).csv
+  [abs_sliding] 10/70: tests/70_cases/Case (14).csv
+  [abs_sliding] 11/70: tests/70_cases/Case (15).csv
+  [abs_sliding] 12/70: tests/70_cases/Case (16).csv
+  [abs_sliding] 13/70: tests/70_cases/Case (17).csv
+  [abs_sliding] 14/70: tests/70_cases/Case (18).csv
+  [abs_sliding] 15/70: tests/70_cases/Case (19).csv
+  [abs_sliding] 16/70: tests/70_cases/Case (2).csv
+  [abs_sliding] 17/70: tests/70_cases/Case (20).csv
+  [abs_sliding] 18/70: tests/70_cases/Case (21).csv
+  [abs_sliding] 19/70: tests/70_cases/Case (22).csv
+  [abs_sliding] 20/70: tests/70_cases/Case (23).csv
+  [abs_sliding] 21/70: tests/70_cases/Case (24).csv
+  [abs_sliding] 22/70: tests/70_cases/Case (25).csv
+  [abs_sliding] 23/70: tests/70_cases/Case (26).csv
+  [abs_sliding] 24/70: tests/70_cases/Case (27).csv
+  [abs_sliding] 25/70: tests/70_cases/Case (28).csv
+  [abs_sliding] 26/70: tests/70_cases/Case (29).csv
+  [abs_sliding] 27/70: tests/70_cases/Case (3).csv
+  [abs_sliding] 28/70: tests/70_cases/Case (30).csv
+  [abs_sliding] 29/70: tests/70_cases/Case (31).csv
+  [abs_sliding] 30/70: tests/70_cases/Case (32).csv
+  [abs_sliding] 31/70: tests/70_cases/Case (33).csv
+  [abs_sliding] 32/70: tests/70_cases/Case (34).csv
+  [abs_sliding] 33/70: tests/70_cases/Case (35).csv
+  [abs_sliding] 34/70: tests/70_cases/Case (36).csv
+  [abs_sliding] 35/70: tests/70_cases/Case (37).csv
+  [abs_sliding] 36/70: tests/70_cases/Case (38).csv
+  [abs_sliding] 37/70: tests/70_cases/Case (39).csv
+  [abs_sliding] 38/70: tests/70_cases/Case (4).csv
+  [abs_sliding] 39/70: tests/70_cases/Case (40).csv
+  [abs_sliding] 40/70: tests/70_cases/Case (41).csv
+  [abs_sliding] 41/70: tests/70_cases/Case (42).csv
+  [abs_sliding] 42/70: tests/70_cases/Case (43).csv
+  [abs_sliding] 43/70: tests/70_cases/Case (44).csv
+  [abs_sliding] 44/70: tests/70_cases/Case (45).csv
+  [abs_sliding] 45/70: tests/70_cases/Case (5).csv
+  [abs_sliding] 46/70: tests/70_cases/Case (57) Type 9- Erick.csv
+  [abs_sliding] 47/70: tests/70_cases/Case (6).csv
+  [abs_sliding] 48/70: tests/70_cases/Case (66) Discharge 1- Erick.csv
+  [abs_sliding] 49/70: tests/70_cases/Case (7).csv
+  [abs_sliding] 50/70: tests/70_cases/Case (8).csv
+  [abs_sliding] 51/70: tests/70_cases/Case (9).csv
+  [abs_sliding] 52/70: tests/70_cases/Case(46) Type 5- Erick.csv
+  [abs_sliding] 53/70: tests/70_cases/Case(47) Type 5- Erick.csv
+  [abs_sliding] 54/70: tests/70_cases/Case(48) Type 5- Erick.csv
+  [abs_sliding] 55/70: tests/70_cases/Case(49) Type 5- Erick.csv
+  [abs_sliding] 56/70: tests/70_cases/Case(50) Type 6- Erick.csv
+  [abs_sliding] 57/70: tests/70_cases/Case(51) Type 6- Erick.csv
+  [abs_sliding] 58/70: tests/70_cases/Case(52) Type 6- Erick.csv
+  [abs_sliding] 59/70: tests/70_cases/Case(53) Type 6- Erick.csv
+  [abs_sliding] 60/70: tests/70_cases/Case(54) Type 9- Erick.csv
+  [abs_sliding] 61/70: tests/70_cases/Case(55) Type 9- Erick.csv
+  [abs_sliding] 62/70: tests/70_cases/Case(56) Type 9- Erick.csv
+  [abs_sliding] 63/70: tests/70_cases/Case(58)Type 7 Daniel.csv
+  [abs_sliding] 64/70: tests/70_cases/Case(59)Type 7 Daniel.csv
+  [abs_sliding] 65/70: tests/70_cases/Case(60)Type 7 Daniel.csv
+  [abs_sliding] 66/70: tests/70_cases/Case(61)Type 7 Daniel.csv
+  [abs_sliding] 67/70: tests/70_cases/Case(62)Type 8 Daniel.csv
+  [abs_sliding] 68/70: tests/70_cases/Case(63)Type 8 Daniel.csv
+  [abs_sliding] 69/70: tests/70_cases/Case(64)Type 8 Daniel.csv
+  [abs_sliding] 70/70: tests/70_cases/Case(65)Type 8 Daniel.csv
+
+[abs_sliding] summary -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/variants/abs_sliding/summary_errors.csv
+[abs_sliding] avg MAE   T_inner=0.3570  T_outer=1.4627  T_avg=2.7767
+[abs_sliding] avg RMSE  T_inner=0.4102  T_outer=1.8339  T_avg=3.1115
+[abs_sliding] avg MAPE  T_inner=0.126%  T_outer=0.627%  T_avg=1.057%  Overall=0.603%
+[abs_sliding] avg R^2   T_inner=0.9999  T_outer=0.9942  T_avg=0.9853  Overall=0.9971
+[abs_sliding] avg Early/Late MAE  T_inner 0.3457 / 0.3479
+[abs_sliding] inference: 17781.4 ms/case  |  0.06 cases/s  |  12348.19 us/step
+[abs_sliding] predictions saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/variants/abs_sliding/predictions.npz
+[abs_sliding] DONE  overall_MAE=1.5321C  time=5h 36m 8s
+  meta -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/variants/abs_sliding/meta.json
+  done.flag written; resume_state.pt removed.
+
+============================================================
+VARIANT COMPARISON SUMMARY
+============================================================
+Aggregate JSON saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/comparison/variant_results.json
+
+Rank Variant               In  Enc     Params    Best/Tot   MAE      MAPE     R^2     EarlyInn  LateInn   ms/case   Time      
+--------------------------------------------------------------------------------------------------------------------------------------------
+1    abs_sliding           5   point    680,067  211/361   1.5321   0.603    0.9971  0.3457    0.3479    17781.4   5h 36m 8s 
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+BEST VARIANT: abs_sliding  (MAE=1.5321C  MAPE=0.603%  R^2=0.9971  params=680,067)
+
+Comparison CSV saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/comparison/variant_comparison.csv
+Loss curves saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/comparison/variant_loss_curves.png
+Bar chart saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/comparison/variant_test_mae.png
+Capacity/speed/drift summary saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_earlyL3.6_tau6_earlyPinnTo0.08_ta0.16_pnormW_seed7/comparison/variant_capacity_speed.png
+
+============================================================
+All variants done. Total runtime: 5h 36m 10s
+============================================================

@@ -1,0 +1,408 @@
+
+===== arm G {'ANCHOR_LEAD': '1', 'LOSS_WEIGHTS': '1,6,3', 'PHYSICS_BOUND_WEIGHT': '0', 'SMOOTH_TO_WEIGHT': '0.005', 'SMOOTH_TA_WEIGHT': '0.01', 'OTHER_CH_MODE': 'abs', 'USE_DWA': '1', 'SOFT_START_TAU': '1.5'} launched 2026-08-12 23:54:45 =====
+Traceback (most recent call last):
+  File "/home/cymaker/Yash/AI-TES/src/models/GRU/GRU_input_ablation.py", line 8, in <module>
+    from tes_gru.main import main
+  File "/home/cymaker/Yash/AI-TES/src/models/GRU/tes_gru/main.py", line 18, in <module>
+    from . import config            # live access to the mutable config.RUN_NAME
+  File "/home/cymaker/Yash/AI-TES/src/models/GRU/tes_gru/config.py", line 415, in <module>
+    if SMOOTH_TO_WEIGHT > 0.0 or SMOOTH_TA_WEIGHT > 0.0:
+NameError: name 'SMOOTH_TO_WEIGHT' is not defined
+
+===== arm G {'ANCHOR_LEAD': '1', 'LOSS_WEIGHTS': '1,6,3', 'PHYSICS_BOUND_WEIGHT': '0', 'SMOOTH_TO_WEIGHT': '0.005', 'SMOOTH_TA_WEIGHT': '0.01', 'OTHER_CH_MODE': 'abs', 'USE_DWA': '1', 'SOFT_START_TAU': '1.5'} launched 2026-08-13 00:02:30 =====
+
+===== arm G {'ANCHOR_LEAD': '1', 'LOSS_WEIGHTS': '1,6,3', 'PHYSICS_BOUND_WEIGHT': '0', 'SMOOTH_TO_WEIGHT': '0.005', 'SMOOTH_TA_WEIGHT': '0.01', 'OTHER_CH_MODE': 'abs', 'USE_DWA': '1', 'SOFT_START_TAU': '1.5'} launched 2026-08-13 00:09:33 =====
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 23.6 GB
+============================================================
+LOADING ALL DATA (ONE TIME ONLY)
+============================================================
+Data source: NEW (2026-04-26 upload)
+  train_dir = /home/cymaker/gru_project/data_temp/training_data/Latest Database (Use this for training)
+  test_dir  = /home/cymaker/gru_project/data_temp/tests/70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 70
+
+FOLDER-AS-GIVEN split (legacy):
+  train: 296, val: 15, test: 70
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+
+Data loaded successfully.
+  Training samples  : 296
+  Validation samples: 15
+  Test samples      : 70
+============================================================
+
+######################################################################
+# SEED 1/2  seed=7  RUN_NAME=2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7
+######################################################################
+
+############################################################
+INPUT-FEATURE ABLATION  -  4 variants, latest hyperparameters
+  hidden=128  layers=5  dropout=0.3  lr=0.0025
+  batch=16  max_epochs=1000  early_stop=150
+  Variants: ['abs_sliding']
+  Window size (abs_window only): 10
+  Sliding pad mode: variable
+  T_inner mode: anchor  (anchor_lead=1)
+  Loss weights (Ti,To,Ta): [1.0, 6.0, 3.0]   physics bound w=0.0
+  T_outer/T_avg mode: abs
+  Run name: 2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7
+  All artifacts will be written under: /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7
+############################################################
+Run config snapshot -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/run_config.json
+
+============================================================
+VARIANT: abs_sliding  (input_size=5, encoder=point)
+============================================================
+
+--- Building datasets for variant 'abs_sliding' ---
+[abs_sliding] orthogonal init applied to main GRU (and window encoder if present)
+[abs_sliding] physics affine registered. ACTIVE PINN regularizations: to_smooth_w=0.005, ta_smooth_w=0.01
+[abs_sliding] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[abs_sliding] T_inner anchor on Input_T: delta mean=-0.154 C std=0.667 C  ->  KA=1.00000 KB=-0.00025 KC=0.001096
+[abs_sliding] trainable params: total=680,067  gru=448,128  fc=387  encoder(point)=231,552
+[abs_sliding] WARNING: could not restore CUDA RNG: RNG state must be a torch.ByteTensor
+[abs_sliding] RESUMED from epoch 5 (best_val=0.313731 @ ep3)
+[abs_sliding] epoch   10 (warmup): train=0.3390  val=0.9749 | PINN: smooth_to=3.33672 smooth_ta=2.31188 | DWA: w1=1.039 w2=0.934 w3=1.028  lr=4.17e-04  tf=0.455  best=0.1752 @ ep6
+[abs_sliding] epoch   20 (warmup): train=0.1928  val=0.1287 | PINN: smooth_to=0.59522 smooth_ta=0.44979 | DWA: w1=0.969 w2=1.001 w3=1.030  lr=8.33e-04  tf=0.405  best=0.1287 @ ep20
+[abs_sliding] epoch   30 (warmup): train=0.1167  val=0.2277 | PINN: smooth_to=0.16041 smooth_ta=0.15537 | DWA: w1=1.040 w2=0.902 w3=1.059  lr=1.25e-03  tf=0.355  best=0.0569 @ ep29
+[abs_sliding] epoch   40 (warmup): train=0.0767  val=0.1119 | PINN: smooth_to=0.12602 smooth_ta=0.10185 | DWA: w1=1.162 w2=0.947 w3=0.891  lr=1.67e-03  tf=0.305  best=0.0310 @ ep36
+[abs_sliding] epoch   50 (warmup): train=0.0880  val=0.0347 | PINN: smooth_to=0.06621 smooth_ta=0.07755 | DWA: w1=0.920 w2=1.001 w3=1.078  lr=2.08e-03  tf=0.255  best=0.0307 @ ep46
+[abs_sliding] epoch   60 (warmup): train=0.0881  val=0.1039 | PINN: smooth_to=0.07879 smooth_ta=0.07479 | DWA: w1=0.964 w2=0.985 w3=1.051  lr=2.50e-03  tf=0.205  best=0.0307 @ ep46
+[abs_sliding] epoch   70 (main  ): train=0.0903  val=0.0768 | PINN: smooth_to=0.05339 smooth_ta=0.04969 | DWA: w1=0.977 w2=1.009 w3=1.014  lr=2.50e-03  tf=0.155  best=0.0229 @ ep66
+[abs_sliding] epoch   80 (main  ): train=0.0439  val=0.0338 | PINN: smooth_to=0.03928 smooth_ta=0.03288 | DWA: w1=0.981 w2=1.135 w3=0.885  lr=2.50e-03  tf=0.105  best=0.0229 @ ep66
+[abs_sliding] epoch   90 (main  ): train=0.0360  val=0.0352 | PINN: smooth_to=0.02989 smooth_ta=0.05003 | DWA: w1=1.030 w2=1.006 w3=0.964  lr=2.50e-03  tf=0.055  best=0.0154 @ ep89
+[abs_sliding] epoch  100 (main  ): train=0.0542  val=0.0503 | PINN: smooth_to=0.02959 smooth_ta=0.05931 | DWA: w1=0.914 w2=1.052 w3=1.034  lr=2.50e-03  tf=0.005  best=0.0154 @ ep89
+[abs_sliding] epoch  110 (main  ): train=0.0325  val=0.0142 | PINN: smooth_to=0.02973 smooth_ta=0.08968 | DWA: w1=0.977 w2=0.957 w3=1.066  lr=2.50e-03  tf=0.000  best=0.0142 @ ep110
+[abs_sliding] epoch  120 (main  ): train=0.0431  val=0.0328 | PINN: smooth_to=0.02550 smooth_ta=0.03745 | DWA: w1=1.176 w2=0.936 w3=0.888  lr=2.50e-03  tf=0.000  best=0.0142 @ ep110
+[abs_sliding] epoch  130 (main  ): train=0.0590  val=0.0357 | PINN: smooth_to=0.05401 smooth_ta=0.04425 | DWA: w1=1.014 w2=1.019 w3=0.967  lr=2.50e-03  tf=0.000  best=0.0132 @ ep127
+[abs_sliding] epoch  140 (main  ): train=0.0504  val=0.0417 | PINN: smooth_to=0.13597 smooth_ta=0.08021 | DWA: w1=0.549 w2=1.771 w3=0.680  lr=2.50e-03  tf=0.000  best=0.0132 @ ep127
+[abs_sliding] epoch  150 (main  ): train=0.0286  val=0.1509 | PINN: smooth_to=0.09147 smooth_ta=0.03980 | DWA: w1=1.355 w2=0.930 w3=0.715  lr=2.50e-03  tf=0.000  best=0.0117 @ ep147
+[abs_sliding] epoch  160 (main  ): train=0.0257  val=0.0143 | PINN: smooth_to=0.01946 smooth_ta=0.03012 | DWA: w1=0.953 w2=0.992 w3=1.056  lr=2.50e-03  tf=0.000  best=0.0117 @ ep147
+[abs_sliding] epoch  170 (main  ): train=0.0295  val=0.0418 | PINN: smooth_to=0.01714 smooth_ta=0.02788 | DWA: w1=1.013 w2=0.965 w3=1.022  lr=2.50e-03  tf=0.000  best=0.0113 @ ep169
+[abs_sliding] epoch  180 (main  ): train=0.0547  val=0.0457 | PINN: smooth_to=0.05375 smooth_ta=0.05613 | DWA: w1=1.134 w2=1.007 w3=0.859  lr=2.50e-03  tf=0.000  best=0.0113 @ ep169
+[abs_sliding] epoch  190 (main  ): train=0.0320  val=0.0124 | PINN: smooth_to=0.02763 smooth_ta=0.03120 | DWA: w1=0.960 w2=0.986 w3=1.054  lr=2.50e-03  tf=0.000  best=0.0113 @ ep169
+[abs_sliding] epoch  200 (main  ): train=0.0357  val=0.0154 | PINN: smooth_to=0.03585 smooth_ta=0.04874 | DWA: w1=0.909 w2=1.056 w3=1.034  lr=2.50e-03  tf=0.000  best=0.0113 @ ep169
+[abs_sliding] epoch  210 (main  ): train=0.0273  val=0.0138 | PINN: smooth_to=0.02454 smooth_ta=0.04615 | DWA: w1=0.872 w2=1.098 w3=1.030  lr=2.50e-03  tf=0.000  best=0.0111 @ ep204
+[abs_sliding] epoch  220 (main  ): train=0.0290  val=0.0271 | PINN: smooth_to=0.02496 smooth_ta=0.02240 | DWA: w1=1.084 w2=1.057 w3=0.859  lr=2.50e-03  tf=0.000  best=0.0111 @ ep204
+[abs_sliding] epoch  230 (main  ): train=0.0225  val=0.0250 | PINN: smooth_to=0.02163 smooth_ta=0.03690 | DWA: w1=0.978 w2=0.950 w3=1.072  lr=2.50e-03  tf=0.000  best=0.0107 @ ep229
+[abs_sliding] epoch  240 (main  ): train=0.0320  val=0.0093 | PINN: smooth_to=0.02476 smooth_ta=0.05019 | DWA: w1=1.054 w2=0.713 w3=1.233  lr=2.50e-03  tf=0.000  best=0.0085 @ ep231
+[abs_sliding] epoch  250 (main  ): train=0.0398  val=0.0196 | PINN: smooth_to=0.04381 smooth_ta=0.05987 | DWA: w1=1.010 w2=1.131 w3=0.859  lr=2.50e-03  tf=0.000  best=0.0077 @ ep244
+[abs_sliding] epoch  260 (main  ): train=0.0516  val=0.0648 | PINN: smooth_to=0.02912 smooth_ta=0.03477 | DWA: w1=0.970 w2=0.963 w3=1.067  lr=2.50e-03  tf=0.000  best=0.0077 @ ep244
+[abs_sliding] epoch  270 (main  ): train=0.0203  val=0.0199 | PINN: smooth_to=0.03690 smooth_ta=0.04055 | DWA: w1=1.011 w2=1.086 w3=0.903  lr=2.50e-03  tf=0.000  best=0.0077 @ ep244
+[abs_sliding] epoch  280 (main  ): train=0.0448  val=0.0184 | PINN: smooth_to=0.03574 smooth_ta=0.05430 | DWA: w1=1.033 w2=1.019 w3=0.948  lr=2.50e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  290 (main  ): train=0.0363  val=0.0140 | PINN: smooth_to=0.05105 smooth_ta=0.05161 | DWA: w1=1.094 w2=0.902 w3=1.003  lr=2.50e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  300 (main  ): train=0.0296  val=0.0390 | PINN: smooth_to=0.02549 smooth_ta=0.02487 | DWA: w1=1.307 w2=0.831 w3=0.862  lr=2.50e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  310 (main  ): train=0.0159  val=0.0265 | PINN: smooth_to=0.03161 smooth_ta=0.05690 | DWA: w1=1.015 w2=1.027 w3=0.958  lr=2.50e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  320 (main  ): train=0.0315  val=0.0125 | PINN: smooth_to=0.11630 smooth_ta=0.06114 | DWA: w1=0.930 w2=1.141 w3=0.930  lr=2.50e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  330 (main  ): train=0.0182  val=0.0149 | PINN: smooth_to=0.01972 smooth_ta=0.02533 | DWA: w1=0.919 w2=1.042 w3=1.039  lr=1.25e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  340 (main  ): train=0.0149  val=0.0115 | PINN: smooth_to=0.02193 smooth_ta=0.02668 | DWA: w1=1.032 w2=1.011 w3=0.957  lr=1.25e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  350 (main  ): train=0.0185  val=0.0165 | PINN: smooth_to=0.03153 smooth_ta=0.03257 | DWA: w1=1.124 w2=0.962 w3=0.914  lr=1.25e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  360 (main  ): train=0.0158  val=0.0086 | PINN: smooth_to=0.03006 smooth_ta=0.05035 | DWA: w1=0.829 w2=0.946 w3=1.225  lr=1.25e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  370 (main  ): train=0.0136  val=0.0089 | PINN: smooth_to=0.01883 smooth_ta=0.02776 | DWA: w1=1.015 w2=1.010 w3=0.974  lr=1.25e-03  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  380 (main  ): train=0.0165  val=0.0081 | PINN: smooth_to=0.02726 smooth_ta=0.04180 | DWA: w1=0.723 w2=1.131 w3=1.146  lr=6.25e-04  tf=0.000  best=0.0044 @ ep272
+[abs_sliding] epoch  390 (main  ): train=0.0124  val=0.0123 | PINN: smooth_to=0.01329 smooth_ta=0.01824 | DWA: w1=1.041 w2=0.972 w3=0.986  lr=6.25e-04  tf=0.000  best=0.0042 @ ep388
+[abs_sliding] epoch  400 (main  ): train=0.0108  val=0.0079 | PINN: smooth_to=0.01654 smooth_ta=0.01991 | DWA: w1=1.041 w2=0.971 w3=0.988  lr=6.25e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  410 (main  ): train=0.0097  val=0.0056 | PINN: smooth_to=0.02299 smooth_ta=0.02164 | DWA: w1=1.076 w2=1.039 w3=0.886  lr=6.25e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  420 (main  ): train=0.0146  val=0.0106 | PINN: smooth_to=0.01329 smooth_ta=0.01840 | DWA: w1=0.889 w2=1.037 w3=1.075  lr=6.25e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  430 (main  ): train=0.0144  val=0.0121 | PINN: smooth_to=0.01448 smooth_ta=0.01799 | DWA: w1=1.109 w2=0.960 w3=0.931  lr=6.25e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  440 (main  ): train=0.0150  val=0.0058 | PINN: smooth_to=0.01557 smooth_ta=0.02008 | DWA: w1=1.032 w2=0.979 w3=0.989  lr=6.25e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  450 (main  ): train=0.0089  val=0.0075 | PINN: smooth_to=0.02486 smooth_ta=0.03334 | DWA: w1=0.894 w2=1.078 w3=1.028  lr=3.13e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  460 (main  ): train=0.0072  val=0.0056 | PINN: smooth_to=0.01369 smooth_ta=0.01787 | DWA: w1=1.007 w2=1.004 w3=0.989  lr=3.13e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  470 (main  ): train=0.0073  val=0.0058 | PINN: smooth_to=0.01378 smooth_ta=0.01798 | DWA: w1=1.047 w2=0.959 w3=0.994  lr=3.13e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  480 (main  ): train=0.0081  val=0.0087 | PINN: smooth_to=0.01375 smooth_ta=0.01925 | DWA: w1=0.996 w2=1.001 w3=1.002  lr=3.13e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  490 (main  ): train=0.0074  val=0.0071 | PINN: smooth_to=0.01149 smooth_ta=0.01636 | DWA: w1=1.022 w2=0.984 w3=0.994  lr=3.13e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  500 (main  ): train=0.0094  val=0.0118 | PINN: smooth_to=0.01490 smooth_ta=0.01956 | DWA: w1=1.090 w2=0.922 w3=0.988  lr=1.56e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  510 (main  ): train=0.0060  val=0.0074 | PINN: smooth_to=0.01186 smooth_ta=0.01631 | DWA: w1=0.988 w2=1.022 w3=0.989  lr=1.56e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  520 (main  ): train=0.0055  val=0.0070 | PINN: smooth_to=0.01121 smooth_ta=0.01645 | DWA: w1=1.029 w2=0.974 w3=0.997  lr=1.56e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  530 (main  ): train=0.0061  val=0.0066 | PINN: smooth_to=0.01073 smooth_ta=0.01586 | DWA: w1=1.010 w2=0.979 w3=1.011  lr=1.56e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] epoch  540 (main  ): train=0.0053  val=0.0067 | PINN: smooth_to=0.01082 smooth_ta=0.01637 | DWA: w1=1.012 w2=0.988 w3=1.000  lr=1.56e-04  tf=0.000  best=0.0040 @ ep398
+[abs_sliding] early stop at epoch 548
+[abs_sliding] restored best (val=0.003974 @ ep398 / 548 total) from /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/checkpoints/best_gru_variant_abs_sliding.pth
+
+============================================================
+[abs_sliding] Testing on variant_abs_sliding: 70 cases
+============================================================
+  [abs_sliding] 1/70: tests/70_cases/(67) Discharge 2- Erick.csv
+  [abs_sliding] 2/70: tests/70_cases/(68) Discharge 3- Erick.csv
+  [abs_sliding] 3/70: tests/70_cases/(69) Discharge 4- Erick.csv
+  [abs_sliding] 4/70: tests/70_cases/(70) Discharge 1- Erick.csv
+  [abs_sliding] 5/70: tests/70_cases/Case (1).csv
+  [abs_sliding] 6/70: tests/70_cases/Case (10).csv
+  [abs_sliding] 7/70: tests/70_cases/Case (11).csv
+  [abs_sliding] 8/70: tests/70_cases/Case (12).csv
+  [abs_sliding] 9/70: tests/70_cases/Case (13).csv
+  [abs_sliding] 10/70: tests/70_cases/Case (14).csv
+  [abs_sliding] 11/70: tests/70_cases/Case (15).csv
+  [abs_sliding] 12/70: tests/70_cases/Case (16).csv
+  [abs_sliding] 13/70: tests/70_cases/Case (17).csv
+  [abs_sliding] 14/70: tests/70_cases/Case (18).csv
+  [abs_sliding] 15/70: tests/70_cases/Case (19).csv
+  [abs_sliding] 16/70: tests/70_cases/Case (2).csv
+  [abs_sliding] 17/70: tests/70_cases/Case (20).csv
+  [abs_sliding] 18/70: tests/70_cases/Case (21).csv
+  [abs_sliding] 19/70: tests/70_cases/Case (22).csv
+  [abs_sliding] 20/70: tests/70_cases/Case (23).csv
+  [abs_sliding] 21/70: tests/70_cases/Case (24).csv
+  [abs_sliding] 22/70: tests/70_cases/Case (25).csv
+  [abs_sliding] 23/70: tests/70_cases/Case (26).csv
+  [abs_sliding] 24/70: tests/70_cases/Case (27).csv
+  [abs_sliding] 25/70: tests/70_cases/Case (28).csv
+  [abs_sliding] 26/70: tests/70_cases/Case (29).csv
+  [abs_sliding] 27/70: tests/70_cases/Case (3).csv
+  [abs_sliding] 28/70: tests/70_cases/Case (30).csv
+  [abs_sliding] 29/70: tests/70_cases/Case (31).csv
+  [abs_sliding] 30/70: tests/70_cases/Case (32).csv
+  [abs_sliding] 31/70: tests/70_cases/Case (33).csv
+  [abs_sliding] 32/70: tests/70_cases/Case (34).csv
+  [abs_sliding] 33/70: tests/70_cases/Case (35).csv
+  [abs_sliding] 34/70: tests/70_cases/Case (36).csv
+  [abs_sliding] 35/70: tests/70_cases/Case (37).csv
+  [abs_sliding] 36/70: tests/70_cases/Case (38).csv
+  [abs_sliding] 37/70: tests/70_cases/Case (39).csv
+  [abs_sliding] 38/70: tests/70_cases/Case (4).csv
+  [abs_sliding] 39/70: tests/70_cases/Case (40).csv
+  [abs_sliding] 40/70: tests/70_cases/Case (41).csv
+  [abs_sliding] 41/70: tests/70_cases/Case (42).csv
+  [abs_sliding] 42/70: tests/70_cases/Case (43).csv
+  [abs_sliding] 43/70: tests/70_cases/Case (44).csv
+  [abs_sliding] 44/70: tests/70_cases/Case (45).csv
+  [abs_sliding] 45/70: tests/70_cases/Case (5).csv
+  [abs_sliding] 46/70: tests/70_cases/Case (57) Type 9- Erick.csv
+  [abs_sliding] 47/70: tests/70_cases/Case (6).csv
+  [abs_sliding] 48/70: tests/70_cases/Case (66) Discharge 1- Erick.csv
+  [abs_sliding] 49/70: tests/70_cases/Case (7).csv
+  [abs_sliding] 50/70: tests/70_cases/Case (8).csv
+  [abs_sliding] 51/70: tests/70_cases/Case (9).csv
+  [abs_sliding] 52/70: tests/70_cases/Case(46) Type 5- Erick.csv
+  [abs_sliding] 53/70: tests/70_cases/Case(47) Type 5- Erick.csv
+  [abs_sliding] 54/70: tests/70_cases/Case(48) Type 5- Erick.csv
+  [abs_sliding] 55/70: tests/70_cases/Case(49) Type 5- Erick.csv
+  [abs_sliding] 56/70: tests/70_cases/Case(50) Type 6- Erick.csv
+  [abs_sliding] 57/70: tests/70_cases/Case(51) Type 6- Erick.csv
+  [abs_sliding] 58/70: tests/70_cases/Case(52) Type 6- Erick.csv
+  [abs_sliding] 59/70: tests/70_cases/Case(53) Type 6- Erick.csv
+  [abs_sliding] 60/70: tests/70_cases/Case(54) Type 9- Erick.csv
+  [abs_sliding] 61/70: tests/70_cases/Case(55) Type 9- Erick.csv
+  [abs_sliding] 62/70: tests/70_cases/Case(56) Type 9- Erick.csv
+  [abs_sliding] 63/70: tests/70_cases/Case(58)Type 7 Daniel.csv
+  [abs_sliding] 64/70: tests/70_cases/Case(59)Type 7 Daniel.csv
+  [abs_sliding] 65/70: tests/70_cases/Case(60)Type 7 Daniel.csv
+  [abs_sliding] 66/70: tests/70_cases/Case(61)Type 7 Daniel.csv
+  [abs_sliding] 67/70: tests/70_cases/Case(62)Type 8 Daniel.csv
+  [abs_sliding] 68/70: tests/70_cases/Case(63)Type 8 Daniel.csv
+  [abs_sliding] 69/70: tests/70_cases/Case(64)Type 8 Daniel.csv
+  [abs_sliding] 70/70: tests/70_cases/Case(65)Type 8 Daniel.csv
+
+[abs_sliding] summary -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/variants/abs_sliding/summary_errors.csv
+[abs_sliding] avg MAE   T_inner=0.2856  T_outer=1.3558  T_avg=3.2104
+[abs_sliding] avg RMSE  T_inner=0.3218  T_outer=1.5085  T_avg=3.3935
+[abs_sliding] avg MAPE  T_inner=0.105%  T_outer=0.640%  T_avg=1.308%  Overall=0.684%
+[abs_sliding] avg R^2   T_inner=0.9999  T_outer=0.9951  T_avg=0.9799  Overall=0.9964
+[abs_sliding] avg Early/Late MAE  T_inner 0.2845 / 0.3346
+[abs_sliding] inference: 588.6 ms/case  |  1.70 cases/s  |  408.72 us/step
+[abs_sliding] predictions saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/variants/abs_sliding/predictions.npz
+[abs_sliding] DONE  overall_MAE=1.6173C  time=4h 56m 36s
+  meta -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/variants/abs_sliding/meta.json
+  done.flag written; resume_state.pt removed.
+
+============================================================
+VARIANT COMPARISON SUMMARY
+============================================================
+Aggregate JSON saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/comparison/variant_results.json
+
+Rank Variant               In  Enc     Params    Best/Tot   MAE      MAPE     R^2     EarlyInn  LateInn   ms/case   Time      
+--------------------------------------------------------------------------------------------------------------------------------------------
+1    abs_sliding           5   point    680,067  398/548   1.6173   0.684    0.9964  0.2845    0.3346    588.6     4h 56m 36s
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+BEST VARIANT: abs_sliding  (MAE=1.6173C  MAPE=0.684%  R^2=0.9964  params=680,067)
+
+Comparison CSV saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/comparison/variant_comparison.csv
+Loss curves saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/comparison/variant_loss_curves.png
+Bar chart saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/comparison/variant_test_mae.png
+Capacity/speed/drift summary saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed7/comparison/variant_capacity_speed.png
+
+######################################################################
+# SEED 2/2  seed=42  RUN_NAME=2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42
+######################################################################
+
+############################################################
+INPUT-FEATURE ABLATION  -  4 variants, latest hyperparameters
+  hidden=128  layers=5  dropout=0.3  lr=0.0025
+  batch=16  max_epochs=1000  early_stop=150
+  Variants: ['abs_sliding']
+  Window size (abs_window only): 10
+  Sliding pad mode: variable
+  T_inner mode: anchor  (anchor_lead=1)
+  Loss weights (Ti,To,Ta): [1.0, 6.0, 3.0]   physics bound w=0.0
+  T_outer/T_avg mode: abs
+  Run name: 2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42
+  All artifacts will be written under: /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42
+############################################################
+Run config snapshot -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/run_config.json
+
+============================================================
+VARIANT: abs_sliding  (input_size=5, encoder=point)
+============================================================
+
+--- Building datasets for variant 'abs_sliding' ---
+[abs_sliding] orthogonal init applied to main GRU (and window encoder if present)
+[abs_sliding] physics affine registered. ACTIVE PINN regularizations: to_smooth_w=0.005, ta_smooth_w=0.01
+[abs_sliding] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[abs_sliding] T_inner anchor on Input_T: delta mean=-0.154 C std=0.667 C  ->  KA=1.00000 KB=-0.00025 KC=0.001096
+[abs_sliding] trainable params: total=680,067  gru=448,128  fc=387  encoder(point)=231,552
+[abs_sliding] epoch   10 (warmup): train=0.1998  val=0.2289 | PINN: smooth_to=2.41708 smooth_ta=1.52357 | DWA: w1=1.034 w2=0.961 w3=1.005  lr=4.17e-04  tf=0.455  best=0.2057 @ ep7
+[abs_sliding] epoch   20 (warmup): train=0.1381  val=0.2758 | PINN: smooth_to=0.49436 smooth_ta=0.38281 | DWA: w1=0.983 w2=1.000 w3=1.017  lr=8.33e-04  tf=0.405  best=0.1506 @ ep13
+[abs_sliding] epoch   30 (warmup): train=0.1301  val=0.0873 | PINN: smooth_to=0.22306 smooth_ta=0.21425 | DWA: w1=0.962 w2=1.117 w3=0.921  lr=1.25e-03  tf=0.355  best=0.0810 @ ep29
+[abs_sliding] epoch   40 (warmup): train=0.1037  val=0.1856 | PINN: smooth_to=0.08063 smooth_ta=0.07718 | DWA: w1=1.016 w2=0.972 w3=1.012  lr=1.67e-03  tf=0.305  best=0.0513 @ ep35
+[abs_sliding] epoch   50 (warmup): train=0.0647  val=0.0892 | PINN: smooth_to=0.07256 smooth_ta=0.04460 | DWA: w1=0.990 w2=0.995 w3=1.015  lr=2.08e-03  tf=0.255  best=0.0254 @ ep46
+[abs_sliding] epoch   60 (warmup): train=0.0954  val=0.0601 | PINN: smooth_to=0.11428 smooth_ta=0.06014 | DWA: w1=0.991 w2=1.059 w3=0.950  lr=2.50e-03  tf=0.205  best=0.0245 @ ep51
+[abs_sliding] epoch   70 (main  ): train=0.0665  val=0.0361 | PINN: smooth_to=0.04971 smooth_ta=0.07537 | DWA: w1=0.918 w2=0.842 w3=1.240  lr=2.50e-03  tf=0.155  best=0.0227 @ ep67
+[abs_sliding] epoch   80 (main  ): train=0.0597  val=0.1200 | PINN: smooth_to=0.04995 smooth_ta=0.04810 | DWA: w1=0.992 w2=1.116 w3=0.891  lr=2.50e-03  tf=0.105  best=0.0171 @ ep74
+[abs_sliding] epoch   90 (main  ): train=0.0503  val=0.0250 | PINN: smooth_to=0.02502 smooth_ta=0.02767 | DWA: w1=0.952 w2=0.994 w3=1.054  lr=2.50e-03  tf=0.055  best=0.0171 @ ep74
+[abs_sliding] epoch  100 (main  ): train=0.0461  val=0.0400 | PINN: smooth_to=0.02563 smooth_ta=0.02899 | DWA: w1=0.995 w2=0.998 w3=1.007  lr=2.50e-03  tf=0.005  best=0.0171 @ ep74
+[abs_sliding] epoch  110 (main  ): train=0.0551  val=0.0414 | PINN: smooth_to=0.03006 smooth_ta=0.04098 | DWA: w1=1.100 w2=0.978 w3=0.923  lr=2.50e-03  tf=0.000  best=0.0133 @ ep105
+[abs_sliding] epoch  120 (main  ): train=0.0348  val=0.0337 | PINN: smooth_to=0.02000 smooth_ta=0.02426 | DWA: w1=1.004 w2=0.982 w3=1.014  lr=2.50e-03  tf=0.000  best=0.0133 @ ep105
+[abs_sliding] epoch  130 (main  ): train=0.0317  val=0.0267 | PINN: smooth_to=0.01623 smooth_ta=0.02328 | DWA: w1=1.018 w2=1.022 w3=0.960  lr=2.50e-03  tf=0.000  best=0.0118 @ ep125
+[abs_sliding] epoch  140 (main  ): train=0.0445  val=0.0348 | PINN: smooth_to=0.01987 smooth_ta=0.02851 | DWA: w1=0.990 w2=1.032 w3=0.978  lr=2.50e-03  tf=0.000  best=0.0118 @ ep125
+[abs_sliding] epoch  150 (main  ): train=0.0388  val=0.0384 | PINN: smooth_to=0.01564 smooth_ta=0.02252 | DWA: w1=1.098 w2=0.898 w3=1.004  lr=2.50e-03  tf=0.000  best=0.0118 @ ep125
+[abs_sliding] epoch  160 (main  ): train=0.0422  val=0.0285 | PINN: smooth_to=0.03656 smooth_ta=0.06621 | DWA: w1=0.767 w2=0.901 w3=1.332  lr=2.50e-03  tf=0.000  best=0.0118 @ ep125
+[abs_sliding] epoch  170 (main  ): train=0.0318  val=0.0173 | PINN: smooth_to=0.01684 smooth_ta=0.02490 | DWA: w1=0.964 w2=1.058 w3=0.978  lr=2.50e-03  tf=0.000  best=0.0086 @ ep168
+[abs_sliding] epoch  180 (main  ): train=0.0412  val=0.0126 | PINN: smooth_to=0.03438 smooth_ta=0.04347 | DWA: w1=1.095 w2=1.035 w3=0.870  lr=2.50e-03  tf=0.000  best=0.0045 @ ep177
+[abs_sliding] epoch  190 (main  ): train=0.0509  val=0.0801 | PINN: smooth_to=0.02615 smooth_ta=0.04283 | DWA: w1=1.038 w2=0.960 w3=1.002  lr=2.50e-03  tf=0.000  best=0.0045 @ ep177
+[abs_sliding] epoch  200 (main  ): train=0.0413  val=0.0732 | PINN: smooth_to=0.01838 smooth_ta=0.02602 | DWA: w1=1.050 w2=1.032 w3=0.918  lr=2.50e-03  tf=0.000  best=0.0045 @ ep177
+[abs_sliding] epoch  210 (main  ): train=0.0294  val=0.0160 | PINN: smooth_to=0.01476 smooth_ta=0.02171 | DWA: w1=0.964 w2=1.012 w3=1.024  lr=2.50e-03  tf=0.000  best=0.0045 @ ep177
+[abs_sliding] epoch  220 (main  ): train=0.0558  val=0.0228 | PINN: smooth_to=0.01903 smooth_ta=0.02558 | DWA: w1=1.212 w2=0.905 w3=0.883  lr=2.50e-03  tf=0.000  best=0.0045 @ ep177
+[abs_sliding] epoch  230 (main  ): train=0.0152  val=0.0193 | PINN: smooth_to=0.01140 smooth_ta=0.01730 | DWA: w1=0.934 w2=1.069 w3=0.997  lr=1.25e-03  tf=0.000  best=0.0045 @ ep177
+[abs_sliding] epoch  240 (main  ): train=0.0159  val=0.0156 | PINN: smooth_to=0.01168 smooth_ta=0.01895 | DWA: w1=1.037 w2=0.962 w3=1.002  lr=1.25e-03  tf=0.000  best=0.0045 @ ep177
+[abs_sliding] epoch  250 (main  ): train=0.0185  val=0.0224 | PINN: smooth_to=0.01173 smooth_ta=0.01820 | DWA: w1=1.120 w2=0.964 w3=0.917  lr=1.25e-03  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  260 (main  ): train=0.0188  val=0.0138 | PINN: smooth_to=0.01137 smooth_ta=0.01826 | DWA: w1=0.939 w2=1.043 w3=1.018  lr=1.25e-03  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  270 (main  ): train=0.0154  val=0.0207 | PINN: smooth_to=0.01154 smooth_ta=0.01824 | DWA: w1=1.032 w2=1.001 w3=0.967  lr=1.25e-03  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  280 (main  ): train=0.0155  val=0.0068 | PINN: smooth_to=0.01175 smooth_ta=0.01879 | DWA: w1=1.111 w2=0.946 w3=0.943  lr=1.25e-03  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  290 (main  ): train=0.0113  val=0.0196 | PINN: smooth_to=0.01020 smooth_ta=0.01730 | DWA: w1=0.974 w2=0.997 w3=1.028  lr=1.25e-03  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  300 (main  ): train=0.0128  val=0.0083 | PINN: smooth_to=0.00993 smooth_ta=0.01673 | DWA: w1=1.129 w2=0.929 w3=0.942  lr=6.25e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  310 (main  ): train=0.0205  val=0.0216 | PINN: smooth_to=0.01008 smooth_ta=0.01722 | DWA: w1=0.984 w2=1.009 w3=1.007  lr=6.25e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  320 (main  ): train=0.0112  val=0.0040 | PINN: smooth_to=0.00992 smooth_ta=0.01783 | DWA: w1=0.875 w2=1.054 w3=1.071  lr=6.25e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  330 (main  ): train=0.0096  val=0.0071 | PINN: smooth_to=0.00927 smooth_ta=0.01619 | DWA: w1=0.927 w2=1.033 w3=1.040  lr=6.25e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  340 (main  ): train=0.0095  val=0.0059 | PINN: smooth_to=0.00971 smooth_ta=0.01630 | DWA: w1=1.007 w2=0.999 w3=0.994  lr=6.25e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  350 (main  ): train=0.0075  val=0.0081 | PINN: smooth_to=0.00933 smooth_ta=0.01612 | DWA: w1=0.951 w2=1.019 w3=1.029  lr=3.13e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  360 (main  ): train=0.0076  val=0.0077 | PINN: smooth_to=0.00928 smooth_ta=0.01551 | DWA: w1=0.983 w2=1.011 w3=1.006  lr=3.13e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  370 (main  ): train=0.0119  val=0.0100 | PINN: smooth_to=0.00971 smooth_ta=0.01613 | DWA: w1=1.058 w2=0.971 w3=0.971  lr=3.13e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  380 (main  ): train=0.0071  val=0.0045 | PINN: smooth_to=0.00908 smooth_ta=0.01537 | DWA: w1=0.958 w2=1.018 w3=1.023  lr=3.13e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] epoch  390 (main  ): train=0.0082  val=0.0114 | PINN: smooth_to=0.00923 smooth_ta=0.01556 | DWA: w1=1.044 w2=0.979 w3=0.977  lr=3.13e-04  tf=0.000  best=0.0038 @ ep242
+[abs_sliding] early stop at epoch 392
+[abs_sliding] restored best (val=0.003756 @ ep242 / 392 total) from /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/checkpoints/best_gru_variant_abs_sliding.pth
+
+============================================================
+[abs_sliding] Testing on variant_abs_sliding: 70 cases
+============================================================
+  [abs_sliding] 1/70: tests/70_cases/(67) Discharge 2- Erick.csv
+  [abs_sliding] 2/70: tests/70_cases/(68) Discharge 3- Erick.csv
+  [abs_sliding] 3/70: tests/70_cases/(69) Discharge 4- Erick.csv
+  [abs_sliding] 4/70: tests/70_cases/(70) Discharge 1- Erick.csv
+  [abs_sliding] 5/70: tests/70_cases/Case (1).csv
+  [abs_sliding] 6/70: tests/70_cases/Case (10).csv
+  [abs_sliding] 7/70: tests/70_cases/Case (11).csv
+  [abs_sliding] 8/70: tests/70_cases/Case (12).csv
+  [abs_sliding] 9/70: tests/70_cases/Case (13).csv
+  [abs_sliding] 10/70: tests/70_cases/Case (14).csv
+  [abs_sliding] 11/70: tests/70_cases/Case (15).csv
+  [abs_sliding] 12/70: tests/70_cases/Case (16).csv
+  [abs_sliding] 13/70: tests/70_cases/Case (17).csv
+  [abs_sliding] 14/70: tests/70_cases/Case (18).csv
+  [abs_sliding] 15/70: tests/70_cases/Case (19).csv
+  [abs_sliding] 16/70: tests/70_cases/Case (2).csv
+  [abs_sliding] 17/70: tests/70_cases/Case (20).csv
+  [abs_sliding] 18/70: tests/70_cases/Case (21).csv
+  [abs_sliding] 19/70: tests/70_cases/Case (22).csv
+  [abs_sliding] 20/70: tests/70_cases/Case (23).csv
+  [abs_sliding] 21/70: tests/70_cases/Case (24).csv
+  [abs_sliding] 22/70: tests/70_cases/Case (25).csv
+  [abs_sliding] 23/70: tests/70_cases/Case (26).csv
+  [abs_sliding] 24/70: tests/70_cases/Case (27).csv
+  [abs_sliding] 25/70: tests/70_cases/Case (28).csv
+  [abs_sliding] 26/70: tests/70_cases/Case (29).csv
+  [abs_sliding] 27/70: tests/70_cases/Case (3).csv
+  [abs_sliding] 28/70: tests/70_cases/Case (30).csv
+  [abs_sliding] 29/70: tests/70_cases/Case (31).csv
+  [abs_sliding] 30/70: tests/70_cases/Case (32).csv
+  [abs_sliding] 31/70: tests/70_cases/Case (33).csv
+  [abs_sliding] 32/70: tests/70_cases/Case (34).csv
+  [abs_sliding] 33/70: tests/70_cases/Case (35).csv
+  [abs_sliding] 34/70: tests/70_cases/Case (36).csv
+  [abs_sliding] 35/70: tests/70_cases/Case (37).csv
+  [abs_sliding] 36/70: tests/70_cases/Case (38).csv
+  [abs_sliding] 37/70: tests/70_cases/Case (39).csv
+  [abs_sliding] 38/70: tests/70_cases/Case (4).csv
+  [abs_sliding] 39/70: tests/70_cases/Case (40).csv
+  [abs_sliding] 40/70: tests/70_cases/Case (41).csv
+  [abs_sliding] 41/70: tests/70_cases/Case (42).csv
+  [abs_sliding] 42/70: tests/70_cases/Case (43).csv
+  [abs_sliding] 43/70: tests/70_cases/Case (44).csv
+  [abs_sliding] 44/70: tests/70_cases/Case (45).csv
+  [abs_sliding] 45/70: tests/70_cases/Case (5).csv
+  [abs_sliding] 46/70: tests/70_cases/Case (57) Type 9- Erick.csv
+  [abs_sliding] 47/70: tests/70_cases/Case (6).csv
+  [abs_sliding] 48/70: tests/70_cases/Case (66) Discharge 1- Erick.csv
+  [abs_sliding] 49/70: tests/70_cases/Case (7).csv
+  [abs_sliding] 50/70: tests/70_cases/Case (8).csv
+  [abs_sliding] 51/70: tests/70_cases/Case (9).csv
+  [abs_sliding] 52/70: tests/70_cases/Case(46) Type 5- Erick.csv
+  [abs_sliding] 53/70: tests/70_cases/Case(47) Type 5- Erick.csv
+  [abs_sliding] 54/70: tests/70_cases/Case(48) Type 5- Erick.csv
+  [abs_sliding] 55/70: tests/70_cases/Case(49) Type 5- Erick.csv
+  [abs_sliding] 56/70: tests/70_cases/Case(50) Type 6- Erick.csv
+  [abs_sliding] 57/70: tests/70_cases/Case(51) Type 6- Erick.csv
+  [abs_sliding] 58/70: tests/70_cases/Case(52) Type 6- Erick.csv
+  [abs_sliding] 59/70: tests/70_cases/Case(53) Type 6- Erick.csv
+  [abs_sliding] 60/70: tests/70_cases/Case(54) Type 9- Erick.csv
+  [abs_sliding] 61/70: tests/70_cases/Case(55) Type 9- Erick.csv
+  [abs_sliding] 62/70: tests/70_cases/Case(56) Type 9- Erick.csv
+  [abs_sliding] 63/70: tests/70_cases/Case(58)Type 7 Daniel.csv
+  [abs_sliding] 64/70: tests/70_cases/Case(59)Type 7 Daniel.csv
+  [abs_sliding] 65/70: tests/70_cases/Case(60)Type 7 Daniel.csv
+  [abs_sliding] 66/70: tests/70_cases/Case(61)Type 7 Daniel.csv
+  [abs_sliding] 67/70: tests/70_cases/Case(62)Type 8 Daniel.csv
+  [abs_sliding] 68/70: tests/70_cases/Case(63)Type 8 Daniel.csv
+  [abs_sliding] 69/70: tests/70_cases/Case(64)Type 8 Daniel.csv
+  [abs_sliding] 70/70: tests/70_cases/Case(65)Type 8 Daniel.csv
+
+[abs_sliding] summary -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/variants/abs_sliding/summary_errors.csv
+[abs_sliding] avg MAE   T_inner=0.2500  T_outer=1.5089  T_avg=4.5334
+[abs_sliding] avg RMSE  T_inner=0.2995  T_outer=1.7774  T_avg=5.0063
+[abs_sliding] avg MAPE  T_inner=0.088%  T_outer=0.621%  T_avg=1.672%  Overall=0.794%
+[abs_sliding] avg R^2   T_inner=1.0000  T_outer=0.9919  T_avg=0.9598  Overall=0.9935
+[abs_sliding] avg Early/Late MAE  T_inner 0.3055 / 0.3087
+[abs_sliding] inference: 586.6 ms/case  |  1.70 cases/s  |  407.40 us/step
+[abs_sliding] predictions saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/variants/abs_sliding/predictions.npz
+[abs_sliding] DONE  overall_MAE=2.0974C  time=3h 37m 37s
+  meta -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/variants/abs_sliding/meta.json
+  done.flag written; resume_state.pt removed.
+
+============================================================
+VARIANT COMPARISON SUMMARY
+============================================================
+Aggregate JSON saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/comparison/variant_results.json
+
+Rank Variant               In  Enc     Params    Best/Tot   MAE      MAPE     R^2     EarlyInn  LateInn   ms/case   Time      
+--------------------------------------------------------------------------------------------------------------------------------------------
+1    abs_sliding           5   point    680,067  242/392   2.0974   0.794    0.9935  0.3055    0.3087    586.6     3h 37m 37s
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+BEST VARIANT: abs_sliding  (MAE=2.0974C  MAPE=0.794%  R^2=0.9935  params=680,067)
+
+Comparison CSV saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/comparison/variant_comparison.csv
+Loss curves saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/comparison/variant_loss_curves.png
+Bar chart saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/comparison/variant_test_mae.png
+Capacity/speed/drift summary saved -> /home/cymaker/Yash/AI-TES/src/models/GRU/runs/2026-07-23_abs_sliding_W10_1000ep_ES150_P0_variable_Tin-anchor_lead1_w1-6-3_pb0_oth-abs_smTo0.005_smTa0.01_DWA_softStart1.5_seed42/comparison/variant_capacity_speed.png
+
+============================================================
+All variants done. Total runtime: 8h 34m 16s
+============================================================

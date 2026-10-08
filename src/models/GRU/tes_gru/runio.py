@@ -62,6 +62,39 @@ def save_run_config_snapshot():
         'anchor_lead': ANCHOR_LEAD,
         'loss_weights': LOSS_WEIGHTS,
         'physics_bound_weight': PHYSICS_BOUND_WEIGHT,
+        'smooth_to_weight': SMOOTH_TO_WEIGHT,
+        'smooth_ta_weight': SMOOTH_TA_WEIGHT,
+        'use_dwa': USE_DWA,
+        'soft_start_tau': SOFT_START_TAU,
+        'early_loss_weight': EARLY_LOSS_WEIGHT,
+        'early_loss_tau': EARLY_LOSS_TAU,
+        'early_ch_weights': EARLY_CH_WEIGHTS,
+        'early_ch_taus': EARLY_CH_TAUS,
+        'early_deriv_weight': EARLY_DERIV_WEIGHT,
+        'early_deriv_tau': EARLY_DERIV_TAU,
+        'use_spatial_anchor': USE_SPATIAL_ANCHOR,
+        'early_smooth_to_weight': EARLY_SMOOTH_TO_WEIGHT,
+        'early_smooth_ta_weight': EARLY_SMOOTH_TA_WEIGHT,
+        'early_smooth_tau': EARLY_SMOOTH_TAU,
+        'pinn_norm': PINN_NORM,
+        'pinn_balance_ratio': PINN_BALANCE_RATIO,
+        'pinn_balance_start': PINN_BALANCE_START,
+        'pinn_energy_weight': PINN_ENERGY_WEIGHT,
+        'val_metric': VAL_METRIC,
+        'curriculum_warmup_epochs': CURRICULUM_WARMUP_EPOCHS,
+        'curriculum_min_horizon': CURRICULUM_MIN_HORIZON,
+        'warmup_steps': WARMUP_STEPS,
+        'dynamic_window_mode': getattr(config, 'DYNAMIC_WINDOW_MODE', 'fixed'),
+        'window_early': getattr(config, 'WINDOW_EARLY', 3),
+        'window_late': getattr(config, 'WINDOW_LATE', 20),
+        'window_split_step': getattr(config, 'WINDOW_SPLIT_STEP', 10),
+        'window_min': getattr(config, 'WINDOW_MIN', 2),
+        'window_max': getattr(config, 'WINDOW_MAX', 25),
+        'window_ramp_steps': getattr(config, 'WINDOW_RAMP_STEPS', 40),
+        'flux_scale': getattr(config, 'FLUX_SCALE', 0.05),
+        'window_tokens': getattr(config, 'WINDOW_TOKENS', 8),
+        'window_fast': getattr(config, 'WINDOW_FAST', 3),
+        'window_slow': getattr(config, 'WINDOW_SLOW', 18),
         'other_ch_mode': OTHER_CH_MODE,
         'variants': VARIANTS,
         'input_dims': INPUT_DIMS,
@@ -109,7 +142,7 @@ def load_resume_state(variant):
     if not os.path.isfile(path):
         return None
     try:
-        # weights_only=False: we are explicitly loading our own RNG / optimizer
+        # weights_only=False: explicitly loading custom RNG / optimizer
         # objects (PyTorch >=2.6 default would block these as 'unsafe').
         return torch.load(path, map_location=DEVICE, weights_only=False)
     except TypeError:
@@ -127,7 +160,8 @@ def remove_resume_state(variant):
 
 
 def save_train_history(variant, train_hist, val_hist, lr_hist,
-                       best_epoch, total_epoch, val_mae, param_breakdown):
+                       best_epoch, total_epoch, val_mae, param_breakdown,
+                       data_loss_hist=None, pinn_loss_hist=None):
     var_dir = variant_dir(variant)
     os.makedirs(var_dir, exist_ok=True)
     payload = {
@@ -135,6 +169,8 @@ def save_train_history(variant, train_hist, val_hist, lr_hist,
         'train_hist': list(train_hist),
         'val_hist': list(val_hist),
         'lr_hist': list(lr_hist),
+        'data_loss_hist': list(data_loss_hist) if data_loss_hist is not None else [],
+        'pinn_loss_hist': list(pinn_loss_hist) if pinn_loss_hist is not None else [],
         'best_epoch': int(best_epoch),
         'total_epoch': int(total_epoch),
         'best_val_mae': float(val_mae),
@@ -191,5 +227,3 @@ def mark_variant_done(variant):
         f.write(f"completed at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
     # Resume state no longer needed once the variant is fully done.
     remove_resume_state(variant)
-
-

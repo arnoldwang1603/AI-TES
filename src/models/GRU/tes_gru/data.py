@@ -381,3 +381,55 @@ def load_all_data():
     return train_dfs, val_dfs, test_dfs, scaler
 
 
+
+
+# ============================================================
+# Lumped energy-balance fit (Arms Z2-Z5, 2026-09-22)
+# ============================================================
+def fit_energy_balance(dfs):
+    """Least-squares fit of the lumped heat-flow model on raw degC data:
+
+        T_avg(t+1) - T_avg(t) = a*(T_inner(t) - T_avg(t))
+                              + b*(T_outer(t) - T_avg(t)) + c
+
+    `dfs` is a list of (DataFrame, name) as returned by load_all_data. Steps
+    are differenced within each case only (never across case boundaries).
+    Returns dict(a, b, c, sigma, r2, n) where sigma is the residual std
+    (floored at 1e-3 degC) and r2 is the R^2 of the step-change prediction.
+    """
+    X, y = [], []
+    for df, _ in dfs:
+        d = df.rename(columns={"T_ave (C)": "T_avg (C)"})
+        ti = d["T_inner (C)"].to_numpy(dtype=np.float64)
+        to = d["T_outer (C)"].to_numpy(dtype=np.float64)
+        ta = d["T_avg (C)"].to_numpy(dtype=np.float64)
+        X.append(np.column_stack([ti[:-1] - ta[:-1], to[:-1] - ta[:-1],
+                                  np.ones(len(ta) - 1)]))
+        y.append(ta[1:] - ta[:-1])
+    X = np.concatenate(X)
+    y = np.concatenate(y)
+    coef, *_ = np.linalg.lstsq(X, y, rcond=None)
+    resid = y - X @ coef
+    ss_tot = float(np.sum((y - y.mean()) ** 2))
+    r2 = 1.0 - float(np.sum(resid ** 2)) / ss_tot if ss_tot > 0 else float('nan')
+    return dict(a=float(coef[0]), b=float(coef[1]), c=float(coef[2]),
+                sigma=float(max(resid.std(), 1e-3)), r2=r2, n=int(len(y)))
+
+
+def energy_residual_stats(dfs, fit):
+    """Apply an existing fit to other cases (e.g. the test set)."""
+    X, y = [], []
+    for df, _ in dfs:
+        d = df.rename(columns={"T_ave (C)": "T_avg (C)"})
+        ti = d["T_inner (C)"].to_numpy(dtype=np.float64)
+        to = d["T_outer (C)"].to_numpy(dtype=np.float64)
+        ta = d["T_avg (C)"].to_numpy(dtype=np.float64)
+        X.append(np.column_stack([ti[:-1] - ta[:-1], to[:-1] - ta[:-1],
+                                  np.ones(len(ta) - 1)]))
+        y.append(ta[1:] - ta[:-1])
+    X = np.concatenate(X)
+    y = np.concatenate(y)
+    resid = y - X @ np.array([fit['a'], fit['b'], fit['c']])
+    ss_tot = float(np.sum((y - y.mean()) ** 2))
+    return dict(r2=1.0 - float(np.sum(resid ** 2)) / ss_tot if ss_tot > 0 else float('nan'),
+                sigma=float(resid.std()), n=int(len(y)))
