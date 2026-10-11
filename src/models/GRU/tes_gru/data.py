@@ -420,11 +420,29 @@ def load_all_data():
         split_name = "stratified_v{}_s{}.json".format(VAL_PER_TYPE, SPLIT_SEED)
         split_path = os.path.join(split_dir, split_name)
         rel = lambda p: os.path.relpath(p, train_dir).replace(os.sep, "/")
+        # Leave-one-type-out: drop the held-out type from train + val before
+        # anything else; it joins the test set below. The split file's lists
+        # are filtered by the same prefix so the consistency check still
+        # holds for the remaining nine types.
+        excluded, excl_prefix = [], None
+        if TRAIN_EXCLUDE_TYPE:
+            excl_prefix = "Case {} (".format(TRAIN_EXCLUDE_TYPE)
+            excluded = sorted(p for p in raw_train_paths if rel(p).startswith(excl_prefix))
+            folders = sorted({rel(p).split("/")[0] for p in excluded})
+            if len(folders) != 1:
+                raise RuntimeError("TRAIN_EXCLUDE_TYPE={!r} matches {} case-type folders: {}".format(
+                    TRAIN_EXCLUDE_TYPE, len(folders), folders))
+            raw_train_paths = [p for p in raw_train_paths if p not in set(excluded)]
+            if not os.path.isfile(split_path):
+                raise RuntimeError("TRAIN_EXCLUDE_TYPE needs the committed split file {}".format(split_path))
         by_type = {}
         for p in raw_train_paths:
             by_type.setdefault(rel(p).split("/")[0], []).append(p)
         if os.path.isfile(split_path):
             spec = json.load(open(split_path, encoding="utf-8"))
+            if excl_prefix:
+                spec = dict(spec, val=[v for v in spec["val"] if not v.startswith(excl_prefix)],
+                            train=[t for t in spec["train"] if not t.startswith(excl_prefix)])
             val_rel = set(spec["val"])
             missing = sorted(val_rel - {rel(p) for p in raw_train_paths})
             if missing:
@@ -458,12 +476,16 @@ def load_all_data():
             src = "drawn and written"
         val_paths = sorted(p for p in raw_train_paths if rel(p) in val_rel)
         actual_train_paths = sorted(p for p in raw_train_paths if rel(p) not in val_rel)
-        test_paths = raw_test_paths
+        test_paths = list(raw_test_paths) + excluded        # LOTO: held-out type scored too
         assert len(val_paths) == len(val_rel) == VAL_PER_TYPE * len(by_type)
         assert not (set(val_paths) & set(actual_train_paths))
+        assert not (set(test_paths) & (set(val_paths) | set(actual_train_paths)))
 
         print("\nSTRATIFIED split ({} per case type, seed {}; {} {}):".format(
             VAL_PER_TYPE, SPLIT_SEED, split_name, src))
+        if excluded:
+            print("  LEAVE-ONE-TYPE-OUT: {!r} ({} runs) removed from train and val, appended to test".format(
+                rel(excluded[0]).split("/")[0], len(excluded)))
         for t in sorted(by_type):
             n_v = sum(1 for p in by_type[t] if rel(p) in val_rel)
             print("  {:<48} train {:>3}  val {}".format(t[:48], len(by_type[t]) - n_v, n_v))

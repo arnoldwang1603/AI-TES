@@ -56,7 +56,19 @@ seed, scores worse, and survives only as a reference.
 
 ### The three ideas that got the error down
 
-Everything in this log is variations on these three.
+Everything in this log up to round 8 is variations on these three.
+
+> **Round 9 (2026-09-28) overturned ideas 2 and 3.** They were chosen with a
+> validation set of 15 linear-charging runs, which stopped training early —
+> earliest for the model that predicts `T_avg` directly (selected at ~360
+> epochs, still far from its end point; the position head was selected near
+> its end point). Both families converge at a similar speed under the new set
+> (2026-09-30 check); all 15 old validation files also carry the other `T_avg`
+> label convention (see the 2026-09-30 entry). With two validation runs of every case type the direct
+> model trains to ~1000 epochs and beats the position head by 0.35 °C, with no
+> gate and no early-window error. Idea 1 stays. Ideas 2 and 3 and everything
+> built on them (gates, flag, time prior) are kept below as history; see the
+> 2026-09-28 entry.
 
 1. **`T_inner`: predict the offset from the inlet temperature.** The model
    outputs how far `T_inner` sits above the inlet — a few degrees — and the
@@ -75,7 +87,8 @@ Everything in this log is variations on these three.
 
 ### The one known blind spot
 
-In 20 of the 70 test cases the run both charges *and* discharges. For a few
+In 21 of the 70 test cases the run both charges *and* discharges (20 in earlier
+entries; recounted 2026-09-30: 32–40, 50–53, 58–65). For a few
 minutes in those runs the true `T_avg` climbs **above both walls** (the walls
 cool first while the interior still holds heat), and the walls are only a few
 degrees apart. Idea 2 cannot express that: `pos` would have to reach 10 or 50
@@ -87,7 +100,7 @@ answers are in "Methods, plainly" below.
 ### How a result is judged
 
 - **MAE in °C** per temperature; **overall MAE** is the plain mean of the
-  three. Lower is better. Current best: 0.72 °C overall for a single model (round 7, `cgate-ah`), 0.68 °C as a 20-seed ensemble.
+  three. Lower is better. Current best (round 9, 2026-09-28): 0.51–0.55 °C overall for a single model, 0.50–0.53 °C as a seed ensemble — the plain direct model (idea 1 only, one or two layers) under the stratified validation set. The round-7 position-head recipe (0.72 / 0.68) was judged under the old validation set.
 - **Never one run.** Training is stochastic, so every configuration is trained
   10-20 times from different random starts (**seeds**) and we report the mean
   and the spread. A difference smaller than the spread is not a result.
@@ -105,7 +118,7 @@ answers are in "Methods, plainly" below.
 | case | one complete tank run = one CSV = one test-set item |
 | seed | one training run from one random start; "20 seeds" = the same configuration trained 20 times |
 | arm / config | one setting being compared in a round |
-| excursion case | a case where `T_avg` leaves the interval between the walls (the blind spot above); 20 of the 70 |
+| excursion case | a case where `T_avg` leaves the interval between the walls (the blind spot above); 21 of the 70 |
 | blow-up | a seed whose final overall MAE exceeds 1.5 °C |
 | channel | one of the model's outputs (3 normally; the gates add a 4th) |
 | gate | a rule that decides, per case or per timestep, to stop using the position formula and take `T_avg` from somewhere else |
@@ -121,6 +134,10 @@ answers are in "Methods, plainly" below.
     ensemble_eval.py        seed-ensemble scores (the deployment metric)
     sanity_compare.py       two configurations on their common cases, paired by seed
     eval_checkpoint.py      re-score a finished run's best or final checkpoint, no retraining
+    energy_uq_report.py     stored energy / state-of-charge error, wall-balance consistency, seed-spread
+                            calibration and cost for one configuration (the paper's energy-domain table)
+    compress_probe.py       post-hoc pruning / weight quantization of a configuration's checkpoints,
+                            parameter breakdown, GPU / CPU inference time per case
     splits/                 the frozen validation lists (round 9 on)
     runs/<name>_seed<N>/    one directory per run: metrics, plots, predictions
     ../../../../calit2-thermal-wiki/HANDOVER.md   state of the work for whoever picks it up next (house rules,
@@ -223,10 +240,308 @@ rather than what it predicts:
 | 2026-09-12 | 8 | combine the two survivors; give the outer wall a reference (the inlet, and a slow running average of it -- the physical one tracks the wall to 5 °C with no model at all); AR at 2 layers | `[CODE]` |
 | 2026-09-12 | 7 | (results) | the case gate with a plain 4th channel wins under the new weights: 0.72 °C, no blow-ups, the 12 hard cases halved; the regime flag helps the other 49 cases instead; removing both-phase runs from training hurts by 0.55 °C |
 | 2026-09-16 | 8 | (results) | the survivors do not stack (0.707 vs 0.718, noise); the outer-wall reference fits T_outer and breaks T_avg, worst on the gated cases; every anchored arm early-stops ~300 epochs sooner on a lower validation loss — and the validation set turns out to be 15 linear-charging runs |
+| 2026-09-30 | — | (diagnosis) | case 70 = T_avg label conflict (123/311 training files use an inner-weighted average; the model picks the convention by temperature level); startup bump = T0-only transient, untrained; fixes to test in round 10 |
+| 2026-09-28 | 9 | (results) | under a validation set with every case type the plain direct model wins: 0.51–0.55 °C single, 0.50–0.53 ensemble (legacy recipe 0.676); the position head's round-5 win was early stopping; gates, flag, time prior and split models leave the recipe; the round-8 anchor collapse was the validation set |
 | 2026-09-19 | 9 | re-test rounds 4–8 — every configuration ever trained (146) and every loss-weight vector — with a validation set that contains every case type; one network per temperature (and a two-network form: walls shared, T_avg separate); a time curve for the position head (the first-50-step T_avg problem) | `[CODE]` — runner ready: everything by default, 218 GPU-h ≈ 108 h wall with 3 seeds in parallel, S1 decision arms first; 3-seed pilots: the validation set caused the round-8 collapse (1.53 → 0.89), the reference still costs T_avg on the switched cases; the time curve cuts the first-50-step error 1.24 → 0.48 with nothing worse |
 
 ---
 
+## 2026-09-30 — Diagnosis `[DIAG]` — case 70 is a T_avg label conflict in the training data; the startup bump is a transient fixed by T0 alone
+
+**In one line:** the two problems left on the round-9 winner (direct h160×1)
+have different causes. Case 70's T_avg (−8.7 °C for the whole run, every seed,
+every arm) comes from the training data: T_avg is computed two different ways
+across the training files, and the model picks between them by temperature
+level. The spike in the first 1–5 steps (the user's cases 4, 8, 10, 19, 23,
+27, 28, 38, 46, 63, seen in seed 123's plots) is built into the architecture:
+the first outputs depend on the initial temperature T0 alone and are almost
+untrained. Inference-only work (no training); three investigators per
+question plus an adversarial verifier each; the case-70 verdict was reached
+twice by independent verifiers. Scripts, tables and figures:
+`calit2-thermal-wiki/round9/diag_2026-09-30/` (`final_*_verdict.md` first).
+
+### Case 70: two T_avg conventions in the training labels
+
+A 1-D radial conduction model (documented geometry r_i 0.0254 m, r_o 0.127 m,
+documented k(T), cp(T); T_inner or Input_T as the boundary) reproduces each
+file's walls, and its T_avg can be averaged over the radius with weight r^p.
+Fitting p per file:
+
+- all 70 test files: line average, p = 0 (67) or −0.25 (3);
+- training + validation: **123 of 311 files use an inner-weighted average**
+  (p −0.25 to −0.5), which sits closer to the inner-wall temperature — several
+  °C lower when discharging, higher when charging: Case 9 25/25, Case 1 37/40,
+  Case 5 20/25, Case 4 15/37, Case 7 10/35, Case 3 8/32, Case 2 5/32, Case 8
+  2/25, Case 10 1/25, Case 6 0/35. Their walls follow the same physics; only
+  T_avg differs.
+- Model-free proof: `Case 1/Case new 18 (1 second step)` and `Case 1/Case new
+  20` have identical Input_T, T_inner within 0.04 °C and T_outer within 0.8
+  °C, but T_avg differs by up to 11.3 °C (7.6 °C RMS).
+- Provenance: the values come from the FE deliveries as they are. `Case new
+  18 (1 second step)` is identical, every value of all five columns, to the FE
+  Data Group's 2025-fall file (`raw/.../2025 Fall/Data Group/Thermal input
+  (temperature)_small time steps/10s/`). None of our code writes the data
+  CSVs; the model-side T_avg formulas (pos, midpoint, blend anchor) only
+  reconstruct predictions. The fitted r^p weight is a description used for the
+  diagnosis, not how the labels were made; the likely origin is the FE
+  extraction (a node average on a mesh graded toward the inner pipe, or a
+  different path or face — the FE W26 slides list "mesh divisions, faces
+  selected" among the dataset discrepancies). To be confirmed by FE.
+
+Why case 70: among training discharges starting above ~500 °C almost all are
+Case 9 (all inner-weighted); the only line-average one is the Erick 600 °C
+file, stored twice (Discharge 11 = 13, byte-identical). The network learned
+"high start temperature → inner-weighted T_avg". Probed by moving 14 input
+shapes across 300–600 °C: below ~400 °C every shape gets the line average,
+at 600 °C every shape (including linear Case 8/10 inputs) gets the
+inner-weighted one. Case 70 starts at 600 °C: model error −8.66 °C vs the
+convention offset −8.08 °C (correlation 0.995 over time); what is left after
+removing the offset is 0.3–0.6 °C. Cases 66/67 (550/575 °C) and 42 (516 °C)
+get part of the offset; 43/44 (308/375 °C) do not. The position head is hit
+less (offset weight ~0.75 vs ~1.06), which is most of its advantage on these
+cases.
+
+Ruled out: capacity (40 arms all 7.7–10.1 °C on case 70), the validation
+split, range extrapolation (600 °C is inside the scaler range 1–610), seed
+variance (all seeds the same sign). Up-weighting the hot runs would make it
+worse (that band is mostly Case 9).
+
+Fix to test (round 10): put the flagged labels on the test convention —
+T_avg_new = T_avg + phys(p=0) − phys(p_best), driven by each file's own
+T_inner, written to a copy of the data root — and retrain direct h160×1, 10
+seeds (~1 GPU-hour). Control arms: mask the T_avg loss on the flagged files;
+TRAIN_EXCLUDE_TYPE=9. Pre-registered: case 70 ≤ 1.5 °C, case 42 ≤ ~2,
+cases 66/67 ≤ ~1, all-70 T_avg not worse than 0.918, the level probe flat.
+The real fix is for the FE group to say how T_avg was extracted and
+re-export it (their W26 slides already list "discrepancies between cases" in
+volume/surface averages).
+
+### The startup bump: a T0-only transient that training never fits
+
+- The GRU is one-directional and step 1 sees only h0 = enc(T0) and x(0) =
+  (Time 0, Input_T(0) = T0), so the step-1 T_outer/T_avg is a function of T0
+  alone; steps 2–5 are nearly so (a constant-input run at the same T0
+  reproduces the real steps 1–5 to 0.01–0.37 °C). Case 70's step-2 zig-zag
+  and case 46's 8 °C T_outer dip (seed 7) reproduce on a constant input.
+- The encoder's h0 is off the states the GRU visits during a run; the first
+  update moves the state by about its own size and settles in 3–5 steps.
+  Steps 1–5 carry ~0.1 % of the training loss, so the outputs read during
+  that settling are never fitted — on training files as much as on test
+  files.
+- Each seed places its error curve over T0 differently (seed-to-seed
+  correlation ~0.3), so the seed mean looks small. Seed 123 has a −1.2 to
+  −1.8 °C T_avg trough at T0 220–290 °C: 8 of the user's 10 cases start there
+  (p = 8e-5 for seed 123; other seeds would have flagged other cases).
+  Larger where few runs start (below 100 °C, above 450 °C; all arms share a
+  +3–6 °C excursion at T0 80–95 °C).
+- Effect on MAE: ≤ 0.003 °C on the user's cases — a plotting/deployment
+  issue, not an accuracy one. h128×2 and the position head have larger
+  bumps than h160×1. The h0-out-of-[−1,1] explanation was refuted.
+- Inference fix (no training, minutes): run the model a second time from the
+  same h0 with Input_T held at T0 for 30 steps; its deviation from T0 is pure
+  model error; subtract it from T_outer/T_avg with weight exp(−(t−1)/5).
+  h160×1 test: spikes > 1 °C 3.7 → 0.4 % (T_outer), 9.1 → 2.6 % (T_avg);
+  largest early error case 70 seed 123 T_avg 5.0 → 1.0 °C, case 46 seed 7
+  T_outer 8.1 → 2.3 °C; whole-run MAE ≤ +0.001. Harms very steep or jumping
+  starts (cases 40, 54 +0.4/+0.7 °C).
+- Training fix (round 10 arm): add rest sequences (Input_T = T0, targets =
+  T0, T0 drawn over 0–620 °C) and/or a burn-in prefix labelled with T0, plus
+  more weight on steps 1–10; 3–5 seeds; accept if a constant-input sweep stays
+  within 0.2 °C of T0 at every T0 and whole-run MAE is unchanged.
+
+### Separate findings
+
+- Cases 27/28/38, T_inner error of 0.4–1.0 °C peaking at steps 15–20: lag
+  behind a steep ramp. The model builds up only 7–14 % of the true lag after
+  any ramp onset, at t=0 or mid-run, so it is not a startup effect. Possibly
+  also a label issue: 22 % of steep-ramp training rows have T_inner exactly
+  equal to Input_T (15 files, 10 of them Case 9); no test file does.
+- Off-by-one at the last step: X holds rows 0..1439, so the T_inner anchor
+  (lead 1) uses Input_T(1439) for step 1440 instead of Input_T(1440) — up to
+  9.6 °C on test case 56 at that one step. Not fixed yet.
+- JumpSteps_gt2C never scores the t0→t1 step; it is blind to the startup
+  bump.
+- Other label anomalies: `Case 1/Case new 1, 2, 3` (walls fit a doubled
+  conductivity); the validation file `Case 10/Case 8` (T_avg tracks T_outer at
+  the end, −10 °C in-sample) — it is one of the 20 files that pick the
+  checkpoint.
+- The 1-D physics model driven by Input_T alone, nothing fitted per file,
+  scores test T_avg MAE 0.51 °C and T_outer 0.54 °C against the GRU's 0.92 /
+  0.35 (r_o chosen from three candidates on files that included test cases;
+  the chosen value is the documented one). Worth comparing with the FE
+  group's physics baseline, and a candidate base for a physics + GRU
+  residual model.
+
+## 2026-09-28 — Round 9 results `[DONE]` — with a validation set that sees every case type, the plain direct model wins; the position head was winning on early stopping
+
+**In one line:** re-run under a validation set with two runs of every case
+type (and room to train to 2000 epochs), the simplest model the project has
+— every temperature predicted directly, only T_inner anchored on the inlet,
+one or two GRU layers — is the best configuration by a wide margin: 0.51–0.55
+°C single-model, 0.50–0.53 as a seed ensemble, against 0.74–0.77 / 0.72–0.74
+for the best position-head arms and 0.676 for the legacy deployment recipe.
+It needs no gate (its 21 switched cases are as good as the gated ones), it
+has no early-window problem (case 24's first 50 steps: 1.0 °C against 8.9),
+and it jumps far less. The position head's round-5 win (0.89 vs 1.37) was
+the old validation set selecting the direct head at ~360 epochs, while its
+validation error was still 1.45–1.81× its eventual minimum; the position head
+was selected at ~500–620 epochs, within 1.14× of its own. (Corrected
+2026-09-30: under the new set both families need a similar 630–770 epochs to
+come within 5 % of their end point, so the position head does not converge
+faster; the old set simply picked the direct head earlier.)
+Rounds 5–8 built the gates, the flag, the reference and the time prior on
+that family; under a fair stopping rule the family loses.
+
+**Control: the validation set, not a code change (dev box, 2026-09-28).**
+The round-9 code differs from the round-5 code in more than the validation
+set (exact validation mean, 2000 cap, the training-loop refactor), so the
+direct h128×2 model was trained again with the current code under both
+splits, seeds 7 / 21 / 42:
+
+| current code, direct h128×2 | seed 7 | seed 21 | seed 42 | mean | best epoch (mean) |
+|---|---|---|---|---|---|
+| legacy validation set, cap 1000 | 1.540 | 1.024 | 1.750 | **1.438** | 315 |
+| stratified validation set (vs2), cap 2000 | 0.529 | 0.576 | 0.581 | **0.562** | 1031 |
+| round 5 as recorded (legacy, old code) | 1.150 | 0.869 | 1.357 | 1.125 | 374 |
+| round 9 server (vs2) | 0.527 | 0.547 | 0.521 | 0.532 | 989 |
+
+Same code, same seeds: the legacy validation set stops the run at epoch
+~300 and leaves it at 1.4 °C; the stratified one lets it train to ~1000
+and it lands at 0.56. The round-5 and round-9 numbers are reproduced in
+kind on a different machine (cuDNN is not bit-reproducible across GPUs, so
+seed-for-seed values differ). The reversal is the validation set.
+
+**What came back.** 2314 of 2314 runs, every one with a done.flag, stratified
+provenance and the 2000-epoch cap (the teammate's server; the S4 LOTO stage
+was not run, as planned). `analyze_round9.py` resolves every arm to its run
+name, pairs it per seed with its legacy twin and applies the pre-registered
+rule; its tables are in `calit2-thermal-wiki/round9/r9_report.md`. Scoring
+re-checked from the raw predictions (MAE recomputed from predictions.npz
+equals meta.json to 4 decimals, abs and position-head runs alike); no file of
+the 70 test cases is byte-identical to a training file.
+
+### The direct model under vs2
+
+| configuration | seeds | single ± sd | ensemble | T_outer | T_avg | 12 hard | 21 switched | 49 rest | T_avg, first 50 steps (49) | case 24, first 50 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **direct, h160×1** | 10 | **0.510 ± 0.015** | **0.495** | 0.354 | 0.918 | 0.72 | 0.55 | 1.08 | 0.37 | 0.8 |
+| direct, h192×1 | 10 | 0.519 ± 0.035 | 0.504 | 0.357 | 0.946 | 0.69 | 0.54 | 1.12 | — | — |
+| direct, h96×1 | 10 | 0.523 ± 0.044 | 0.507 | 0.360 | 0.934 | 0.66 | 0.53 | 1.11 | — | — |
+| **direct, h128×2** (r5-abs) | 20 | **0.548 ± 0.029** | **0.529** | 0.414 | 0.962 | 0.81 | 0.64 | 1.10 | 0.43 | 1.0 |
+| direct, h128×5 (r4 base) | 20 | 0.699 ± 0.080 | 0.649 | 0.543 | 1.285 | 1.31 | 1.10 | 1.36 | — | — |
+| position head + case gate (r7 winner) | 20 | 0.767 ± 0.032 | 0.737 | 0.381 | 1.638 | 0.98 | 0.70 | 2.04 | 1.21 | 8.9 |
+| … + time prior (tp) | 20 | 0.740 ± 0.039 | 0.717 | 0.379 | 1.565 | 0.91 | 0.65 | 1.96 | 0.50 | 2.6 |
+| legacy deployment recipe (cgate-ah, old protocol) | 20 | 0.718 | 0.676 | 0.447 | 1.430 | 1.09 | 0.86 | 1.67 | — | 10.6 (ensemble) |
+
+All 42 direct configurations at one to three layers land between 0.51 and
+0.73 (32 of them at or below 0.60; five layers 0.70–1.10), and every direct
+arm improved over its legacy twin — by 0.52–0.95 °C at one to three layers. At one layer the dp0.2 and dp0.3 arms are the same model
+(dropout acts only between GRU layers) and give identical numbers — one data
+point each, not two. The one-layer arms carry the round-5 seed count (10).
+
+**The round-5 early-window problem** (T_avg error in the first 50 steps of
+cases 15–24 and 58–65, seed means, °C):
+
+| | direct h160×1 (vs2) | direct h128×2 (vs2) | direct h128×2 (legacy val) | position head + cgate-ah (vs2) | … + tp (vs2) | position head + cgate-ah (legacy val) |
+|---|---|---|---|---|---|---|
+| cases 15–23, first 50 | 0.13 | 0.19 | 1.56 | 0.69 | 0.26 | 0.82 |
+| case 24, first 50 | 0.77 | 0.98 | 1.12 | 8.94 | 2.61 | 10.57 |
+| cases 58–65, first 50 | 0.12 | 0.20 | 1.94 | 0.54 | 0.53 | 0.85 |
+| cases 15–24, whole case | 0.82 | 0.86 | 3.35 | 2.01 | 1.83 | 1.55 |
+| cases 58–65, whole case | 0.34 | 0.43 | 2.94 | 0.29 | 0.25 | 0.51 |
+
+Trained to convergence, the direct model has no early-window problem on
+either group; under the legacy validation set it was bad everywhere (it was
+stopped before it had learnt anything well). Case 24 stays the hardest start
+(~1 °C). Over the whole of 58–65 the gated position head is still slightly
+better (0.25–0.29 vs 0.34–0.43).
+
+Case by case (20-seed means, vs2), the direct h128×2 model's T_avg beats the
+position-head winner on 54 of the 70 cases, most on the charging cases the
+position head over-estimated early (case 5: 1.6 vs 5.7, 22: 0.9 vs 4.0, 13:
+1.7 vs 4.6). It loses on the five "Discharge – Erick" cases 66–70 and on
+42–44 (case 70: 8.5 vs 6.2, 42: 5.7 vs 4.4) and by 0.1–0.4 °C on some
+switched cases the gate handles well (58, 59, 62). Cases 70 and 42 are the
+worst for both families — the tail round 10 should look at.
+
+Paired, under vs2: position head h128×2 − direct h128×2 = **+0.348 [+0.28,
++0.45]** overall, +0.93 T_avg, +1.40 on the switched cases, +0.72 on the
+rest, and +675 jump steps (jump veto on the position head). The round-5
+verdict reverses.
+
+### Why: the early-stopping audit predicted it
+
+The audit that tiered the legacy inventory (training loss still falling
+after the old checkpoint) sorted S1b = "cut short" from S1c = "not cut
+short" before any of these runs existed. Under vs2: **S1b 75 of 90 arms
+better, median −0.66 °C; S1c 3 of 24 better, 6 worse, median +0.006.** The
+direct-model scans were the most cut-short group (training loss still
+falling 32–56 % after the checkpoint, best epoch ~360); under vs2 they train
+to ~980. The position head was cut short less (11–17 %), so it lost less and
+looked better. Across all 146 arms with a legacy twin: 89 better under vs2,
+12 worse, 45 within noise.
+
+### The pre-registered decisions
+
+1. **Protocol effect.** Direct model −0.6 to −0.95 per arm; the position-head
+   base −0.08 (noise); the round-7 winner cgate-ah **+0.049 [+0.018, +0.079]
+   (worse)** — its T_avg on the 49 normal cases went from 1.67 to 2.04.
+2. **Primary comparisons, inside the position-head family** (all hold or
+   weaken, none reverses): the gates still beat their 4-channel null
+   (cgate-ah −0.066, tg30s30 −0.097, cgate-afb −0.055; tg10s40 −0.048 with a
+   jump veto); cgate-ah still beats the plain base (−0.130; −0.048 on the 17
+   non-pilot seeds); 2 layers vs 5 noise on 20 seeds (1 blow-up each), −0.09
+   on the 17; the loss-weight lever 1-6-1 vs 1-6-3 has shrunk to noise
+   (+0.002; −0.031 on the 17); fip vs fiz −0.022 [−0.042, −0.001] (borderline);
+   fip-cgate-ah vs fiz-cgate-ah and vs cgate-ah: noise.
+3. **The round-8 hypothesis:** (To-em1200-cgate-ah − cgate-ah) on the 21
+   switched cases = +0.73 [+0.67, +0.80] under vs2 against +3.40 legacy —
+   **(a) yes, the validation set caused the round-8 collapse; (b) yes, the
+   reference still costs T_avg** (and carries a jump veto). Best epoch of the
+   anchored arm 258 → 806.
+4. **Loss weights** (every vector ever scanned, on its own base): none beats
+   1-6-1 with the CI clear of zero; without the one blow-up seed of w161,
+   1-6-1 is best or tied everywhere. w1-6-6 on the winner is worse (+0.041).
+5. **Time prior (tp): PASS** on the winner — first-200-step T_avg error on
+   the 49 −0.47 [−0.55, −0.39] (1.26 → 0.79), overall −0.028 [−0.045, −0.011],
+   23 fewer jump steps, no blow-up. On the plain base it fails the overall
+   clause (noise, one blow-up). Moot for the direct model, which never had
+   the early-window problem.
+6. **Split models (S2): dropped.** Three networks on the winner +0.135
+   [+0.10, +0.17] (worse), walls-shared-T_avg-separate +0.115; the GRU-capacity
+   control h64 within noise of h128. Only the EMA-reference arm gains from
+   the split (−0.101 vs its shared twin), which does not reach the winner.
+7. **Deployment:** the direct model beats the legacy ensemble 0.676 (0.495 at
+   h160×1, 0.529 at h128×2) and the best position-head arm, with no blow-up
+   and far fewer jumps. **The recipe changes to the direct model.** Which
+   size exactly is round 10's first question (the one-layer arms have 10
+   seeds; only 1-6-3 weights were ever run on the direct model at ≤ 2
+   layers).
+
+### What stays, what goes
+
+Stays: the T_inner anchor (every direct arm uses it), the stratified
+validation set and the 2000 cap, seed ensembles, the rule. Goes from the
+recipe: the position head, the case gate and its fourth channel, the phase
+flag, the time prior, the split models — each solved a problem of the
+position-head family. The T_outer EMA reference is not settled for the
+direct model: T_outer is the direct model's weakest channel relative to the
+anchored arms (0.35–0.41 vs 0.30 with the reference), and the reference has
+only ever been tried on top of the position head.
+
+For the paper this is the headline methodological result: a validation set
+that does not cover the operating regimes did not just pick a worse epoch —
+it picked the wrong model family. The old set stopped the direct model much
+further from its end point than the position head (both converge at a similar
+speed), and its `T_avg` labels used the other convention (2026-09-30 entry).
+
+### Round 10 (`[PLAN]`)
+
+The direct model re-optimised at 20 seeds under vs2: capacity at one and two
+layers (h96–h192), loss weights (1-6-3, 1-6-1 and the T_avg side), the T_outer
+EMA reference on the direct model, the init-encoder width; ensemble as the
+deployment metric. Then the paper items that were waiting for a winner: LOTO
+(S4) on the new recipe, the LSTM control, energy/UQ tables.
 ## 2026-09-19 — Round 9 `[CODE]` — a validation set that sees every case type; one network per temperature
 
 **In one line:** round 8 ended with a suspect rather than a verdict: every
@@ -348,6 +663,56 @@ independent models alike).
   is now its done.flags, not the exit code. Default stages: everything —
   S1, S2, S1b, S1c — 218 GPU-h, ~108 h wall at 3 workers (user 2026-09-20:
   "it is 7 days anyway, run it all").
+- `TRAIN_EXCLUDE_TYPE` (config, data, runio, export, eval_checkpoint; tag
+  `xt<N>`): leave-one-type-out. The named case-type folder is removed from
+  training and validation (the frozen split filtered, not redrawn) and
+  appended to the test set; refuses to run without the committed split
+  file; the runner's preflight checks one fold's split (256 / 18 / 107 with
+  0 / 0 / 37 runs of the held-out type). Stage S4 in the runner. No
+  retraining of anything else: the validation change had to re-run every
+  arm because it changes when every run stops; this only re-trains the one
+  recipe ten times.
+- `energy_uq_report.py` (2026-09-23): the numbers an energy-systems reader
+  asks for, from a finished configuration's predictions.npz — stored-energy
+  error per unit m·cp (kWh with `--mcp-kj-per-k`), state-of-charge error in
+  percentage points of each run's own swing, T_avg-outside-its-walls rate on
+  the steps where the truth is inside, the lumped outer-wall balance residual
+  of the prediction next to the truth's, seed-spread vs ensemble-error
+  calibration, and training / inference cost. On the round-8 winner
+  (cgate-ah, 20 seeds): SoC MAE 1.1 pp (1.2 non-switched / 0.9 switched),
+  end-of-run |SoC error| 1.6 pp; stored energy 2.0 K per unit m·cp; T_avg
+  never outside the predicted walls on the 49 (0.42 % of steps on the 21);
+  wall-balance residual RMS 22.3 °C for the prediction vs 22.1 for the truth
+  (ratio 1.01 — as consistent as the data; the absolute value is the
+  one-node model's own error); training 105 s per seed, inference 2.0 ms
+  per case. Seed spread predicts the ensemble's error: Spearman 0.78
+  (T_inner), 0.59 (T_outer), 0.71 (T_avg on the 49 non-switched cases; 0.48
+  on the switched, where the gate hands T_avg to the absolute channel) —
+  the 20-seed spread is a usable uncertainty signal. The ungated w161 has
+  T_avg Spearman 0.75 overall; the gate makes the remaining T_avg error
+  more systematic than seed-dependent, which is what the early-window
+  diagnosis then found and the time prior removed.
+- `compress_probe.py` (2026-09-28; the user asked whether pruning or a
+  structural search is needed). Round-8 cgate-ah, 5 seeds, no retraining
+  (the evaluator reproduces every seed's meta.json exactly at 0 %). Nothing
+  can be cut for free: removing the smallest 30 % of the GRU weights raises
+  overall MAE by +0.88 °C (0.74 → 1.61), 30 % of the init encoder +0.44,
+  both +1.67; fp16 weights are lossless (−0.001), int8 +0.05 (seed-dependent:
+  one seed +0.41 on T_outer, another ~0), 6-bit +1.35. By channel (2 seeds,
+  30 % GRU pruning): T_inner +0.01 / +0.03 — the anchored channel barely
+  notices, the network only emits a small correction to the inlet
+  temperature — while T_outer (predicted as an absolute value here) takes
+  +0.64 / +1.93 and T_avg follows it through the position formula (+0.81 /
+  +3.33). Size: 283,140 parameters, 1.08 MB fp32 / 0.54 MB fp16; the init
+  encoder that maps four initial temperatures to h0 is 47 % of them (width
+  hard-coded 256, independent of HIDDEN_SIZE). Inference per 1440-step case
+  (4 h of plant time): 1.8 ms on the 4090, 119 ms on one CPU core (slower
+  on 24 threads, 214 ms: the matrices are too small to split) — over 10⁴×
+  real time on a single core. Conclusion: no deployment need for
+  compression, and the network is not over-parameterised in a way pruning
+  could exploit; capacity was already scanned (rounds 4–7: under 1-6-1
+  h128x2 0.787, h192x2 0.798, h256x3 0.823; five layers worse or unstable in
+  every round). The one structural inefficiency is the encoder width.
 - `rollout.touter_reference`: the 1440-step Python loop that computed the
   EMA reference per batch is replaced by its closed form (float64; equal to
   the recurrence to 5×10⁻⁷ in scaled units, i.e. < 10⁻³ °C). The EMA arms
@@ -366,6 +731,7 @@ independent models alike).
 | S1, part 3 (the early-window fix; 2 arms, new) | tp-w161, tp-w161-cgate-ah (20 seeds) | r7-w161, r7-w161-cgate-ah | does a fixed elapsed-time curve for the position (`POS_TIME_PRIOR=median`, tag `tp`) remove the first-200-step T_avg overestimate without costing anything later — the user's "core problem since round 5" (cases 15–24 / 58–65, first 50 steps); primary = first-200-step T_avg error on the 49 non-gated cases, paired; passes only with overall not worse and no veto |
 | S1b (the legacy configurations the old validation set demonstrably cut short; 90 arms, tier "keep" in `splits/round9_legacy_configs.json`) | the entire abs-model capacity, lookahead, weight and anchor-scale scans of rounds 4–5, the fixed anchors, the learned gates, the round-6 soft timestep gates and floors at 1-6-3, To-ai, os2, To-em900, the full stack — each with its legacy seed list | its legacy twin, per seed | tiered by a **measurement**, after the user pointed out (2026-09-20) that the first tiering did not follow its own criterion: for every legacy run, how much the training loss still fell in the 150 epochs after the checkpoint the old set picked (`legacy_post_checkpoint_train_drop`, median over seeds, stored in the manifest). Calibration on S1's twins: cgate-ah 12.8 % and w161 11.4 % (vs2 moved cgate-ah by +0.03 — nothing), To-em1200-cgate-ah 25.5 % (vs2: 1.53 → 0.89), abs-h128x5 31.4 %. Everything above the calibrated no-change point (12.8 %) is S1b: the abs scans sit at 32–56 % with best epochs 290–410, the learned gates at 33–48 %, the round-6 soft gates and floors at 13–30 %. The first, argued tiering had put exactly these in the archive and the least-cut-short arms (median 10 %) in "keep" — backwards |
 | S1c (the 24 legacy configurations the old set did not cut short; off by default) | drop ≤ 12.8 %: the 1-6-1 gate/flag family (cgate-afb, fip/fiz-cgate-afb, tg10s40, tg20/30, fic), the h192/h256 arms at 1-6-1 and 1-6-3 (best epochs 680–830, many at the 1000 cap), fl20/fl40/fl40s, the shared-channel cgate, To-em1500 | its legacy twin, per seed | these trained at least as long as the winner did, and vs2 did not move the winner; `--stage S1c` (~44 h) completes the record. The manifest is built from the runs' own `run_config.json`, so nothing is hand-picked; the 5 exclude-both-phase sanity arms (a different test set) and the 4 AR arms (user decision) are the only omissions |
+| S4 (leave-one-type-out; 10 folds, off by default, `--stage S4`, ~8 GPU-h) | w161-cgate-ah trained ten times, each with one case-type folder removed from training **and** validation (`TRAIN_EXCLUDE_TYPE`, tag `xt<N>`; the frozen split is filtered, so the other nine types' validation runs are identical across folds) and that folder's runs appended to the test set; 12 seeds | r7-w161-cgate-ah on the 70 standard cases, per seed | the paper's generalisation section: what the recipe does on an operating regime it never saw (scored on the held-out type's own runs) and what the missing type costs in-distribution (the 70). Folds 4 / 6 / 7 also test the case gate on both-phase runs it never trained on. Filed under `loto_xt<N>_` families because a fold's overall number mixes the two sets |
 | S2 (branch I, `ind` / `inda`, `vs2`; 7 arms) | ind-w161, ind-w161-cgate-ah, ind-w161-To-em1200, ind-w161-To-em1200-cgate-ah; ind-h64-w161-cgate-ah; inda-w161-cgate-ah, inda-w161-To-em1200-cgate-ah | the S1 arm with the same knobs; the h64 control against ind-w161-cgate-ah; inda against both its shared and its ind twin | does one network per temperature beat the shared one, alone and on the winner; does the outer-wall reference help once it cannot stop T_avg's training; is any gain a GRU-capacity gain; does the wall pair want its shared trunk (`inda`: walls shared, T_avg separate — the pilot's suggestion) |
 | S1, part 2 (the weight scans; 14 arms) | r6-w1-6-0.5, r6-w1-6-6, r6-w1-6-10, r6-w1-3-3, r6-w1-4-3, r6-w1-8-3, r6-w2-6-3, r7-w1-8-1, r7-w1-8-2, r7-w1-10-1, r7-w1-12-1 (12 seeds, plain position head); r8-w163-To-em1200, r8-w131-To-em1200 (20 seeds); w166-cgate-ah (12 seeds, new: Arnold's "explore increasing the weight average" on the winner) | their round-6/7/8 twins (same base, same seeds); each vs r7-w161 on the common seeds, the EMA pair vs r8-w161-To-em1200, w166-cgate-ah vs r7-w161-cgate-ah and r6-cgate-ah | is 1-6-1 still the weight vector — the T_avg side (0.5 / 1 / 3 / 6 / 10) and the T_outer side (3 / 4 / 6 / 8 / 10 / 12) — now that early stopping sees every case type. The user's rule: everything decided under the old validation set is re-run, weights included; nothing carries over untested |
 

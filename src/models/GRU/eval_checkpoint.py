@@ -67,6 +67,7 @@ def env_from_config(c):
     env["DROPOUT"] = str(lp["dropout"]); env["MAX_EPOCHS"] = str(lp.get("max_epochs", 1000))
     d = c.get("data", {})
     env["VAL_SPLIT"] = d.get("val_split", "legacy"); env["VAL_PER_TYPE"] = str(d.get("val_per_type", 2))
+    env["TRAIN_EXCLUDE_TYPE"] = str(d.get("train_exclude_type", "") or "")
     env["SEEDS"] = str(c["seed"])
     return env
 
@@ -79,7 +80,7 @@ def evaluate_one(run_dir, which):
     # REMOVED from the environment first, so they fall back to config.py's
     # defaults instead of whatever the shell or the previous --glob run set.
     for var in list(KEYS.values()) + ["LOSS_WEIGHTS", "VARIANTS", "HIDDEN_SIZE", "NUM_LAYERS",
-                                      "DROPOUT", "MAX_EPOCHS", "VAL_SPLIT", "VAL_PER_TYPE", "SEEDS"]:
+                                      "DROPOUT", "MAX_EPOCHS", "VAL_SPLIT", "VAL_PER_TYPE", "TRAIN_EXCLUDE_TYPE", "SEEDS"]:
         os.environ.pop(var, None)
     for k, v in env.items():
         os.environ[k] = v

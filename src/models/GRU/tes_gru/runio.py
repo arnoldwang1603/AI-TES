@@ -94,6 +94,7 @@ def save_run_config_snapshot():
             'manual_split_enabled': MANUAL_SPLIT_ENABLED,
             'val_split': VAL_SPLIT,
             'val_per_type': VAL_PER_TYPE,
+            'train_exclude_type': TRAIN_EXCLUDE_TYPE,
             'outer_test_frac': OUTER_TEST_FRAC,
             'inner_val_frac': INNER_VAL_FRAC,
             'split_seed': SPLIT_SEED,

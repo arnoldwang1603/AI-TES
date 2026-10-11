@@ -856,6 +856,22 @@ VAL_SPLIT = os.environ.get("VAL_SPLIT", "legacy")
 assert VAL_SPLIT in ("legacy", "stratified"), VAL_SPLIT
 VAL_PER_TYPE = int(os.environ.get("VAL_PER_TYPE", "2"))
 assert 1 <= VAL_PER_TYPE <= 5
+# Round 9 add-on (2026-09-23): leave-one-type-out (LOTO) generalisation test.
+# TRAIN_EXCLUDE_TYPE = "" | the number of a case-type folder ("4" -> the
+#   folder whose name starts with "Case 4 ("). Every run of that type is
+#   removed from training AND validation -- the frozen stratified split is
+#   FILTERED, not redrawn, so the other nine types' validation runs are the
+#   same in every fold -- and appended to the test set, so a fold is scored
+#   on the 70 standard cases plus the held-out type's own runs (one row per
+#   case in summary_errors.csv; the analysis separates them by name, and
+#   export_results files these runs under a "loto_" family so their mixed
+#   Test_MAE_Overall never sits next to a full-set number). Answers "what
+#   does the model do on an operating regime it has never seen", with the
+#   data already in hand. Tag `xt<N>`.
+TRAIN_EXCLUDE_TYPE = os.environ.get("TRAIN_EXCLUDE_TYPE", "").strip()
+if TRAIN_EXCLUDE_TYPE:
+    assert TRAIN_EXCLUDE_TYPE.isdigit(), "TRAIN_EXCLUDE_TYPE is the case-type number, got %r" % TRAIN_EXCLUDE_TYPE
+    assert VAL_SPLIT == "stratified", "TRAIN_EXCLUDE_TYPE needs VAL_SPLIT=stratified (the frozen split is filtered)"
 
 _LW = "-".join(f"{w:g}" for w in LOSS_WEIGHTS)
 _VTAG = "-".join(VARIANTS)
@@ -914,6 +930,8 @@ elif MODEL_SPLIT == "avg_only":
     _parts.append("inda")
 if VAL_SPLIT == "stratified":
     _parts.append("vs%d" % VAL_PER_TYPE)
+if TRAIN_EXCLUDE_TYPE:
+    _parts.append("xt%s" % TRAIN_EXCLUDE_TYPE)      # leave-one-type-out fold
 if SLIDING_PAD_MODE != "variable":
     _parts.append(SLIDING_PAD_MODE)
 RUN_NAME_BASE = "_".join(_parts)

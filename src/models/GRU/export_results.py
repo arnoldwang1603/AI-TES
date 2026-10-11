@@ -45,6 +45,12 @@ def family(c):
     # (291/20 split instead of 296/15); same test set, so they are
     # comparable, but they are filed as their own family so the protocol
     # change is visible in every table.
+    # Leave-one-type-out folds are scored on 70 + the held-out type's runs,
+    # so their overall numbers are their own family, never ranked with the
+    # full-set ones (same reason as sanity_xb_).
+    xt = (c.get("data") or {}).get("train_exclude_type")
+    if xt:
+        return "loto_xt{}_".format(xt) + fam
     if (c.get("data") or {}).get("val_split") == "stratified":
         return "vs{}_".format((c.get("data") or {}).get("val_per_type", 2)) + fam
     return fam
@@ -115,6 +121,8 @@ def leaf_name(c, lp):
         p.append("fi" + str(c["case_flag_input"])[0])
     if c.get("exclude_both_phase"):
         p.append("xb")
+    if (c.get("data") or {}).get("train_exclude_type"):
+        p.append("xt{}".format(c["data"]["train_exclude_type"]))
     if c.get("model_split") == "independent":
         p.append("ind")
     elif c.get("model_split") == "avg_only":
@@ -338,6 +346,9 @@ then describe EACH of the three."""),
     ("inda", """two networks: the two surfaces share one (as before), the
 average temperature has its own, trained afterwards against the finished
 surfaces."""),
+    ("xt", """leave-one-type-out: every run of case type N was removed from
+training and validation and added to the test set, so the numbers include a
+regime the model never saw. Not comparable with the full-set families."""),
     ("vs", """the validation set used to pick the best epoch: "vs2" means 2
 runs from each of the 10 case-type folders (20 in all, fixed once and
 recorded in splits/); absent means the original protocol, where the 15

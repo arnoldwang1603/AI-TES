@@ -285,6 +285,20 @@ Usage:
     python run_round9.py --parallel 4    # 4 seeds at once (measured 2.27x on a 4090; 3 -> 2.03x)
     python run_round9.py --parallel 1    # one seed at a time, as rounds 4-8 ran
 
+Stage S4 (off by default; --stage S4, ~11 GPU-h) -- leave-one-type-out. The
+recipe (w161-cgate-ah) trained ten times, each with one of the ten case-type
+folders removed from training AND validation (TRAIN_EXCLUDE_TYPE; the frozen
+split is filtered, so the other nine types' validation runs are identical
+across folds) and that folder's runs appended to the test set. Scored per
+fold on (a) the 70 standard cases -- how much the missing type costs
+in-distribution -- and (b) the held-out type's own runs -- what the model
+does on an operating regime it never saw. 12 seeds. The folds that remove
+Case 4 / 6 / 7 also test the case gate on both-phase runs it never trained
+on. Tag xt<N>; export_results files them under loto_xt<N>_ families
+because their Test_MAE_Overall mixes the two sets. No pre-registered
+threshold: this is a generalisation report for the paper, paired per seed
+against r7-w161-cgate-ah on the 70 standard cases.
+
 Parallel seeds (--parallel N, default 3; env PARALLEL_SEEDS): each arm's
 seed list is dealt round-robin to N launcher processes that train at the
 same time on the one GPU, each writing its own run dirs and its own log
@@ -330,7 +344,7 @@ BASE = dict(TINNER_MODE="anchor", ANCHOR_LEAD="1", PHYSICS_BOUND_WEIGHT="0",
             CASE_FLAG_INPUT="", EXCLUDE_BOTH_PHASE="0",
             TOUTER_MODE="abs", TOUTER_TAU="1200", TOUTER_SCALE="1.0", TOUTER_EMA_FORM="euler",
             MAX_EPOCHS="2000", MODEL_SPLIT="shared",
-            VAL_SPLIT="stratified", VAL_PER_TYPE="2")
+            VAL_SPLIT="stratified", VAL_PER_TYPE="2", TRAIN_EXCLUDE_TYPE="")
 RUN_PREFIX = "2026-08-06_"
 SPLIT_FILE = os.path.join("splits", "stratified_v2_s42.json")
 W = "1,6,1"
@@ -436,6 +450,12 @@ STAGES = {
 }
 STAGES["S1b"] = legacy_arms("keep")
 STAGES["S1c"] = legacy_arms("archive")
+# S4 -- leave-one-type-out (2026-09-23, for the paper's generalisation
+# section; off by default, run after the round with --stage S4): the current
+# recipe re-trained ten times, each time with one case-type folder removed
+# from training and validation and scored on it. 12 seeds per fold.
+STAGES["S4"] = [("loto-xt%d-w161-cgate-ah" % t, cah(TRAIN_EXCLUDE_TYPE=t), S12, mins())
+                for t in range(1, 11)]
 # Everything, in decision order: the S1 decision arms, the split models,
 # then the legacy inventory the old validation set cut short, then the rest.
 DEFAULT_STAGES = ["S1", "S2", "S1b", "S1c"]
@@ -626,6 +646,8 @@ def preflight_stale_dirs():
                 continue
             if "_vs" in d and (keys.get("data") or {}).get("val_split") != "stratified":
                 stale.append(d + "  (vs tag but no stratified provenance)")
+            if re.search(r"_xt\d+(_|$)", d) and not (keys.get("data") or {}).get("train_exclude_type"):
+                stale.append(d + "  (xt tag but no train_exclude_type provenance)")
             if "_ind_" in d and keys.get("model_split") != "independent":
                 stale.append(d + "  (ind tag but no model_split provenance)")
     if stale:
@@ -748,10 +770,27 @@ def _run_check(code, env, label):
         print("   (passed; exit code {} at teardown ignored)".format(p.returncode))
 
 
-def preflight_child():
+_CHILD_CHECK_LOTO = r'''
+import sys
+from tes_gru.config import TRAIN_EXCLUDE_TYPE
+from tes_gru.data import load_all_data
+assert TRAIN_EXCLUDE_TYPE == "4", TRAIN_EXCLUDE_TYPE
+tr, va, te, sc = load_all_data()
+pfx = "Case 4 ("
+in_tr = sum(1 for _, c in tr if pfx in c); in_va = sum(1 for _, c in va if pfx in c); in_te = sum(1 for _, c in te if pfx in c)
+print("  LOTO fold xt4: train %d (%d of type 4), val %d (%d of type 4), test %d (%d of type 4)" % (len(tr), in_tr, len(va), in_va, len(te), in_te))
+if in_tr or in_va or in_te == 0 or len(va) != 18 or len(te) != 70 + in_te:
+    print("  LOTO split is wrong"); sys.exit(8)
+print("CHECK_OK")
+'''
+
+
+def preflight_child(plan=None):
     env = dict(os.environ, **BASE)
     env.update(PYTHONUNBUFFERED="1")
     _run_check(_CHILD_CHECK, env, "split + detector twins")
+    if plan and any(e.get("TRAIN_EXCLUDE_TYPE") for _, _, e, _, _, _ in plan):
+        _run_check(_CHILD_CHECK_LOTO, dict(env, TRAIN_EXCLUDE_TYPE="4"), "leave-one-type-out split")
     env2 = dict(env, MODEL_SPLIT="independent", POS_CASE_GATE="1", POS_ABS_HEAD="1",
                 TOUTER_MODE="anchor_ema", TOUTER_TAU="1200", LOSS_WEIGHTS="1,6,1")
     _run_check(_CHILD_CHECK_2, env2, "EMA closed form + independent wrapper")
@@ -824,7 +863,7 @@ def main():
     preflight_compile()
     preflight_split_file()
     preflight_stale_dirs()
-    preflight_child()
+    preflight_child(plan)
     print("  [config import under every arm's knobs]")
     preflight_arm_configs(plan)
     if n_workers > 1:

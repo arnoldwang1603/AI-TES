@@ -456,7 +456,7 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
             'T_inner': 'red',     'T_outer': 'blue',
             'T_avg':   'green',   'Input_T': 'purple',
         }
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(14, 6))
         # Prepend the t=0 row (Arnold 2026-07-23): predictions cover t=1..n,
         # so plotting from t=1 hid the shared starting point and made a
         # one-step-lagged prediction look like it started somewhere else.
@@ -478,7 +478,12 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         plt.xlabel("Time (s)")
         plt.ylabel("Temperature (C)")
         plt.title(f"[{variant}] Prediction - {case_id}")
-        plt.legend(fontsize=8)
+        # Legend and metrics box sit outside the axes, on the right, so they
+        # never cover the curves (2026-09-29; inside the axes they hid the
+        # first steps, where the early-window errors are).
+        ax = plt.gca()
+        ax.legend(fontsize=8, loc='upper left', bbox_to_anchor=(1.01, 1.0),
+                  borderaxespad=0.0)
         # Composite info text from whatever channels exist
         info_lines = [f"Channels: {'|'.join(channel_names)}"]
         for ch in channel_names:
@@ -488,10 +493,11 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         info_lines.append(
             f"Overall: MAPE={metric_row['MAPE_Overall (%)']:.2f}%  "
             f"R^2={metric_row['R2_Overall']:.4f}")
-        plt.text(0.02, 0.98, '\n'.join(info_lines),
-                 transform=plt.gca().transAxes, verticalalignment='top',
-                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
-                 fontsize=8)
+        ax.text(1.01, 0.0, '\n'.join(info_lines),
+                transform=ax.transAxes, verticalalignment='bottom',
+                horizontalalignment='left',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
+                fontsize=8)
         plt.tight_layout()
         out_path = os.path.join(case_plots_dir,
                                 f"plot_{safe_id.replace('.csv', '.png')}")
