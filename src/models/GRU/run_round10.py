@@ -53,7 +53,7 @@ Usage (from src/models/GRU):
                         pre-Round-10 torch default, tag tf32c)
 Env: SEEDS overrides the P1-only seed list; PROGRESS_EVERY tunes
 the status cadence; CHAMPION_RUN_DIR points the gate at the Round 9
-champion run directory (default: the sibling wiki checkout).
+champion run directory (default: the packaged round10_resources/round9 run).
 Resumable per seed (done.flag); Ctrl+C safe. Logs -> sweep_logs/r10-<arm>.w<k>.log
 """
 import glob
@@ -314,6 +314,16 @@ def run_dir_of(name, seed):
 
 
 # ----------------------------------------------------------------- smoke verification
+def transport_env(overrides=None):
+    """Preserve legacy knobs while resolving paths before child cwd changes."""
+    from round10_pipeline import resolved_data_root, resolved_resource_paths
+    env = dict(os.environ)
+    env.update(overrides or {})
+    env["DATA_ROOT"] = resolved_data_root(env)
+    env.update(resolved_resource_paths(env))
+    return env
+
+
 def verify_sealed_run(run_dir, env):
     """Checks on a finished sealed run; returns a dict with ok + details.
     eval_checkpoint --set val runs in a child (its own env isolation) and
@@ -349,7 +359,7 @@ def verify_sealed_run(run_dir, env):
         agg_p = os.path.join(tmp, "agg.json")
         p = subprocess.run([sys.executable, os.path.join(HERE, "eval_checkpoint.py"), run_dir, "--which", "best",
                             "--set", "val", "--out-dir", os.path.join(tmp, "val"), "--out", agg_p],
-                           env=dict(os.environ, PYTHONUNBUFFERED="1"), cwd=HERE,
+                           env=dict(transport_env(env), PYTHONUNBUFFERED="1"), cwd=HERE,
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         if os.path.isfile(agg_p):
             agg = json.load(open(agg_p))[0]
@@ -504,6 +514,7 @@ def smoke(names, n_workers, keep, gate):
 
 
 def main():
+    os.environ.update(transport_env())
     # Full-round smoke/gate use the same entrypoints as the teammate's
     # package. The historical P1-only flags remain for inspecting its table.
     if "--smoke" in sys.argv[1:] or "--all" in sys.argv[1:]:

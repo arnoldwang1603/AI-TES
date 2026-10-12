@@ -127,3 +127,29 @@ shipped 物理缓存仅含训练/验证文件。物理臂的测试评分必须�
 - 完整 `--preflight` 退出 0。审计钩子覆盖 43 个 Python 进程，禁止访问原 AI-TES、原工作包以及 wiki 开发工作树等路径，禁止路径访问尝试为 0。独立旧 P0 的 20 个验证文件预测差与加权损失差均为 0。
 - 这次隔离验证实际运行在 Windows / Python 3.12.12；LF 文件模拟验证不等于服务器 Linux / Python 3.10 已运行通过。服务器更新完整包后仍需重跑预检。
 - 证据保存在 `round10_validation_2026-10-12/portable_fix/`；补丁安装回执为 `round10_validation_2026-10-12/install_portable_receipt.json`。本次没有重跑全臂训练，既有 69/69 冒烟证据保持独立；正式 Round 10 与真实 B6/F11 尚未执行。
+
+### 默认数据根目录传递修复（2026-10-12）
+
+服务器未设置 DATA_ROOT 时，父进程来源校验使用 AI-TES/data，但 command() 曾给子进程注入空字符串；F4/F1 的 os.environ.get 默认值不会在空字符串时生效，导致从当前目录查找训练 CSV。此前隔离预检显式指定 DATA_ROOT，未覆盖这一启动方式。
+
+- 流水线集中解析数据根目录：未设置和空值使用仓库 data，自定义目录保留并转绝对路径。检查、训练子进程和分析 manifest 使用相同路径；独立 F4/F1 入口也接受空值回退。
+- 新增 5/5 回归检查，真实启动子进程覆盖未设置、空值、自定义目录和相对目录，核对训练环境、manifest 及显式覆盖。
+- 使用标准 AI-TES/src/models/GRU 布局的独立 LF 副本，不设置 DATA_ROOT，完整 preflight 退出 0；739 个固定包输入、311 个训练源文件核验通过，48 个受审计 Python 进程没有访问被禁的原仓库或开发路径。独立旧 P0 在 20 个验证文件上的预测与加权损失差均为 0。
+- F4/F1 在该整包预检中 14/14 PASS，并另外以显式空 DATA_ROOT 独立执行，仍为 14/14 PASS。Python 3.9 语法检查覆盖 97 个源文件；完整 --all --dry-run 退出 0，仍为 420–540 run。
+- 证据见 round10_validation_2026-10-12/data_root_fix/，安装回执为 install_data_root_receipt.json。实际测试平台仍是 Windows / Python 3.12.12，不代表服务器 Linux / Python 3.10 已通过；此次没有读取真实 Test CSV、训练模型、修改原数据或原预注册。
+
+### 同类路径与环境问题并行审计（2026-10-12）
+
+针对服务器连续出现的可携带性问题，从资源入口、子进程环境及 Linux/Python 版本差异三路检查，确认并修复三类遗漏：
+
+1. PHYSICS_CACHE_DIR、CHAMPION_RUN_DIR、ROUND9_RUNS_ROOT 显式空值未回退，且相对路径在子进程切换 cwd 后改变含义。现集中解析包内默认值，并在切换目录前变成绝对路径；训练、检查和分析 manifest 使用一致路径。
+2. 冒烟训练已解析路径，但 verify_sealed_run 的 checkpoint 复验原样继承环境；P1 兼容入口也存在此问题。两处现统一环境路径传递，复验保留当前臂的数据及物理缓存覆盖值。
+3. analysis_common 的独立分析入口遇到空 DATA_ROOT 会选当前目录。现与流水线一致，空值回退至仓库 data。
+
+- 新增 check_resource_paths 12/12 PASS：从其他 cwd 真实启动子进程，覆盖未设置、空值、带空格绝对路径、相对路径；检查 manifest 一致性、独立分析默认路径，以及合成 sealed run 的复验调用和 P1 入口。复验夹具的 evaluator 被替换为合成指标，不是重新训练或真实模型实验。
+- 在标准仓库布局的独立 LF 包中，从 GRU 目录外启动、DATA_ROOT 未设置、三个资源环境变量为空，完整 preflight 退出 0。740 个固定包输入及 311 个训练源文件核对通过；53 个受审计 Python 进程没有访问禁止的原仓库/wiki 开发路径。旧 P0 在 20 个验证文件上的预测差及加权损失差均为 0。
+- 完整 dry-run 退出 0，仍为 420–540 run。98 个源文件通过 Python 3.9 语法检查；另对原 739 个固定输入及 311 个训练 CSV 逐级核对大小写，没有发现 Linux 文件名大小写不一致。没有发现新的主流程包外依赖，残留 wiki 工作树引用属于开发生成工具或文档。
+- Test_70_cases 目录仍属于 runbook 所要求的数据布局；预检不会读取其中 CSV。本次隔离包只创建空目录，未复制真实 Test 数据。
+- 实际执行平台为 Windows / Python 3.12.12。对 Python 3.10 与 PyTorch 2.9 的接口检查不等于服务器运行验证；服务器仍应预检和冒烟。没有修改训练/打分数学逻辑、原数据或原预注册，也没有重跑全臂训练。
+
+证据见 round10_validation_2026-10-12/env_audit/，本次安装回执为 install_env_audit_receipt.json。

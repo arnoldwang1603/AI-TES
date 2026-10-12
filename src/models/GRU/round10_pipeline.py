@@ -43,7 +43,7 @@ def base_env():
              EARLY_STEP_WEIGHT="1", RATIO_CHANNELS="R3", RATIO_REF="kelvin", PHYS_MODE="",
              INIT_ENCODER="point", INIT_BURNIN_STEPS="0", SYNTHETIC_REST_FILES="0",
              FROZEN_CONSTANTS="")
-    e["PHYSICS_CACHE_DIR"] = os.environ.get("PHYSICS_CACHE_DIR", os.path.join(HERE, "round10_resources", "physics", "nominal"))
+    e["PHYSICS_CACHE_DIR"] = resolved_resource_paths()["PHYSICS_CACHE_DIR"]
     return e
 
 
@@ -109,6 +109,22 @@ def full_arm_table(prereg, candidate=None, winners=None):
     return table
 
 
+def resolved_data_root(env=None):
+    env = os.environ if env is None else env
+    return os.path.abspath(env.get("DATA_ROOT") or os.path.join(HERE, "..", "..", "..", "data"))
+
+
+def resolved_resource_paths(env=None):
+    """Resolve caller-relative paths before any child changes its cwd."""
+    env = os.environ if env is None else env
+    resource_root = os.path.join(HERE, "round10_resources", "round9")
+    defaults = dict(PHYSICS_CACHE_DIR=os.path.join(HERE, "round10_resources", "physics", "nominal"),
+                    ROUND9_RUNS_ROOT=resource_root,
+                    CHAMPION_RUN_DIR=os.path.join(resource_root,
+                        "2026-08-06_forward_direct_W10_Tin-anchor_l1_w1-6-3_oth-abs_h160x1dp0.2_ep2000_vs2_seed7"))
+    return {key: os.path.abspath(env.get(key) or default) for key, default in defaults.items()}
+
+
 def isolated_env(overrides):
     env = dict(os.environ)
     # A pipeline started from a research shell must not inherit experimental
@@ -128,13 +144,10 @@ def isolated_env(overrides):
         env.pop(key, None)
     env.update(transport)
     env.update(overrides)
+    env["DATA_ROOT"] = resolved_data_root(env)
     env.update(PYTHONUNBUFFERED="1", PYTHONIOENCODING="utf-8", MPLBACKEND="Agg",
                TEMP=os.path.join(HERE, "scratch"), TMP=os.path.join(HERE, "scratch"))
-    resource_root = os.path.join(HERE, "round10_resources", "round9")
-    env.setdefault("ROUND9_RUNS_ROOT", resource_root)
-    champion = os.path.join(resource_root,
-        "2026-08-06_forward_direct_W10_Tin-anchor_l1_w1-6-3_oth-abs_h160x1dp0.2_ep2000_vs2_seed7")
-    env.setdefault("CHAMPION_RUN_DIR", champion)
+    env.update(resolved_resource_paths(env))
     # Statistical replay is part of this frozen package, not a developer's
     # sibling wiki checkout or a research-shell fixture override.
     env["BAND_CAL_DIR"] = os.path.join(HERE, "round10_resources", "band_calibration")
@@ -274,9 +287,10 @@ def launch_arm(a, workers, result_dir, smoke=False):
 
 
 def write_manifest(path, records, **kwargs):
-    obj = dict(runs=records, data_root=os.environ.get("DATA_ROOT", ""),
-               physics_cache_dir=base_env()["PHYSICS_CACHE_DIR"],
-               round9_root=os.environ.get("ROUND9_RUNS_ROOT", os.path.join(HERE, "round10_resources", "round9")))
+    resources = resolved_resource_paths()
+    obj = dict(runs=records, data_root=resolved_data_root(),
+               physics_cache_dir=resources["PHYSICS_CACHE_DIR"],
+               round9_root=resources["ROUND9_RUNS_ROOT"])
     obj.update(kwargs)
     atomic_json(path, obj)
     return obj
@@ -287,7 +301,7 @@ def command(script, args, out_dir):
     path = os.path.join(out_dir, os.path.basename(script) + ".log")
     with open(path, "a", encoding="utf-8") as f:
         p = subprocess.run([sys.executable, os.path.join(HERE, script)] + args,
-                           env=isolated_env(dict(base_env(), **{"DATA_ROOT": os.environ.get("DATA_ROOT", "")})),
+                           env=isolated_env(base_env()),
                            cwd=HERE, stdout=f, stderr=subprocess.STDOUT)
     if p.returncode:
         raise RuntimeError("%s failed (exit%d): %s" % (script, p.returncode, path))
@@ -330,7 +344,7 @@ def preflight(out):
 def verify_dataset_hashes():
     path = os.path.join(HERE, "round10_resources", "training_source_hashes.json")
     expected = read_json(path)
-    root = os.path.abspath(os.environ.get("DATA_ROOT") or os.path.join(HERE, "..", "..", "..", "data"))
+    root = resolved_data_root()
     train = os.path.join(root, expected["train_subdir"])
     for key, digest in expected["files"].items():
         if not matches_frozen_sha256(os.path.join(train, *key.split("/")), digest):

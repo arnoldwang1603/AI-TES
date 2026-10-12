@@ -1,0 +1,13 @@
+PASS actual child, training and manifest agree for unset
+PASS actual child, training and manifest agree for empty
+PASS actual child, training and manifest agree for absolute paths with spaces
+PASS actual child, training and manifest agree for caller-relative paths
+PASS analysis fallback for DATA_ROOT=None from another cwd
+PASS analysis fallback for DATA_ROOT='' from another cwd
+PASS smoke verification preserves arm paths over inherited paths (absolute)
+PASS smoke verification preserves arm paths over inherited paths (relative)
+PASS P1 entrypoint normalizes environment before dry-run for unset
+PASS P1 entrypoint normalizes environment before dry-run for empty
+PASS P1 entrypoint normalizes environment before dry-run for absolute paths with spaces
+PASS P1 entrypoint normalizes environment before dry-run for caller-relative paths
+check_resource_paths: 12/12 PASS

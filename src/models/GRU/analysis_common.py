@@ -46,7 +46,7 @@ def split_spec(path=None):
 
 
 def resolve_data_root(path=None):
-    root = Path(path or os.environ.get("DATA_ROOT", HERE.parents[2] / "data")).resolve()
+    root = Path(path or os.environ.get("DATA_ROOT") or HERE.parents[2] / "data").resolve()
     if not (root / "Latest Database (Use this for training)").is_dir():
         raise FileNotFoundError("DATA_ROOT has no training directory: %s" % root)
     return root

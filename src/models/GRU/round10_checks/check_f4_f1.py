@@ -43,7 +43,7 @@ def main():
     else:
         failures.append("graph")
         print("FAIL near-duplicate graph transitive closure")
-    data_root = Path(os.environ.get("DATA_ROOT", HERE.parents[2] / "data")) / base["train_subdir"]
+    data_root = Path(os.environ.get("DATA_ROOT") or HERE.parents[2] / "data") / base["train_subdir"]
     unchanged = all(matches_frozen_sha256(data_root / key, expected) for key, expected in audit["protocol"]["input_csv_sha256"].items())
     if unchanged:
         print("PASS all304source CSV hashes unchanged")
