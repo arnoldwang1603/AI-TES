@@ -153,3 +153,14 @@ shipped 物理缓存仅含训练/验证文件。物理臂的测试评分必须�
 - 实际执行平台为 Windows / Python 3.12.12。对 Python 3.10 与 PyTorch 2.9 的接口检查不等于服务器运行验证；服务器仍应预检和冒烟。没有修改训练/打分数学逻辑、原数据或原预注册，也没有重跑全臂训练。
 
 证据见 round10_validation_2026-10-12/env_audit/，本次安装回执为 install_env_audit_receipt.json。
+
+### Linux PID 0 锁误判修复（2026-10-12）
+
+服务器 check_paper_report 在当前 PID 锁拦截通过后，以 pid=0 模拟进程退出并尝试恢复。POSIX 的 kill(0, 0) 查询当前进程组，旧 pid_alive 因而返回 True，抛出 A test report is already running；Windows 上该夹具却通过。上一轮审计注意到了 PID 0 语义差异，但漏查测试实际使用它，未及时消除该跨平台假设。
+
+- pid_alive 先将 PID 转为整数，对 <=0 的非单进程标识直接返回 False，避免探测进程组。正数 PID 的存活、无进程和权限不足处理保留；报告窗口与流水线共用该函数。
+- 报告检查新增显式 POSIX mock，覆盖零/负 PID 不调用系统探测、存活 PID、已退出 PID 和权限不足。恢复夹具改用本次实际创建并等待退出的子进程 PID，同时检查当前进程仍存活、并发锁仍拦截。
+- check_paper_report 40/40 PASS。完整 LF 独立副本预检退出 0，覆盖目录外启动、默认数据目录和空资源变量；740 个固定输入、311 个训练源核验通过，54 个受审计 Python 进程无禁止路径访问。独立旧 P0 的 20 个验证文件预测和损失差均为 0，完整 --all --dry-run 仍为 420–540 run。
+- 本机实际平台仍为 Windows/Python 3.12；新增 POSIX 分支检查是模拟，不冒充 Linux 全流程实跑。没有读取真实 Test CSV、运行正式报告窗口或训练模型；原数据与预注册未改。
+
+证据在 round10_validation_2026-10-12/pid_fix/，安装回执 install_pid_fix_receipt.json。服务器应更新完整补丁（含封存清单）后重跑预检，不需要修改锁或跳过检查。

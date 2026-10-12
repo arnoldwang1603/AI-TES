@@ -59,10 +59,15 @@ def json_safe(value):
 
 
 def pid_alive(pid):
+    pid = int(pid)
+    # Locks name a single process. POSIX kill(0, 0) queries our process
+    # group, and negative IDs query groups too; neither is a lock owner.
+    if pid <= 0:
+        return False
     if os.name == "nt":
         import ctypes
         kernel = ctypes.windll.kernel32
-        handle = kernel.OpenProcess(0x1000, False, int(pid))
+        handle = kernel.OpenProcess(0x1000, False, pid)
         if not handle:
             return False
         code = ctypes.c_ulong()
@@ -70,7 +75,7 @@ def pid_alive(pid):
         kernel.CloseHandle(handle)
         return bool(ok and code.value == 259)
     try:
-        os.kill(int(pid), 0)
+        os.kill(pid, 0)
         return True
     except ProcessLookupError:
         return False

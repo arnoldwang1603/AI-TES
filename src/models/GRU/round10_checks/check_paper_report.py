@@ -9,8 +9,11 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -177,6 +180,29 @@ def _source_window(mode, digest, private, out, root):
 
 def main():
     block_test_csv_reads()
+    # Exercise POSIX semantics on every test host, including Windows.
+    # Never send a real signal to a group or any unrelated process.
+    probes = []
+
+    def posix_probe(pid, signal):
+        probes.append((pid, signal))
+        if pid == 101:
+            raise ProcessLookupError()
+        if pid == 102:
+            raise PermissionError()
+        # Includes pid=0: POSIX treats it as our process group, not a
+        # terminated process. The guard must reject it before this call.
+
+    with patch.object(report, "os", SimpleNamespace(name="posix", kill=posix_probe)):
+        check("zero and negative lock PIDs never query POSIX process groups",
+              not report.pid_alive(0) and not report.pid_alive(-1) and probes == [])
+        check("POSIX live and permission-denied processes stay protected; exited PID is dead",
+              report.pid_alive(100) and not report.pid_alive(101) and report.pid_alive(102)
+              and probes == [(100, 0), (101, 0), (102, 0)])
+    child = subprocess.Popen([sys.executable, "-c", "pass"])
+    child.wait(timeout=30)
+    check("a real exited child is not alive and our current PID remains alive",
+          not report.pid_alive(child.pid) and report.pid_alive(os.getpid()))
     prereg = report.read_json(os.path.join(HERE, "prereg", "round10_v3.json"))
     parent = os.path.join(HERE, "runs", "_round10_check_scratch")
     os.makedirs(parent, exist_ok=True)
@@ -238,7 +264,7 @@ def main():
                 lambda: _enter_window("B6", "b6", private, out_b6), "already running")
                 and os.path.isfile(lock_path))
             # Simulate a killed process only after checking active-PID refusal.
-            report.atomic_json(lock_path, {"mode": "B6", "fingerprint": "b6", "pid": 0})
+            report.atomic_json(lock_path, {"mode": "B6", "fingerprint": "b6", "pid": child.pid})
             printed = io.StringIO()
             with contextlib.redirect_stdout(printed):
                 with report.access_window("B6", "b6", {}, private, out_b6) as ledger:

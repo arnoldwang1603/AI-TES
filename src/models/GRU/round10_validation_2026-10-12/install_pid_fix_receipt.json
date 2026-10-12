@@ -1,0 +1,79 @@
+{
+  "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU",
+  "files": [
+    {
+      "relative": "paper_report.py",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\paper_report.py",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\paper_report.py",
+      "sha256": "8C10A94698D3BB81D60286B87DCCD3BB3753803D9123E4CC20A77ABB70ADE3F2"
+    },
+    {
+      "relative": "ROUND10_VALIDATION_2026-10-12.md",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\ROUND10_VALIDATION_2026-10-12.md",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\ROUND10_VALIDATION_2026-10-12.md",
+      "sha256": "66088E366B11A3CF128B8B2182C3F6C10004E430F6DDF50B288BF94C4BEF8CFE"
+    },
+    {
+      "relative": "prereg/round10_package_hashes.json",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\prereg\\round10_package_hashes.json",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\prereg\\round10_package_hashes.json",
+      "sha256": "E4D2C1CB0460CA746D9A230605BA98504F6AA030723BE834F8EA97B65323A810"
+    },
+    {
+      "relative": "round10_checks/check_paper_report.py",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_checks\\check_paper_report.py",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_checks\\check_paper_report.py",
+      "sha256": "D0AB0EF7656F104873A994265AE986473E7A363147E1DC02621D66070FE3BA28"
+    },
+    {
+      "relative": "round10_validation_2026-10-12/pid_fix/all_dry_run.txt",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_validation_2026-10-12\\pid_fix\\all_dry_run.txt",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_validation_2026-10-12\\pid_fix\\all_dry_run.txt",
+      "sha256": "73D5E37F47AD984BEDCF2E47396B5AAA97AF14A25AF35D670AF6A895F7D1A7C3"
+    },
+    {
+      "relative": "round10_validation_2026-10-12/pid_fix/audit.jsonl",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_validation_2026-10-12\\pid_fix\\audit.jsonl",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_validation_2026-10-12\\pid_fix\\audit.jsonl",
+      "sha256": "1FCE57AE7774D0C1DCB9B391C4565F58B5A4384753BA05B88041AC7D57F12671"
+    },
+    {
+      "relative": "round10_validation_2026-10-12/pid_fix/check_paper_report.txt",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_validation_2026-10-12\\pid_fix\\check_paper_report.txt",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_validation_2026-10-12\\pid_fix\\check_paper_report.txt",
+      "sha256": "39234878C45AC69EF5C327CD51F41A92159F47AD43331F4315EB6EE031974906"
+    },
+    {
+      "relative": "round10_validation_2026-10-12/pid_fix/check_python_compat.txt",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_validation_2026-10-12\\pid_fix\\check_python_compat.txt",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_validation_2026-10-12\\pid_fix\\check_python_compat.txt",
+      "sha256": "08D535B8175DF4B0690D860E24E7FE740C11404D989CB49E5796AB591A9382C1"
+    },
+    {
+      "relative": "round10_validation_2026-10-12/pid_fix/preflight.json",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_validation_2026-10-12\\pid_fix\\preflight.json",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_validation_2026-10-12\\pid_fix\\preflight.json",
+      "sha256": "40155F6A9F7C531FCA39D652A88D4733F44428D3CF89BA8D55B2B17FEB9CA6F9"
+    },
+    {
+      "relative": "round10_validation_2026-10-12/pid_fix/preflight.txt",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_validation_2026-10-12\\pid_fix\\preflight.txt",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_validation_2026-10-12\\pid_fix\\preflight.txt",
+      "sha256": "467F3522610A0EB302AF0D019587286795E65512763E0C6FE66C4463D5BA16B9"
+    },
+    {
+      "relative": "round10_validation_2026-10-12/pid_fix/regression.json",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_validation_2026-10-12\\pid_fix\\regression.json",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_validation_2026-10-12\\pid_fix\\regression.json",
+      "sha256": "0FE6CD33B5E0B0039859641FF036139E9A76DF856A762D31156954E684EC3C94"
+    },
+    {
+      "relative": "round10_validation_2026-10-12/pid_fix/summary.json",
+      "source": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\round10_validation_2026-10-12\\pid_fix\\summary.json",
+      "target": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU\\round10_validation_2026-10-12\\pid_fix\\summary.json",
+      "sha256": "7A800B11C66F44ADCCAA3D032EA1B6B3698F8107C3CCC15D6FF189884169FC15"
+    }
+  ],
+  "installed_at": "2026-10-12T08:18:00.3771489Z",
+  "installed_dry_run": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\installed_pid_fix_dry_run.txt"
+}

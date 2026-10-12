@@ -1,0 +1,238 @@
+{
+  "ok": true,
+  "tf32": "legacy",
+  "set": "validation",
+  "test_csv_access": false,
+  "gate": "Frozen original P0 package versus new defaults; independent constants fits and complete rollouts",
+  "source_verified": false,
+  "baseline_files_verified": 13,
+  "baseline_manifest_sha256": "759b285417e4e5cfbc1d79b66322d3e4376b69da869ebdc97f70178075e84d2c",
+  "checkpoint_sha256": "72442eb28660fb7376008565bfad65860656a718ac0d3fb3439d2e9abe8e3a69",
+  "n_files": 20,
+  "max_delta_scaled": 0.0,
+  "tolerance_scaled": 1e-06,
+  "max_weighted_loss_delta": 0.0,
+  "tolerance_loss": 1e-07,
+  "files": [
+    {
+      "file": "Latest Database (Use this for training)/Case 1 (linear charging)/Case 10.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 8.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 3.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 3 (Charging with noise)/Case 15.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 3 (Charging with noise)/Case 17.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging)/Case 15.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging)/Case new 8.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 5 (Linear charging + constant)/Case 21.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 5 (Linear charging + constant)/Case 3.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging)/Case 10.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging)/Case 11.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise)/Case 14.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise)/Case 3.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 8 (linear discharging)/Discharge 16 - Darien.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 8 (linear discharging)/Discharge 24 - Aaron.csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 9 (non-linear discharging)/Case New 1 (Tejas).csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    },
+    {
+      "file": "Latest Database (Use this for training)/Case 9 (non-linear discharging)/Case New 4 (Tejas).csv",
+      "steps": 1440,
+      "max_delta_scaled": 0.0,
+      "channel_deltas_scaled": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "weighted_loss_delta": 0.0
+    }
+  ]
+}
