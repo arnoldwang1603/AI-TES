@@ -1,0 +1,9 @@
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS fold9 all validation Tavg labels masked
+PASS wall-only aggregate finite; Tavg/count preserved
+PASS finite plot bounds preserve available values
+PASS fresh wall-only meta preserves unavailable Tavg
+PASS all comparison plots finish without NaN limits
+check_f1_all_masked: 5/5 PASS

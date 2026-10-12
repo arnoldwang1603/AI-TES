@@ -1,0 +1,25 @@
+PASS analysis modules parse asPython3.11
+PASS nominal solver exactlymatchesvendoredsource
+PASS prefix fit recoverssynthetic0.8diffusivity
+PASS G11 never usesobservedtailforfit
+PASS masked Tavg ignoredbyglobalandbinnedfits
+PASS linear predict shapeandfinite
+PASS linear score excludesmaskedTavg
+PASS MSE identity andensemble-removablevariance
+PASS G1 uses14validationderivedshapes
+PASS validation loader rejectstest path
+PASS portableA7 contains60distinctcheckpoints
+PASS A7 requires complete registered S10 before scoring
+PASS A7 refuses missing seed in checkpoint manifest
+PASS A7 refuses extra seed in checkpoint manifest
+PASS A7 refuses duplicate seed in checkpoint manifest
+PASS A7 missing seed stops before frame loading or model evaluation
+PASS A7 pairs by all ten registered labels independent of row order
+PASS A7 refuses seed missing from both arms instead of reporting nine pairs
+PASS A7 refuses missing shared-file rows
+PASS A7 refuses duplicate shared-file rows
+PASS F11yardstickmetadatahas67strictlineaveragefiles
+PASS F11providedframes67yardstickand21oracle strata
+PASS F11C16providedbundlesretaintrainingreferences
+PASS F11bracketoracle positiveflooronclippedfixtures
+24checks,0FAIL; no realtestCSVread

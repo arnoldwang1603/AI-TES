@@ -29,7 +29,7 @@ def check(label, ok):
 
 def main():
     block_test_csv_reads()
-    p = read_json(os.path.join(HERE, "prereg", "round10_v3.json"))
+    p = read_json(os.path.join(HERE, "prereg", "round10_v4.json"))
     parent = os.path.join(HERE, "runs", "_round10_check_scratch")
     os.makedirs(parent, exist_ok=True)
     records = []

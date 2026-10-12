@@ -23,7 +23,7 @@ FORMS = ("direct", "anchor", "EMA", "ratio", "physics residual")
 def read_refit_rules(prereg=None):
     """Read exact parameter descriptions from the frozen protocol."""
     if prereg is None:
-        prereg = HERE / "prereg" / "round10_v3.json"
+        prereg = HERE / "prereg" / "round10_v4.json"
     p = prereg if isinstance(prereg, dict) else read_json(prereg)
     text = p["batches"]["P3"]["re_fit_column"]
     rules = {}

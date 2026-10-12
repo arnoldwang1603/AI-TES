@@ -305,17 +305,85 @@ def score_run(run, dest, ledger, physics_overrides=None):
 def paired_summary(a, b, seed=0):
     import numpy as np
     from paper_stats import paired_stats
-    return paired_stats(np.asarray(a, float) - np.asarray(b, float), np.random.default_rng(seed))
+    left, right = np.asarray(a, float), np.asarray(b, float)
+    if left.ndim != 1 or left.shape != right.shape:
+        raise ValueError("paired_summary requires identical one-dimensional seed membership")
+    return paired_stats(left - right, np.random.default_rng(seed))
+
+
+def registered_report_seeds(prereg):
+    """Validate the active main, historical bridge and untouched fresh panels."""
+    groups = {key: list(map(int, prereg["seeds"][key]))
+              for key in ("S10", "S20", "F9_fresh_primes")}
+    for key, count in (("S10", 10), ("S20", 20), ("F9_fresh_primes", 20)):
+        if len(groups[key]) != count or len(set(groups[key])) != count:
+            raise RuntimeError("Report requires exactly %d unique registered %s seeds" % (count, key))
+    if not set(groups["S10"]) <= set(groups["S20"]) or set(groups["S20"]) & set(groups["F9_fresh_primes"]):
+        raise RuntimeError("Report requires S10 within S20 and disjoint S20/fresh seed panels")
+    return groups
+
+
+def require_seed_membership(records, arm, expected):
+    actual = [int(r["seed"]) for r in records if r["arm"] == arm]
+    if len(actual) != len(set(actual)) or set(actual) != set(expected):
+        raise RuntimeError("%s seed membership mismatch: require exactly the registered %d seeds" % (arm, len(expected)))
+
+
+def validate_f11_seeds(runs, prereg, recipe, confirmed=()):
+    """Check manifest membership before loading or scoring any test arrays."""
+    groups = registered_report_seeds(prereg)
+    ids = [(r["arm"], int(r["seed"])) for r in runs]
+    if len(ids) != len(set(ids)):
+        raise RuntimeError("F11 duplicate arm/seed record")
+    for arm in ("B1_mask", "B1_orig"):
+        require_seed_membership(runs, arm, groups["S20"])
+    for arm in ("RETRAIN", "R9_twin"):
+        require_seed_membership(runs, arm, groups["S10"])
+    require_seed_membership(runs, "F9", groups["F9_fresh_primes"])
+    source = recipe.get("arm", "direct")
+    challenger = source not in ("direct", "B1_mask", "B2_mask")
+    if challenger:
+        require_seed_membership(runs, "C17_" + source, groups["S20"])
+    if challenger or any(r["arm"] == "F10" for r in runs):
+        require_seed_membership(runs, "F10", groups["F9_fresh_primes"])
+    for source in confirmed:
+        require_seed_membership(runs, "C17_" + source, groups["S20"])
+    return groups
+
+
+def f11_chain_comparisons(table, prereg):
+    """Registered paired chain, with the S10 bridge selected explicitly."""
+    import numpy as np
+    from paper_stats import paired_stats, signflip_metadata
+    groups = registered_report_seeds(prereg)
+    records = table.to_dict("records")
+    for arm, key in (("F9", "F9_fresh_primes"), ("B1_mask", "S20"), ("B1_orig", "S20"),
+                     ("RETRAIN", "S10"), ("R9_twin", "S10")):
+        require_seed_membership(records, arm, groups[key])
+    comparisons = []
+    pairs = [("B1_mask", "B1_orig", "S20"), ("B1_orig", "RETRAIN", "S10"), ("RETRAIN", "R9_twin", "S10")]
+    if (table.arm == "F10").any():
+        require_seed_membership(records, "F10", groups["F9_fresh_primes"])
+        pairs.insert(0, ("F9", "F10", "F9_fresh_primes"))
+    for a, b, key in pairs:
+        seeds = groups[key]
+        left = table[table.arm == a].set_index("seed").loc[seeds]
+        right = table[table.arm == b].set_index("seed").loc[seeds]
+        for ch in CHANNELS:
+            stats = paired_stats(left[ch].to_numpy(float) - right[ch].to_numpy(float), np.random.default_rng(0))
+            comparisons.append(dict(armA=a, armB=b, channel=ch, seed_group=key,
+                                    seed_ids=" ".join(map(str, seeds)), **stats, **signflip_metadata(stats["n"])))
+    return comparisons
 
 
 def b6_report(runs, prereg, out, ledger):
     import numpy as np
     import pandas as pd
-    seeds = list(map(int, prereg["seeds"]["S10"]))
+    seeds = registered_report_seeds(prereg)["S20"]
     lookup = {(r["arm"], int(r["seed"])): r for r in runs}
     expected = {(a, s) for a in ("B1_mask", "B1_orig") for s in seeds}
     if set(lookup) != expected or len(runs) != len(expected) or len(lookup) != len(runs):
-        raise RuntimeError("B6 requires exactly B1_mask/B1_orig on every S10 seed")
+        raise RuntimeError("B6 requires exactly B1_mask/B1_orig on every S20 seed")
     # Read numeric thresholds from the actual registered B6 rule.
     rule = prereg["test_reads"]["B6"]
     thresholds = {int(k): float(v) for k, v in re.findall(r"(?:case\s*)?(70|42)\s*<=\s*([0-9.]+)", rule)}
@@ -351,16 +419,16 @@ def b6_report(runs, prereg, out, ledger):
         a = [r["selected"][str(k)]["mask"] for r in records]
         b = [r["selected"][str(k)]["orig"] for r in records]
         stats = paired_summary(a, b)
-        table.append(dict(case=k, mask_T_avg=float(np.mean(a)), orig_T_avg=float(np.mean(b)),
+        table.append(dict(case=k, n_seeds=len(seeds), mask_T_avg=float(np.mean(a)), orig_T_avg=float(np.mean(b)),
                           diff=stats["mean"], ci_lo=stats["lo"], ci_hi=stats["hi"],
                           threshold=thresholds[k], threshold_pass=bool(np.mean(a) <= thresholds[k])))
     rest = paired_summary([r["rest66_difference"] for r in records], np.zeros(len(records)))
-    report = dict(mode="B6", rule=rule, selected=table,
+    report = dict(mode="B6", rule=rule, n_seeds=len(seeds), seed_group="S20", selected=table,
                   remaining66={"ci_upper": rest["hi"], "limit": float(limit.group(1)),
                                "pass": rest["hi"] <= float(limit.group(1))},
                   decision_changes_allowed=False)
     pd.DataFrame(table).to_csv(os.path.join(out, "B6_selected.csv"), index=False)
-    lines = ["# B6 registered first look", "", "T_avg MAE (C), mask minus orig; no recipe changes.", ""]
+    lines = ["# B6 registered first look", "", "T_avg MAE (C), mask minus orig; %d paired S20 seeds; no recipe changes." % len(seeds), ""]
     for r in table:
         lines.append("Case {case}: mask {mask_T_avg:.4f}, orig {orig_T_avg:.4f}; difference {diff:.4f} "
                      "[{ci_lo:.4f}, {ci_hi:.4f}], threshold {threshold:.2f}: {threshold_pass}".format(**r))
@@ -378,13 +446,7 @@ def f11_report(runs, prereg, manifest, out, ledger):
     recipe = manifest.get("frozen_recipe")
     if not recipe:
         raise RuntimeError("F11 requires the written frozen_recipe from S8")
-    fresh = list(map(int, prereg["seeds"]["F9_fresh_primes"]))
-    actual = sorted(int(r["seed"]) for r in runs if r["arm"] == "F9")
-    if actual != sorted(fresh):
-        raise RuntimeError("F11 requires all 20 F9 fresh seeds")
-    if recipe.get("arm", "direct") not in ("direct", "B1_mask"):
-        if sorted(int(r["seed"]) for r in runs if r["arm"] == "F10") != sorted(fresh):
-            raise RuntimeError("A challenger recipe requires the paired F10 direct baseline")
+    validate_f11_seeds(runs, prereg, recipe, manifest.get("confirmed", []))
     # Physics inputs/residual references must be generated inside this
     # registered window before hybrid checkpoints can be scored. The
     # shipped cache deliberately has no sealed-test entries.
@@ -403,6 +465,8 @@ def f11_report(runs, prereg, manifest, out, ledger):
             overrides = physics if cfg.get("phys_mode") else None
             agg, _ = score_run(run, dest, ledger, physics_overrides=overrides)
             atomic_json(cached, agg)
+        if int(agg["seed"]) != int(run["seed"]):
+            raise RuntimeError("F11 cached score seed differs from its manifest")
         scores.append(dict(agg, arm=run["arm"]))
         z = np.load(os.path.join(dest, "predictions.npz"), allow_pickle=True)
         bundles.append(dict(arm=run["arm"], seed=run["seed"], case_ids=list(z["case_ids"]),
@@ -440,17 +504,7 @@ def f11_report(runs, prereg, manifest, out, ledger):
                 seed_case_ci_lo=float(lo), seed_case_ci_hi=float(hi),
                 interpretation="Descriptive levels; seed+case resampling does not select a recipe"))
     pd.DataFrame(uncertainty).to_csv(os.path.join(out, "F11_uncertainty.csv"), index=False)
-    comparisons = []
-    for a, b in (("F9", "F10"), ("B1_mask", "B1_orig"), ("B1_orig", "RETRAIN"), ("RETRAIN", "R9_twin")):
-        left = table[table.arm == a].set_index("seed")
-        right = table[table.arm == b].set_index("seed")
-        common = sorted(set(left.index) & set(right.index))
-        if len(common) < 3:
-            continue
-        for ch in CHANNELS:
-            stats = paired_stats(left.loc[common, ch].values - right.loc[common, ch].values,
-                                 np.random.default_rng(0))
-            comparisons.append(dict(armA=a, armB=b, channel=ch, **stats))
+    comparisons = f11_chain_comparisons(table, prereg)
     pd.DataFrame(comparisons).to_csv(os.path.join(out, "F11_chain_differences.csv"), index=False)
     # Test-side physics, linear rows, C16, floors and ensembles are produced
     # here by the analysis adapter, never by independent analysis CLIs.
@@ -461,6 +515,10 @@ def f11_report(runs, prereg, manifest, out, ledger):
                   disclosures=prereg["deviations_and_disclosures"])
     with open(os.path.join(out, "F11.md"), "w", encoding="utf-8") as f:
         f.write("# F11 frozen final report\n\n")
+        f.write("Main comparisons use S20; historical Round 9 bridge comparisons explicitly use S10. "
+                "F9/F10 use the unchanged 20 fresh seeds. Fixed ensembles use 20 fresh models and "
+                "40 existing+fresh models. Seed-paired sign-flip p is exact for n <= 16 and "
+                "Monte Carlo with 50,000 random flips otherwise; see F11_chain_differences.csv.\n\n")
         for r in means.to_dict("records"):
             f.write("%s: Tin %.5f, Tout %.5f, Tavg %.5f C\n\n" % (
                 r["arm"], r["T_inner"], r["T_outer"], r["T_avg"]))
@@ -497,7 +555,7 @@ def main():
     mode.add_argument("--b6", action="store_true")
     mode.add_argument("--f11", action="store_true")
     ap.add_argument("--manifest", required=True)
-    ap.add_argument("--prereg", default=os.path.join(HERE, "prereg", "round10_v3.json"))
+    ap.add_argument("--prereg", default=os.path.join(HERE, "prereg", "round10_v4.json"))
     ap.add_argument("--out", required=True)
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()

@@ -1,5 +1,6 @@
 # Python 3.11/3.12: match the package's verified numerical environment.
-# Install torch==2.8.0 separately using the CUDA index in the runbook.
+# Local verification used torch 2.8.0+cu126; retain the validated server CUDA environment.
+# Rebuilt environments require preflight and a full-arm smoke before production.
 numpy==2.4.2; python_version >= "3.11"
 pandas==3.0.1; python_version >= "3.11"
 scipy==1.17.1; python_version >= "3.11"

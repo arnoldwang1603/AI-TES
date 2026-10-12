@@ -20,15 +20,16 @@ import time
 
 from paper_report import atomic_json, read_json, sha256, pid_alive
 from round10_integrity import matches_frozen_sha256
+from round10_migration import ensure_v4_restart, restart_v4
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 VARIANT = "forward_direct"
-STAGES = ["S0", "S1", "S1b", "S2", "S3", "S4", "S5", "S5b", "S6", "S7", "S8", "S9"]
+STAGES = ["S0", "S1", "S1b", "S2", "S3", "S4", "S5", "S5b", "S6", "S7", "S7b", "S8", "S9"]
 CH = ("T_inner", "T_outer", "T_avg")
 
 
 def protocol():
-    return read_json(os.path.join(HERE, "prereg", "round10_v3.json"))
+    return read_json(os.path.join(HERE, "prereg", "round10_v4.json"))
 
 
 def arm(name, stage, env, seeds, condition=None):
@@ -38,7 +39,7 @@ def arm(name, stage, env, seeds, condition=None):
 def base_env():
     from run_round10 import BASE
     e = dict(BASE)
-    e.update(RUN_PREFIX="r10", SEAL_TEST="1", LOSS_W0_MODE="", ENC_WIDTHS="256,256",
+    e.update(RUN_PREFIX="r10v4", SEAL_TEST="1", LOSS_W0_MODE="", ENC_WIDTHS="256,256",
              H0_MODE="linear", FEAT_COLS="Time (s),Input Temperature (C)",
              EARLY_STEP_WEIGHT="1", RATIO_CHANNELS="R3", RATIO_REF="kelvin", PHYS_MODE="",
              INIT_ENCODER="point", INIT_BURNIN_STEPS="0", SYNTHETIC_REST_FILES="0",
@@ -47,14 +48,16 @@ def base_env():
     return e
 
 
-def full_arm_table(prereg, candidate=None, winners=None):
+def full_arm_table(prereg, candidate=None, winners=None, frozen_candidate=None):
     """One table for planning, real launching and the all-arm smoke."""
     from run_round10 import ARMS
-    seeds = prereg["seeds"]["S10"]
+    seeds = prereg["seeds"]["S20"]
+    cross_seeds = prereg["seeds"]["S10"]
     base = base_env()
     table = []
     for name, env in ARMS:
-        table.append(arm(name, "S1", dict(base, **env), seeds))
+        table.append(arm(name, "S1", dict(dict(base, **env), RUN_PREFIX="r10v4"),
+                         cross_seeds if name == "RETRAIN" else seeds))
     direct = dict(base, HIDDEN_SIZE="128", TAVG_MASK="split")
     def add(name, stage, overrides, sd=seeds, condition=None):
         table.append(arm(name, stage, dict(direct, **{k: str(v) for k, v in overrides.items()}), sd, condition))
@@ -75,7 +78,7 @@ def full_arm_table(prereg, candidate=None, winners=None):
     add("C2", "S3", dict(OTHER_CH_MODE="anchor_initial"))
     # Supplementary *already registered* G7 parameters are shipped verbatim
     # with provenance. No choices are made from validation outcomes here.
-    extra = read_json(os.path.join(HERE, "prereg", "round10_execution_protocol.json"))
+    extra = read_json(os.path.join(HERE, "prereg", "round10_execution_v4.json"))
     add("G7a", "S4", dict(EARLY_STEP_WEIGHT=extra["G7a"]["weight"]))
     add("G7b", "S4", dict(INIT_ENCODER="window", WINDOW_SIZE=extra["G7b"]["window"]))
     add("ENC_linear", "S4", dict(ENC_WIDTHS=""))
@@ -83,8 +86,8 @@ def full_arm_table(prereg, candidate=None, winners=None):
     add("H0_tanh", "S4", dict(H0_MODE="tanh"))
     add("H0_zero", "S4", dict(H0_MODE="zero"))
     add("NO_TIME", "S4", dict(FEAT_COLS="Input Temperature (C)"))
-    add("G7c", "S4", dict(INIT_BURNIN_STEPS=extra["G7c"]["steps"]), condition="no core G7 treatment passes")
-    add("G7d", "S4", dict(SYNTHETIC_REST_FILES=extra["G7d"]["files"]), condition="no core G7 treatment passes")
+    add("G7c", "S4", dict(INIT_BURNIN_STEPS=extra["G7c"]["steps"]))
+    add("G7d", "S4", dict(SYNTHETIC_REST_FILES=extra["G7d"]["files"]))
     for name, mode in (("C11", "residual"), ("C12", "input_residual"), ("C13", "input")):
         add(name, "S5", dict(PHYS_MODE=mode))
     lookup = {a["arm"]: a for a in table}
@@ -94,17 +97,22 @@ def full_arm_table(prereg, candidate=None, winners=None):
         table.append(arm("C17_" + name, "S6", dict(source["env"], HIDDEN_SIZE="160"), seeds,
                          "family winner meets its registered adoption rule"))
     for split_seed in (43, 44):
-        add("F4_direct_%d" % split_seed, "S7", dict(SPLIT_NAME="round10_vs3_s%d.json" % split_seed))
+        add("F4_direct_%d" % split_seed, "S7", dict(SPLIT_NAME="round10_vs3_s%d.json" % split_seed), cross_seeds)
         if candidate:
             source = lookup[candidate]
             table.append(arm("F4_%s_%d" % (candidate, split_seed), "S7",
-                dict(source["env"], SPLIT_NAME="round10_vs3_s%d.json" % split_seed), seeds, "confirmed challenger"))
+                dict(source["env"], SPLIT_NAME="round10_vs3_s%d.json" % split_seed), cross_seeds, "confirmed challenger"))
+    effective = candidate if frozen_candidate is None else (None if frozen_candidate == "direct" else frozen_candidate)
     for fold in range(1, 11):
-        add("F1_%d" % fold, "S7", dict(SPLIT_NAME="loto_vs3_fold%d.json" % fold,
-            FROZEN_CONSTANTS=os.path.join(HERE, "round10_resources", "full_train.constants.json")), extra["F1"]["seeds"])
-    frozen_env = lookup[candidate]["env"] if candidate else direct
+        fold_env = dict(SPLIT_NAME="loto_v4_fold%d.json" % fold, FROZEN_CONSTANTS="", CONSTANTS_FROM="")
+        add("F1_%d" % fold, "S7b", fold_env, extra["F1"]["seeds"])
+        if effective:
+            source = lookup[effective]
+            table.append(arm("F1_%s_%d" % (effective, fold), "S7b",
+                dict(source["env"], **fold_env), extra["F1"]["seeds"], "frozen recipe differs from direct"))
+    frozen_env = lookup[effective]["env"] if effective else direct
     table.append(arm("F9", "S8", dict(frozen_env, HIDDEN_SIZE="160"), prereg["seeds"]["F9_fresh_primes"]))
-    if candidate:
+    if effective:
         table.append(arm("F10", "S8", dict(base, TAVG_MASK="split"), prereg["seeds"]["F9_fresh_primes"], "recipe differs from direct"))
     return table
 
@@ -243,7 +251,7 @@ def launch_arm(a, workers, result_dir, smoke=False):
         env = dict(a["env"], SEEDS=str(seed), SEAL_TEST="1")
         if verify_done(record, env):
             return record
-        log = os.path.join(HERE, "sweep_logs", "pipeline-%s-seed%d.log" % (a["arm"], seed))
+        log = os.path.join(HERE, "sweep_logs", "pipeline-v4-%s-seed%d.log" % (a["arm"], seed))
         with open(log, "a", encoding="utf-8") as f:
             p = subprocess.Popen([sys.executable, os.path.join(HERE, "GRU_input_ablation.py")],
                 env=isolated_env(env), cwd=HERE, stdout=f, stderr=subprocess.STDOUT)
@@ -333,7 +341,7 @@ def preflight(out):
     command("round10_validation_gate.py", ["--out", os.path.join(out, "regression.json")], out)
     result = dict(python=sys.version, torch=torch.__version__, cuda=torch.version.cuda,
                   gpu=torch.cuda.get_device_name(0), free_disk_GiB=free,
-                  prereg_sha256=sha256(os.path.join(HERE, "prereg", "round10_v3.json")),
+                  prereg_sha256=sha256(os.path.join(HERE, "prereg", "round10_v4.json")),
                   test_access=False, package_hashes_verified=len(lock["files"]))
     result["dataset_sha256"] = dataset_identity
     result["training_source_files_verified"] = 311
@@ -407,10 +415,12 @@ def adoption_flags(tidy, verdict, arm_name, source_stage, manifest, out):
 class Pipeline:
     def __init__(self, args):
         self.args = args
-        self.out = os.path.join(HERE, "runs", "_round10_results")
+        self.out = os.path.join(HERE, "runs", "_round10_v4_results")
         os.makedirs(self.out, exist_ok=True)
         self.state_path = os.path.join(self.out, "pipeline_state.json")
-        self.identity = sha256(os.path.join(HERE, "prereg", "round10_v3.json"))
+        self.identity = sha256(os.path.join(HERE, "prereg", "round10_v4.json"))
+        if not os.path.isfile(self.state_path):
+            ensure_v4_restart(HERE)
         package_path = os.path.join(HERE, "prereg", "round10_package_hashes.json")
         package_identity = sha256(package_path)
         package = read_json(package_path)
@@ -468,7 +478,8 @@ class Pipeline:
     def run_stage(self, stage):
         out = os.path.join(self.out, stage)
         os.makedirs(out, exist_ok=True)
-        table = full_arm_table(protocol(), self.state.get("candidate"), self.state.get("winners"))
+        table = full_arm_table(protocol(), self.state.get("candidate"), self.state.get("winners"),
+                               self.state.get("frozen_recipe", {}).get("arm"))
         if stage == "S0":
             preflight(out)
         elif stage in ("S1", "S2", "S3", "S5"):
@@ -486,18 +497,9 @@ class Pipeline:
             command("paper_report.py", ["--b6", "--manifest", path, "--out", os.path.join(out, "B6")], out)
             self.analyses(stage, ["g1_probe", "a7_bridge"], {"B1_mask", "B1_orig", "B2_mask", "B2_orig", "B2_relabel", "B2_drop9", "B7", "B8", "RETRAIN"})
         elif stage == "S4":
-            core = [a for a in table if a["stage"] == stage and not a["condition"]]
-            self.add_runs(core, stage)
-            from round10_decisions import p4_adoption
-            results = {a["arm"]: p4_adoption(self.records, a["arm"], protocol(), out)
-                       for a in core}
-            # 'core arm passes' refers to the startup treatment rule,
-            # not just a smaller encoder's equivalence.
-            treatment_pass = any(result[1].get("startup_pass", False) for result in results.values())
-            self.decide(stage, "conditional G7(c)(d)", dict(run=not treatment_pass,
-                rule=protocol()["batches"]["P4"]["arms"], core=results))
-            if not treatment_pass:
-                self.add_runs([a for a in table if a["stage"] == stage and a["condition"]], stage)
+            self.add_runs(table, stage)
+            self.decide(stage, "All nine P4 arms completed before adoption decisions",
+                        dict(rule=protocol()["batches"]["P4"]["arms"], screening=False))
             from round10_decisions import descriptive_tables
             descriptive_tables([r for r in self.records if r["arm"] in {a["arm"] for a in table if a["stage"] == stage}], out, stage)
         elif stage == "S5b":
@@ -520,22 +522,25 @@ class Pipeline:
         elif stage == "S6":
             self.select_and_confirm(table, out)
         elif stage == "S7":
-            from f1_envelope import freeze_full_train_constants
-            source = next(r["run_dir"] for r in self.records if r["arm"] == "B2_mask" and r["seed"] == 7)
-            freeze_full_train_constants(source, os.path.join(HERE, "round10_resources", "full_train.constants.json"))
             self.add_runs(table, stage)
-            self.analyses(stage, ["f1_envelope"])
-        elif stage == "S8":
+        elif stage == "S7b":
             from round10_decisions import freeze_recipe
             candidate = self.state.get("candidate")
             frozen = self.state.get("frozen_recipe")
             if frozen is None:
                 frozen = freeze_recipe(self.records, candidate, protocol(), out)
                 self.state["frozen_recipe"] = frozen
-                self.decide(stage, "final recipe frozen before fresh seed launch", frozen)
+                self.decide(stage, "final recipe frozen before F1 and fresh seed launch", frozen)
                 atomic_json(os.path.join(out, "frozen_recipe.json"), frozen)
-            effective = frozen["arm"] if frozen["arm"] != "direct" else None
-            self.add_runs(full_arm_table(protocol(), effective, []), stage)
+            self.add_runs(full_arm_table(protocol(), candidate, [], frozen_candidate=frozen["arm"]), stage)
+            path, _ = self.manifest(stage, frozen_recipe=frozen)
+            command("f1_envelope.py", ["--manifest", path, "--out", os.path.join(out, "f1_envelope")], out)
+        elif stage == "S8":
+            frozen = self.state.get("frozen_recipe")
+            if not frozen:
+                raise RuntimeError("S8 requires the recipe frozen before F1")
+            self.add_runs(full_arm_table(protocol(), self.state.get("candidate"), [],
+                          frozen_candidate=frozen["arm"]), stage)
             from round10_decisions import descriptive_tables
             descriptive_tables([r for r in self.records if r["arm"] in ("F9", "F10")], out, stage)
         elif stage == "S9":
@@ -664,28 +669,28 @@ def smoke(args):
     possible = [a for a in core if a["arm"].startswith("H8_") or a["arm"] == "R3" or a["stage"] == "S4" or a["arm"] in ("C11", "C12")]
     for a in possible:
         core.append(arm("C17_" + a["arm"], "S6", dict(a["env"], HIDDEN_SIZE="160"), [7], "smoke path"))
+    # Every eligible recipe gets one strict-fold smoke, in addition to all
+    # ten direct and R3 folds. This covers each representation's fitted
+    # constants and reconstruction without multiplying the full design.
+    for a in possible:
+        if a["arm"] != "R3":
+            core.append(arm("F1_" + a["arm"] + "_1", "S7b", dict(a["env"],
+                SPLIT_NAME="loto_v4_fold1.json", FROZEN_CONSTANTS="", CONSTANTS_FROM=""), [7], "smoke path"))
     # Smoke must not collide with a production run or another smoke alias.
     selected = []
     for a in core:
         if args.only and a["arm"] not in args.only.split(","):
             continue
-        a = dict(a, env=dict(a["env"], MAX_EPOCHS="2", RUN_PREFIX="r10smoke_" + a["arm"], SEAL_TEST="1", ROUND10_NO_PLOTS="1"), seeds=[7])
+        a = dict(a, env=dict(a["env"], MAX_EPOCHS="2", RUN_PREFIX="r10v4smoke_" + a["arm"], SEAL_TEST="1", ROUND10_NO_PLOTS="1"), seeds=[7])
         selected.append(a)
     if not selected:
         raise RuntimeError("No smoke arms selected")
     selected = resolve_names(selected)
-    out = os.path.join(HERE, "runs", "_round10_smoke")
+    out = os.path.join(HERE, "runs", "_round10_v4_smoke")
     os.makedirs(out, exist_ok=True)
     rows, targets = [], []
-    # F1 reuses the completed smoke B2 sidecar. It is never a production
-    # constant selection or a research outcome.
     try:
         for a in selected:
-            if a["arm"].startswith("F1_"):
-                from f1_envelope import freeze_full_train_constants
-                source_arm = next(s for s in selected if s["arm"] == "B2_mask")
-                freeze_full_train_constants(run_record(source_arm, 7)["run_dir"],
-                    os.path.join(HERE, "round10_resources", "full_train.constants.json"), allow_smoke=True)
             for seed in a["seeds"]:
                 target = run_record(a, seed)["run_dir"]
                 # A previous smoke is reviewed, never silently promoted to
@@ -696,7 +701,11 @@ def smoke(args):
             records = launch_arm(a, args.parallel, out, smoke=True)
             for record in records:
                 result = verify_done(record, dict(a["env"], SEEDS=str(record["seed"])), reproduce=True)
-                rows.append(dict(arm=a["arm"], seed=record["seed"], ok=result["ok"],
+                holdout = None
+                if a["arm"].startswith("F1_"):
+                    from f1_envelope import check_holdout_roundtrip
+                    holdout = check_holdout_roundtrip(record["run_dir"], os.path.join(out, a["arm"] + "_holdout"))
+                rows.append(dict(arm=a["arm"], seed=record["seed"], ok=result["ok"], holdout=holdout,
                                  max_delta=result["max_delta"], sealed=result["sealed"],
                                  no_test_key=result["no_test_key"], sidecar=result["sidecar"], repro=result["repro"]))
                 atomic_json(os.path.join(out, "smoke_results.json"), rows)
@@ -708,14 +717,14 @@ def smoke(args):
     pd.DataFrame(rows).to_csv(os.path.join(out, "smoke_results.csv"), index=False)
     if len(rows) != len(selected) or not all(r["ok"] for r in rows):
         raise RuntimeError("All-arm smoke incomplete")
-    print("SMOKE PASS %d/%d; two epochs each, validation round-trip; no test access" % (len(rows), len(selected)))
+    print("SMOKE PASS %d/%d; two epochs each, validation and strict F1 holdout round-trips; no test access" % (len(rows), len(selected)))
 
 
 def safe_delete_smoke(path):
     root = os.path.realpath(os.path.join(HERE, "runs"))
     target = os.path.realpath(path)
     name = os.path.basename(target)
-    if os.path.commonpath([root, target]) != root or not name.startswith("r10smoke_") or "_ep2_" not in name:
+    if os.path.commonpath([root, target]) != root or not name.startswith("r10v4smoke_") or "_ep2_" not in name:
         raise RuntimeError("Unsafe smoke cleanup target: " + path)
     if os.path.isdir(target):
         shutil.rmtree(target)
@@ -735,7 +744,7 @@ def dry_run(args):
         for seed in a["seeds"]:
             print("[%s] %-20s %s%s" % (a["stage"], a["arm"], os.path.basename(run_record(a, seed)["run_dir"]),
                 " CONDITIONAL: " + a["condition"] if a["condition"] else ""))
-    print("Unconditional graph: %d runs; named conditional G7:20; per-stage:%s" % (minimum, counts))
+    print("Unconditional graph: %d runs; all nine P4 arms unconditional; per-stage:%s" % (minimum, counts))
     # Enumerate *every possible* conditional name: per-family selections,
     # best-challenger redraws, recipe-specific F9 and optional F10. The
     # maximum is a bound on one executable branch, not this enumerated union.
@@ -743,17 +752,21 @@ def dry_run(args):
     sources = [a for a in table if a["arm"].startswith("H8_") or a["arm"] == "R3" or a["stage"] == "S4" or a["arm"] in ("C11", "C12")]
     for source in sources:
         env = source["env"]
-        variants.append(arm("C17_" + source["arm"], "S6", dict(env, HIDDEN_SIZE="160"), p["seeds"]["S10"], "eligible family winner"))
+        variants.append(arm("C17_" + source["arm"], "S6", dict(env, HIDDEN_SIZE="160"), p["seeds"]["S20"], "eligible family winner"))
         for seed in (43, 44):
             variants.append(arm("F4_%s_%d" % (source["arm"], seed), "S7", dict(env, SPLIT_NAME="round10_vs3_s%d.json" % seed),
                                 p["seeds"]["S10"], "best confirmed challenger"))
+        for fold in range(1, 11):
+            variants.append(arm("F1_%s_%d" % (source["arm"], fold), "S7b",
+                dict(env, SPLIT_NAME="loto_v4_fold%d.json" % fold, FROZEN_CONSTANTS="", CONSTANTS_FROM=""),
+                p["seeds"]["S10"], "frozen recipe differs from direct"))
         variants.append(arm("F9_" + source["arm"], "S8", dict(env, HIDDEN_SIZE="160"), p["seeds"]["F9_fresh_primes"], "frozen challenger recipe"))
     variants.append(arm("F10", "S8", dict(base_env(), TAVG_MASK="split"), p["seeds"]["F9_fresh_primes"], "recipe differs from direct"))
     variants = resolve_names(variants)
     for a in variants:
         for seed in a["seeds"]:
             print("[%s] %-20s %s CONDITIONAL: %s" % (a["stage"], a["arm"], os.path.basename(run_record(a, seed)["run_dir"]), a["condition"]))
-    maximum = minimum + 20 + 6 * 10 + 20 + 20
+    maximum = minimum + 6 * len(p["seeds"]["S20"]) + 12 * len(p["seeds"]["S10"]) + len(p["seeds"]["F9_fresh_primes"])
     print("Total actual executable branch: %d..%d runs. All possible names printed; no training or test access." % (minimum, maximum))
 
 
@@ -761,6 +774,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     modes = ap.add_mutually_exclusive_group(required=True)
     modes.add_argument("--all", action="store_true")
+    modes.add_argument("--restart-v4", action="store_true", help="Audit a stopped v3 before starting a fresh v4 namespace; preserve all runs and ledgers")
     modes.add_argument("--preflight", action="store_true")
     modes.add_argument("--smoke", action="store_true")
     modes.add_argument("--stage", choices=STAGES)
@@ -770,6 +784,8 @@ def main():
     ap.add_argument("--keep-smoke", action="store_true")
     ap.add_argument("--only")
     args = ap.parse_args()
+    if args.only and not args.smoke:
+        ap.error("--only is for smoke diagnostics; registered production uses the complete stage graph")
     if args.parallel < 1:
         ap.error("--parallel must be positive")
     if os.environ.get("SEAL_TEST", "1") not in ("1", "true", "True"):
@@ -777,10 +793,13 @@ def main():
     os.environ["SEAL_TEST"] = "1"
     if args.dry_run:
         dry_run(args)
+    elif args.restart_v4:
+        receipt = restart_v4(HERE)
+        print("V4 restart audit PASS; old runs and test ledgers preserved; namespace runs/_round10_v4_results")
     elif args.smoke:
         smoke(args)
     elif args.preflight:
-        preflight(os.path.join(HERE, "runs", "_round10_results", "S0"))
+        preflight(os.path.join(HERE, "runs", "_round10_v4_results", "S0"))
     else:
         pipe = Pipeline(args)
         lock = os.path.join(pipe.out, "pipeline.lock")

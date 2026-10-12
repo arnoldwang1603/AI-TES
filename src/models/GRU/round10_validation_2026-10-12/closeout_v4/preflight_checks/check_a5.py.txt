@@ -1,0 +1,32 @@
+PASS  (policy) thresholds, confidence and bootstrap count follow the supplied registration  
+PASS  (policy) S20 comparisons retain 20 pairs; CSV/markdown label 50,000 Monte Carlo flips  
+PASS  (policy) rejects missing one arm seed instead of taking a seed intersection  
+PASS  (policy) rejects missing both arms' channel seed instead of taking a seed intersection  
+PASS  (policy) rejects missing one jump-veto seed instead of taking a seed intersection  
+PASS  (policy) historical S10 fixtures retain exact 1,024-flip labeling  
+PASS  (policy) array entry refuses broadcasting unequal paired dimensions  
+PASS  (policy) run-directory loader refuses missing requested seeds  
+PASS  (a) known effect (0 / -0.05 / -0.10 C): CI covers it on every channel, mean = effect  max |mean - effect| 1.4e-17; n_files Tin 20 Tout 20 Tavg 17; T_inner -0.0000 [-0.0031, +0.0031]  T_outer -0.0500 [-0.0521, -0.0481]  T_avg -0.1000 [-0.1034, -0.0965]
+PASS  (a) ToTa row = (T_outer + T_avg)/2 per seed: mean -0.075, CI < 0; band formula per channel  ToTa -0.0750 [-0.0775, -0.0726]; bands {'T_inner': 0.02, 'T_outer': 0.05, 'T_avg': 0.08}
+PASS  (b) zero effect -> EQUIVALENT; wording 'indistinguishable at n=20' (walls) / n=17 (T_avg); no veto  verdict EQUIVALENT; T_inner [-0.0009, +0.0009] band 0.020  T_outer [-0.0011, +0.0011] band 0.050  T_avg [-0.0011, +0.0011] band 0.080
+PASS  (b) +0.30 / +0.10 C worse -> WORSE (CI entirely above 0)  verdict WORSE
+PASS  (b) T_avg CI below 0 AND inside the band -> BETTER takes precedence over EQUIVALENT  verdict BETTER, T_avg [-0.072, -0.048] band 0.080
+PASS  (b) seed-noisy slightly-worse arm (CI crosses 0 and +band) -> UNDECIDED, no veto  verdict UNDECIDED, T_avg [-0.066, +0.108] band 0.087
+PASS  (c) -0.15 / -0.30 C challenger -> BETTER, no veto  verdict BETTER ToTa [-0.226, -0.224] Tin hi +0.0020 (band 0.020)
+PASS  (c) V1: seed 13 of A at 2.0 C on every channel -> veto_V1, verdict != BETTER  verdict WORSE; blow-up seeds A '13' B ''
+PASS  (c) V2: JumpSteps_gt2C/gt1C_ToTa +20 per seed in A (p = 2/1024) -> veto_V2, verdict != BETTER  verdict WORSE; J2 +20.0 p 0.00195; J1 +20.0 p 0.00195
+PASS  (c) jumps DEcrease in A is not a veto (BETTER stands)  verdict BETTER
+PASS  (d) Holm: p = (0.01, 0.04, 0.03, 0.2) -> adjusted (0.04, 0.09, 0.09, 0.2), reject only the first  adj [0.04, 0.09, 0.09, 0.2]
+PASS  (d) Holm with a NaN: m = 2 -> (0.04, nan, 0.04), both rejected; monotone in rank  adj [0.04, nan, 0.04]
+PASS  (d) family Holm: two comparisons, T_avg p_holm >= p_signflip, order kept  p [0.002, 0.7051] -> holm [0.0039, 0.7051]
+PASS  (e) paired_stats == analyze_round9.paired draw for draw (n=20: bootstrap + 50,000 random flips)  mean +0.00793 CI [-0.01723, +0.03267] p 0.55054
+PASS  (e) band-calibration replay: champion (h160x1) vs h128x2_direct = pair_full70.csv P4, 7 channels x 11 columns, 1e-6  max |delta| 2.22e-16 over 7 rows; T_inner -0.0071 [-0.0203, +0.0059]; T_outer -0.0515 [-0.0760, -0.0305]; T_avg -0.0367 [-0.0732, -0.0060]; overall -0.0318 [-0.0475, -0.0183]
+PASS  (f) prereg/round10_v4.json: data.hashes match the split json + mask lists; bands / seeds / counts as pre-registered  hash mismatches []; status 'amended 2026-10-12 by owner request afte'
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS  (f) prereg tavg_mask_train/val_sha256 == data.get_tavg_mask_sets() digests under TAVG_MASK=split (115 / 3)  train 115 val 3
+PASS  (g) EXPERIMENT_LOG.md has '[PREREG v4]' (< 120 lines, names the active prereg file, bands, veto)  39 lines
+PASS  (h) CLI: exit 0, tidy / verdict csv + markdown written, 'indistinguishable at n=20' and EQUIVALENT in the markdown  exit 0; files ['chk.md', 'chk_tidy.csv', 'chk_verdicts.csv']
+
+check_a5: 27/27 PASS

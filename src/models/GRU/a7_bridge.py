@@ -29,7 +29,46 @@ def discover_runs(round9_root):
         for path in paths:
             config = read_json(path / "run_config.json")
             result.append({"arm": arm, "seed": config["seed"], "run_dir": str(path)})
+        seeds = [int(record["seed"]) for record in result if record["arm"] == arm]
+        if len(set(seeds)) != expected:
+            raise ValueError("A7 duplicate seed in archived family " + arm)
     return result
+
+
+def validate_bridge_records(records, seeds):
+    """The machine comparison is the complete registered S10 panel."""
+    seeds = list(map(int, seeds))
+    if len(seeds) != 10 or len(set(seeds)) != 10:
+        raise ValueError("A7 machine bridge requires exactly 10 unique registered S10 seeds")
+    for arm in ("RETRAIN", "r9_direct160"):
+        actual = [int(record["seed"]) for record in records if record["arm"] == arm]
+        if len(actual) != len(set(actual)) or set(actual) != set(seeds):
+            raise ValueError("A7 machine bridge seed membership mismatch for " + arm)
+    return sorted(seeds)
+
+
+def machine_bridge(table, seeds, shared_keys):
+    """Compare every S10 pair on the same 12 files; never drop incomplete pairs."""
+    from paper_stats import paired_stats, signflip_metadata
+    seeds = sorted(map(int, seeds))
+    keys = set(shared_keys)
+    if len(seeds) != 10 or len(set(seeds)) != 10 or len(keys) != 12:
+        raise ValueError("A7 machine bridge requires registered S10 and 12 shared validation files")
+    arms = ("RETRAIN", "r9_direct160")
+    selected = table[(table.scope == "shared12") & table.arm.isin(arms)].copy()
+    columns = ["arm", "seed", "channel", "file"]
+    expected = {(arm, seed, channel, key) for arm in arms for seed in seeds for channel in CHANNELS for key in keys}
+    actual = set(selected[columns].itertuples(index=False, name=None))
+    if selected.duplicated(columns).any() or actual != expected or not np.isfinite(selected.MAE.to_numpy(float)).all():
+        raise ValueError("A7 machine bridge incomplete/duplicate seed-file membership or nonfinite score")
+    levels = selected.groupby(["arm", "seed", "channel"]).MAE.mean().unstack("arm")
+    output = []
+    for channel in sorted(CHANNELS):
+        paired = levels.xs(channel, level="channel").loc[seeds]
+        stats = paired_stats((paired.RETRAIN - paired.r9_direct160).to_numpy(), np.random.default_rng(20261012))
+        output.append(dict(channel=channel, comparison="RETRAIN-Round9 onshared12", seed_group="S10",
+                           seed_ids=" ".join(map(str, seeds)), **stats, **signflip_metadata(stats["n"])))
+    return pd.DataFrame(output)
 
 
 def legacy_validation_scalar(session, frames):
@@ -50,6 +89,11 @@ def run_analysis(manifest, out, data_root=None, physics_cache_dir=None, round9_r
     data_root, physics_cache_dir, round9_root = manifest_context(manifest, data_root, physics_cache_dir, round9_root)
     if not round9_root:
         raise ValueError("A7 requires --round9-root containing the60 selected archived checkpoints")
+    protocol = read_json(Path(__file__).parent / "prereg/round10_v4.json")
+    records = discover_runs(round9_root)
+    if manifest:
+        records.extend(record for record in load_manifest(manifest) if record["arm"] == "RETRAIN")
+    bridge_seeds = validate_bridge_records(records, protocol["seeds"]["S10"])
     spec = split_spec()
     legacy = split_spec(Path(__file__).parent / "splits/stratified_v2_s42.json")
     shared = sorted((set(spec["val"]) & set(legacy["val"])) - set(spec["tavg_mask"]))
@@ -61,9 +105,6 @@ def run_analysis(manifest, out, data_root=None, physics_cache_dir=None, round9_r
     legacy_frames = read_frames(legacy["val"], data_root, legacy)
     rows = []
     sanity_rows = []
-    records = discover_runs(round9_root)
-    if manifest:
-        records.extend(record for record in load_manifest(manifest) if record["arm"] == "RETRAIN")
     for record in records:
         session = setup_run(record["run_dir"])
         scalar = legacy_validation_scalar(session, legacy_frames)
@@ -101,17 +142,7 @@ def run_analysis(manifest, out, data_root=None, physics_cache_dir=None, round9_r
                 "R9 one-layer dp0.2/dp0.3 twins are not both used. Newvalidation files were trained on in R9 and must not support generalisation.")
     sanity = pd.DataFrame(sanity_rows)
     write_table(sanity, out, "a7_vs2_sanity", "Own20file validation scalar reproduced undercheckpoint-ownTF32 (legacyforRound9,0forRETRAIN); intentionalH9 last-step change disclosed.")
-    machine = []
-    shared_scores = table[table.scope == "shared12"].groupby(["arm", "seed", "channel"]).MAE.mean().unstack("arm")
-    if "RETRAIN" in shared_scores and "r9_direct160" in shared_scores:
-        from paper_stats import paired_stats
-        for channel, subset in shared_scores.groupby(level="channel"):
-            paired = subset[["RETRAIN", "r9_direct160"]].dropna()
-            if len(paired) < 3:
-                raise ValueError("A7 machine bridge needs at least3 paired seeds")
-            stats = paired_stats((paired.RETRAIN - paired.r9_direct160).to_numpy(), np.random.default_rng(20261012))
-            machine.append(dict(channel=channel, comparison="RETRAIN-Round9 onshared12", **stats))
-    machine = pd.DataFrame(machine)
+    machine = machine_bridge(table, bridge_seeds, shared)
     write_table(machine, out, "a7_machine_bridge", "Paired machine difference onidentical12validationfiles; nevercompareoldTestMAEwithnewValMAE.")
     return {"scores": table, "summary": summary, "shared_keys": shared, "machine_bridge": machine, "vs2_sanity": sanity}
 

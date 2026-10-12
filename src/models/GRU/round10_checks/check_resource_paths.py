@@ -160,25 +160,24 @@ def main():
             for label, values, expected in modes:
                 captured = []
 
-                def inspect_plan(plan):
+                def inspect_plan(args):
                     assert Path(os.environ["DATA_ROOT"]) == arm_data
                     for key in RESOURCE_KEYS:
                         assert Path(os.environ[key]) == expected[key], (label, key, os.environ[key])
                         assert Path(os.environ[key]).is_absolute()
-                    assert len(plan) == 1 and plan[0][1] == "B2_mask", plan
-                    runner.r9.RUN_NAMES["B2_mask"] = "synthetic_dry_run_name"
-                    captured.append(plan)
+                    assert args.all and args.dry_run and args.only is None
+                    captured.append(args)
 
                 with patch.dict(os.environ), patch.dict(runner.r9.RUN_NAMES), \
-                     patch.object(sys, "argv", [str(HERE / "run_round10.py"), "--dry-run", "--only", "B2_mask"]), \
-                     patch.object(runner.r9, "preflight_arm_configs", side_effect=inspect_plan), \
+                     patch.object(sys, "argv", [str(HERE / "run_round10.py"), "--dry-run"]), \
+                     patch.object(pipeline, "dry_run", side_effect=inspect_plan), \
                      patch.object(runner, "launch", side_effect=AssertionError("training forbidden in path check")), \
                      contextlib.redirect_stdout(io.StringIO()):
                     set_paths(values)
                     os.environ.update(DATA_ROOT=arm_data.name, SEAL_TEST="1", SEEDS="7")
                     runner.main()
                     assert len(captured) == 1
-                passed("P1 entrypoint normalizes environment before dry-run for " + label)
+                passed("v4 entrypoint normalizes environment before full dry-run for " + label)
 
     print("check_resource_paths: %d/%d PASS" % (len(checks), len(checks)))
     return 0

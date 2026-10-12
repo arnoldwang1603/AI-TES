@@ -19,7 +19,9 @@ from c16_curves import test_points, horizon_statistics
 
 def main():
     failures = []
+    checked = []
     def check(name, operation):
+        checked.append(name)
         try:
             assert operation()
             print("PASS " + name)
@@ -79,6 +81,50 @@ def main():
     check("validation loader rejectstest path", lambda: refused)
     root = HERE / "round10_resources/round9"
     check("portableA7 contains60distinctcheckpoints", lambda: len(discover_runs(root)) == 60)
+    # The descriptive archived capacity groups may contain 20 seeds, while
+    # the machine bridge must retain the complete registered S10 panel.
+    import a7_bridge as a7
+    from analysis_common import read_json
+    from unittest.mock import patch
+    bridge_seeds = read_json(HERE / "prereg/round10_v4.json")["seeds"]["S10"]
+    bridge_records = [dict(arm=arm, seed=seed, run_dir="synthetic")
+                      for arm in ("RETRAIN", "r9_direct160") for seed in bridge_seeds]
+    def a7_refuses(operation):
+        try:
+            operation()
+        except ValueError:
+            return True
+        return False
+    check("A7 requires complete registered S10 before scoring", lambda:
+          a7.validate_bridge_records(bridge_records, bridge_seeds) == sorted(bridge_seeds))
+    for label, broken in (("missing seed", bridge_records[1:]),
+                          ("extra seed", bridge_records + [dict(arm="RETRAIN", seed=999, run_dir="synthetic")]),
+                          ("duplicate seed", bridge_records + [bridge_records[0]])):
+        check("A7 refuses " + label + " in checkpoint manifest", lambda broken=broken:
+              a7_refuses(lambda: a7.validate_bridge_records(broken, bridge_seeds)))
+    with patch.object(a7, "discover_runs", return_value=[r for r in bridge_records if r["arm"] == "r9_direct160"]), \
+         patch.object(a7, "load_manifest", return_value=[r for r in bridge_records[1:] if r["arm"] == "RETRAIN"]), \
+         patch.object(a7, "read_frames", side_effect=AssertionError("must refuse before loading frames")) as loader:
+        check("A7 missing seed stops before frame loading or model evaluation", lambda:
+              a7_refuses(lambda: a7.run_analysis({"runs": []}, "unused", round9_root="synthetic"))
+              and loader.call_count == 0)
+    shared_keys = ["synthetic_%02d" % index for index in range(12)]
+    bridge_table = pd.DataFrame([dict(arm=r["arm"], seed=r["seed"], file=key, channel=channel,
+                                      scope="shared12", MAE=float(r["seed"]) + (1 if r["arm"] == "RETRAIN" else 0))
+                                for r in bridge_records for key in shared_keys for channel in CHANNELS])
+    shuffled = bridge_table.sample(frac=1, random_state=42)
+    bridge = a7.machine_bridge(shuffled, bridge_seeds, shared_keys)
+    check("A7 pairs by all ten registered labels independent of row order", lambda:
+          len(bridge) == 3 and bridge.n.eq(10).all() and bridge['mean'].eq(1).all()
+          and bridge.seed_group.eq("S10").all() and bridge.signflip_method.eq("exact").all()
+          and bridge.signflip_draws.eq(1024).all())
+    missing_both = bridge_table[bridge_table.seed != bridge_seeds[-1]]
+    check("A7 refuses seed missing from both arms instead of reporting nine pairs", lambda:
+          a7_refuses(lambda: a7.machine_bridge(missing_both, bridge_seeds, shared_keys)))
+    check("A7 refuses missing shared-file rows", lambda:
+          a7_refuses(lambda: a7.machine_bridge(bridge_table.iloc[1:], bridge_seeds, shared_keys)))
+    check("A7 refuses duplicate shared-file rows", lambda:
+          a7_refuses(lambda: a7.machine_bridge(pd.concat([bridge_table, bridge_table.iloc[:1]]), bridge_seeds, shared_keys)))
     labels = convention_map()
     check("F11yardstickmetadatahas67strictlineaveragefiles", lambda: sum(
         key.startswith("Test_70_cases/") and value.get("label") == "line average"
@@ -110,7 +156,7 @@ def main():
           np.allclose(point.reference_residual_std_C, 1) and set(point["set"]) == {"test"})
     check("F11bracketoracle positiveflooronclippedfixtures", lambda:
           np.allclose(result["oracle"][result["oracle"].stratum == "both_phase21"].bracket_clip_oracle_MAE_C, 0.2))
-    print("15checks,%dFAIL; no realtestCSVread" % len(failures))
+    print("%dchecks,%dFAIL; no realtestCSVread" % (len(checked), len(failures)))
     return 1 if failures else 0
 
 

@@ -1,0 +1,27 @@
+PASS original frozen bytes accepted
+PASS LF checkout accepted against original CRLF digest
+PASS strict byte hash still distinguishes line endings
+PASS CRLF checkout accepted against original LF digest
+PASS numeric edit rejected
+PASS numeric formatting edit rejected
+PASS header edit rejected
+PASS space edit rejected
+PASS missing row rejected
+PASS reordered rows rejected
+PASS missing final newline rejected
+PASS extra blank line rejected
+PASS UTF-8 BOM addition rejected
+PASS .pth remains strict byte comparison
+PASS .npz remains strict byte comparison
+PASS .log remains strict byte comparison
+PASS NUL is not normalized
+PASS invalid UTF8 is not normalized
+PASS standalone CR is not normalized
+PASS sealed Case1 identity unchanged
+PASS reported Linux hash is exactly Case1 with LF newlines
+PASS real pipeline validates all311 LF training inputs
+PASS real pipeline rejects an added training row
+PASS all sealed package inputs pass both LF and CRLF checkout simulation
+PASS independent P0 verifier accepts LF-only frozen code
+PASS independent P0 verifier rejects changed source
+26/26 PASS; no original files modified; no test CSV access

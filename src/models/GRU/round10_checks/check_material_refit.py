@@ -60,7 +60,7 @@ def config(**updates):
 
 
 def main():
-    prereg_path = HERE / "prereg/round10_v3.json"
+    prereg_path = HERE / "prereg/round10_v4.json"
     before = sha(prereg_path)
     prereg = json.loads(prereg_path.read_text(encoding="utf-8"))
     # This independent parsing checks the actual frozen source, not constants

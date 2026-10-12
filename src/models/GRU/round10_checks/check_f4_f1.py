@@ -8,7 +8,7 @@ import pandas as pd
 
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
-from make_round10_splits import digest, near_groups, verify
+from make_round10_splits import digest, near_groups, strict_loto, verify
 from round10_integrity import matches_frozen_sha256
 
 
@@ -18,14 +18,24 @@ def main():
     audit = json.loads((split_dir / "round10_split_generation_audit.json").read_text(encoding="utf-8"))
     universe = sorted(base["train"] + base["val"])
     failures = []
-    for name, expected_sha in audit["files"].items():
+    strict_audit = json.loads((split_dir / "round10_f1_v4_generation_audit.json").read_text(encoding="utf-8"))
+    files = dict(audit["files"], **strict_audit["files"])
+    assert strict_audit["protocol"] == audit["protocol"], "F1 v4 source/group provenance differs"
+    for name, expected_sha in files.items():
         try:
             path = split_dir / name
             assert matches_frozen_sha256(path, expected_sha), "split hash changed"
             spec = json.loads(path.read_text(encoding="utf-8"))
             verify(spec, audit["protocol"]["groups"], universe)
             assert spec["drop"] == base["drop"] and spec["tavg_mask"] == base["tavg_mask"]
-            if spec.get("heldout_family"):
+            if spec.get("holdout"):
+                assert spec["constants_fit_scope"] == "fold_train_only"
+                assert spec["checkpoint_selection_scope"] == "inner_validation_only"
+                assert not any(key in spec for key in ("frozen_train", "frozen_constants_split"))
+                expected = strict_loto(base, audit["protocol"]["groups"], spec["heldout_family"], audit["protocol"])
+                assert spec == expected, "unexpected strict fold membership or fitting protocol"
+                assert not any(k.startswith(spec["heldout_family"] + "/") for k in spec["train"] + spec["val"])
+            elif spec.get("heldout_family"):
                 assert spec["frozen_train"] == sorted(base["train"])
                 assert spec["frozen_constants_split"] == "round10_vs3_s42.json"
             else:
@@ -50,7 +60,7 @@ def main():
     else:
         failures.append("source-hashes")
         print("FAIL source CSV hashes")
-    print("%dchecks,%dFAIL" % (14, len(failures)))
+    print("%dchecks,%dFAIL" % (len(files) + 2, len(failures)))
     return 1 if failures else 0
 
 

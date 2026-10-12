@@ -36,7 +36,7 @@ def main():
                 files[relative] = sha256(path)
     target = os.path.join(HERE, "prereg", "round10_package_hashes.json")
     atomic_json(target, dict(format="round10.package/1", files=files,
-                           scope="immutable code, prereg, splits, full-train constants, train/val physics cache and archived R9 resources"))
+                           scope="immutable code, versioned protocols and splits, historical constants, train/val physics cache and archived R9 resources; strict F1 fits per-fold constants"))
     print("Sealed %d immutable package files" % len(files))
 
 

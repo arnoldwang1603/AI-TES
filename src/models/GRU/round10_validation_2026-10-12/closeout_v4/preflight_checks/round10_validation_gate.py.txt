@@ -1,0 +1,36 @@
+NOTE: NUM_LAYERS=1 -> GRU dropout is a no-op; DROPOUT 0.2 normalised to 0.0 (run name dp0.0)
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+NOTE: NUM_LAYERS=1 -> GRU dropout is a no-op; DROPOUT 0.2 normalised to 0.0 (run name dp0.0)
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; stratified_v2_s42.json read; tag vs2):
+  Case 1 (linear charging)                         train  38  val 2
+  Case 10 (Discharging + Constant)                 train  23  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  23  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 291, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.138 C std=0.639 C  ->  KA=1.00000 KB=-0.00023 KC=0.001050
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.138 C std=0.639 C  ->  KA=1.00000 KB=-0.00023 KC=0.001050
+Independent P0 validation gate PASS: 20 files, all steps; scaled delta 0, loss delta 0; no test CSV access

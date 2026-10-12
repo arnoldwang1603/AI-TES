@@ -1,0 +1,50 @@
+PASS  v4 fixed graph has 830 runs with the registered per-stage counts
+PASS  all 34 scientific arms use the same 20 seeds; only RETRAIN keeps ten
+PASS  G7c and G7d are fixed work, with no conditional base arm
+PASS  all ten F1 folds use ten seeds, h128 and fold fitting after F4
+PASS  challenger branch adds paired F4 arms and exactly the optional fresh F10 control
+PASS  challenger F1 covers all ten families with the same seeds and capacity as direct
+PASS  F4 rejection returns F1 and F9 to direct without dropping the completed F4 comparison
+PASS  all permitted follow-ups total 1090 runs, without full arm/capacity/fold multiplication
+PASS  every planned training arm seals test access and pins fresh F9 primes
+PASS  legacy frozen-constants env alias cannot contaminate any pipeline arm
+PASS  old v3 state requires an explicit restart audit before v4 begins
+PASS  migration preserves the old state, checkpoint and prereg without reusing or resetting them
+PASS  repeated restart and ensure are idempotent and leave the receipt unchanged
+PASS  a changed old journal after the audit is refused
+PASS  a changed v4 prereg after the audit is refused
+PASS  migration refuses a reserved real-test window and retains its ledger
+PASS  migration refuses a completed real-test window and retains its ledger
+PASS  migration refuses standalone test_source_seal.json evidence without deleting it
+PASS  migration refuses standalone test_access.lock evidence without deleting it
+PASS  migration refuses standalone test_set_access.log evidence without deleting it
+PASS  migration refuses a live old pipeline PID
+PASS  an old stage at the B6 boundary is refused even without a ledger
+PASS  a fresh installation records an audit with no old state
+PASS  restart after v4 initialization preserves its own state and test reservation instead of resetting
+PASS  an existing v4 state without an audit cannot be silently adopted
+PASS  compatibility entry (bare) forwards to the complete v4 pipeline
+PASS  compatibility entry --dry-run forwards to the complete v4 pipeline
+PASS  compatibility entry --parallel 3 forwards to the complete v4 pipeline
+PASS  compatibility entry --all --parallel 3 forwards to the complete v4 pipeline
+PASS  compatibility entry --preflight forwards to the complete v4 pipeline
+PASS  compatibility entry --smoke forwards to the complete v4 pipeline
+PASS  compatibility entry --restart-v4 forwards to the complete v4 pipeline
+PASS  compatibility --gate targets the v4 validation-gate output path
+PASS  legacy regression helper also writes only the v4 gate path
+PASS  resume accepts identical numeric env semantics 0.0 versus0
+PASS  resume refuses a genuinely changed numeric model knob
+PASS  resume refuses a checkpoint seed that disagrees with its manifest
+PASS  a failing stage is durably failed and later stages never launch
+PASS  same-command resume skips completed stages and continues at the failed stage
+PASS  manual later-stage entry refuses missing dependencies
+PASS  an equivalent small encoder does not suppress fixed startup treatments
+PASS  even a passing core startup treatment cannot skip G7c or G7d
+PASS  S7b freezes from F4 before any F1 training and plans the frozen direct fallback
+PASS  S7b resume and S8 consume the frozen recipe without reselecting from F1
+PASS  S8 refuses launch without the pre-F1 frozen recipe
+PASS  a changed dataset seal cannot mix resumed stage results
+PASS  changed registered package input cannot reuse completed stage markers
+PASS  changed package identity cannot resume old stages even with the same prereg
+
+check_pipeline: 48/48 PASS

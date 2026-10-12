@@ -82,7 +82,7 @@ def main():
                 patch.object(runner.subprocess, "run", side_effect=AssertionError("unexpected scoring subprocess")):
             with contextlib.redirect_stdout(io.StringIO()):
                 passed = runner.regression_gate()
-            result = read_json(os.path.join(tmp, "runs", "_round10_results", "S0", "regression.json"))
+            result = read_json(os.path.join(tmp, "runs", "_round10_v4_results", "S0", "regression.json"))
             check("legacy callable gate delegates to validation and records its result", passed and result["set"] == "validation")
         with patch.object(runner, "HERE", tmp), patch.object(gate, "run_gate", side_effect=FileNotFoundError("missing champion")):
             failed = False

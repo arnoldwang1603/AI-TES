@@ -117,7 +117,7 @@ def check_source_seal(tmp, prereg):
 
     # Exercise actual main ordering with fake reports, never a raw CSV parser.
     main_private = os.path.join(tmp, "source_main_prereg")
-    prereg_path = os.path.join(main_private, "round10_v3.json")
+    prereg_path = os.path.join(main_private, "round10_v4.json")
     report.atomic_json(prereg_path, prereg)
     manifest_path = os.path.join(tmp, "source_main_manifest.json")
     report.atomic_json(manifest_path, {"runs": [], "data_root": root})
@@ -203,7 +203,44 @@ def main():
     child.wait(timeout=30)
     check("a real exited child is not alive and our current PID remains alive",
           not report.pid_alive(child.pid) and report.pid_alive(os.getpid()))
-    prereg = report.read_json(os.path.join(HERE, "prereg", "round10_v3.json"))
+    prereg = report.read_json(os.path.join(HERE, "prereg", "round10_v4.json"))
+    groups = report.registered_report_seeds(prereg)
+    f11_runs = [dict(arm=arm, seed=s, run_dir="synthetic") for arm, group in
+                (("B1_mask", "S20"), ("B1_orig", "S20"), ("RETRAIN", "S10"), ("R9_twin", "S10"),
+                 ("F9", "F9_fresh_primes")) for s in groups[group]]
+    report.validate_f11_seeds(f11_runs, prereg, {"arm": "direct"})
+    check("F11 validates 20 main, 10 historical and 20 fresh seeds", True)
+    challenger_runs = f11_runs + [dict(arm=arm, seed=s, run_dir="synthetic") for arm, group in
+                                 (("C17_R3", "S20"), ("F10", "F9_fresh_primes")) for s in groups[group]]
+    report.validate_f11_seeds(challenger_runs, prereg, {"arm": "R3"}, ["R3"])
+    check("F11 validates paired fresh direct and confirmed S20 challenger", True)
+    with patch.object(report, "read_f11_frames", side_effect=AssertionError("test frames must remain unopened")) as reader:
+        for label, broken, recipe in (
+                ("missing main seed", f11_runs[1:], "direct"),
+                ("missing fresh seed", f11_runs[:-1], "direct"),
+                ("duplicate seed", f11_runs + [f11_runs[0]], "direct"),
+                ("missing fresh direct seed", challenger_runs[:-1], "R3"),
+                ("missing C17 seed", [r for r in challenger_runs if (r["arm"], r["seed"]) != ("C17_R3", groups["S20"][-1])], "R3")):
+            check("F11 " + label + " refused before test loading", rejects(
+                lambda broken=broken, recipe=recipe: report.f11_report(
+                    broken, prereg, {"frozen_recipe": {"arm": recipe}}, "unused", "unused")))
+        check("F11 failed membership checks never load test frames", reader.call_count == 0)
+    levels = pd.DataFrame([dict(r, **{ch: float(r["seed"]) for ch in report.CHANNELS}) for r in challenger_runs])
+    # Give the extra S20 B1_orig seeds an enormous offset: the bridge must
+    # explicitly use S10, while the main B1 contrast must retain all 20.
+    extra = (levels.arm == "B1_orig") & ~levels.seed.isin(groups["S10"])
+    levels.loc[extra, list(report.CHANNELS)] += 100
+    chain = pd.DataFrame(report.f11_chain_comparisons(levels, prereg))
+    bridge = chain[(chain.armA == "B1_orig") & (chain.armB == "RETRAIN")]
+    main_pair = chain[(chain.armA == "B1_mask") & (chain.armB == "B1_orig")]
+    fresh_pair = chain[chain.armA == "F9"]
+    check("F11 main/fresh pairs retain 20; historical bridge explicitly selects its 10 seed labels",
+          main_pair.n.eq(20).all() and main_pair['mean'].eq(-50).all()
+          and bridge.n.eq(10).all() and bridge['mean'].eq(0).all() and bridge.seed_group.eq("S10").all()
+          and fresh_pair.n.eq(20).all() and fresh_pair.signflip_method.eq("monte_carlo").all()
+          and fresh_pair.signflip_draws.eq(50000).all())
+    check("F11 chain rejects seed mismatch instead of intersecting", rejects(
+        lambda: report.f11_chain_comparisons(levels.iloc[1:], prereg), "seed membership mismatch"))
     parent = os.path.join(HERE, "runs", "_round10_check_scratch")
     os.makedirs(parent, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="paper_report_", dir=parent) as tmp:
@@ -236,13 +273,16 @@ def main():
             return {}, pd.DataFrame(rows)
 
         runs = [dict(arm=arm, seed=s, run_dir="synthetic")
-                for arm in ("B1_mask", "B1_orig") for s in prereg["seeds"]["S10"]]
+                for arm in ("B1_mask", "B1_orig") for s in prereg["seeds"]["S20"]]
         report.score_run = synthetic_score
         try:
             check("incomplete B1 manifest refused", rejects(
                 lambda: report.b6_report(runs[:-1], prereg, out_b6, "unused"), "exactly"))
             check("duplicate arm/seed B1 manifest refused before any scoring", rejects(
                 lambda: report.b6_report(runs + [runs[0]], prereg, out_b6, "unused"), "exactly"))
+            check("historical 10-seed B6 manifest cannot open the v4 main comparison", rejects(
+                lambda: report.b6_report([r for r in runs if r["seed"] in prereg["seeds"]["S10"]],
+                                         prereg, out_b6, "unused"), "S20") and calls == [])
             # Interrupt a window after intent but before report completion.
             try:
                 with report.access_window("B6", "b6", {}, private, out_b6):
@@ -304,7 +344,8 @@ def main():
                   "99.123" not in exposure and "77.765" not in exposure)
             check("B6 T_avg paired residual66 contrast has the expected upper bound",
                   abs(result["remaining66"]["ci_upper"] + 0.02) < 1e-9)
-            check("all 20 synthetic score calls occur inside a logged capability", len(calls) == 20)
+            check("all 40 synthetic score calls occur inside a logged capability; B6 reports 20 pairs",
+                  len(calls) == 40 and result["n_seeds"] == 20 and all(r["n_seeds"] == 20 for r in result["selected"]))
             check("completed B6 cannot be read again", rejects(
                 lambda: _enter_window("B6", "b6", private, out_b6), "already completed"))
             # The second mode is allowed only after B6 and has its own token.
@@ -349,7 +390,7 @@ def main():
         rc_path = os.path.join(run_dir, "run_config.json")
         report.atomic_json(rc_path, {"sealed": True, "seed": 7, "latest_params": {"max_epochs": 2000}})
         manifest = [dict(arm="B1_mask", seed=7, run_dir=run_dir)]
-        prereg_path = os.path.join(HERE, "prereg", "round10_v3.json")
+        prereg_path = os.path.join(HERE, "prereg", "round10_v4.json")
         fp1, _ = report.fingerprint_runs(manifest, prereg_path, "B6")
         with open(cp, "ab") as f:
             f.write(b"modified")

@@ -1,93 +1,140 @@
-# Round 10 — 组员运行说明
+# Round 10 v4 — 组员运行说明
 
-你负责在实验室 GPU 服务器上运行整包，并把产物交回。进入 `AI-TES/src/models/GRU/` 后，按下面三条命令执行。阶段、条件臂、统计判决和最终配方都由流水线自动处理。
+这份说明用于实验室 GPU 服务器。你负责更新完整包、通过预检和全臂冒烟，再启动一次全量流水线，最后把完整产物交回。34 个基础科学实验臂全部固定跑 20 个种子；程序自动完成后续确认和报告，不需要中途人工挑臂或决定补跑。
 
-## 1. 安装环境
+**版本状态：本机 v4 完整预检与 `--all --dry-run` 已通过；全臂冒烟按负责人要求放到实验机器上跑。** 本版计划覆盖 96 条冒烟路径，必须在服务器看到 `SMOKE PASS 96/96` 后再启动全量。v3 的 `SMOKE PASS 69/69` 属于旧版证据。详见 `ROUND10_V4_VALIDATION_2026-10-12.md`。
 
-建议新建 Python 3.11 环境，使用支持 CUDA 的 NVIDIA GPU：
+## 1. 停止旧任务，更新完整包
+
+如果旧终端还在跑 v3，按一次 `Ctrl+C`，等流水线和它启动的训练进程退出。保留原有 `runs/`、状态、日志和 `prereg/` 中的测试访问记录。
+
+先等负责人在自己的电脑上提交并推送 v4，再在服务器执行：
 
 ```bash
-conda create -n tes-round10 python=3.11 -y
-conda activate tes-round10
-python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu126
-python -m pip install -r round10_requirements.txt
+cd ~/AI-TES
+git status --short
+git pull --ff-only
+cd src/models/GRU
 ```
 
-PyTorch 安装命令来自 [官方 2.8.0 / CUDA 12.6 安装说明](https://pytorch.org/get-started/previous-versions/#v280)。如果服务器已有管理员维护的 CUDA/PyTorch 环境，可先用该环境运行预检和冒烟。磁盘至少留出 30 GiB，正式实验建议预留更多空间。
+`git pull --ff-only` 是更新命令：下载远端提交并直接前移当前分支；遇到本地改动冲突或分支分叉会停止。更新报错时保留输出交给负责人处理，完成更新后再往下走。所有提交、推送由负责人自行操作。
 
-本机已在 Python 3.12.12、PyTorch 2.8.0+cu126、RTX 4090 上完成全臂冒烟，代码通过 Python 3.9 语法检查。Python 3.10/3.11 的实际运行仍需下面的服务器冒烟确认。
+沿用此前已经通过服务器 CUDA 检查和冒烟的 Python 环境。新服务器需要可用的 CUDA/PyTorch，以及 `round10_requirements.txt` 中的依赖；由维护该服务器环境的人安装。预检会检查 GPU 和剩余磁盘，至少需要 30 GiB；完整实验应预留足够保存上千个训练目录的空间。
 
-## 2. 放好包和数据
+完整包应包含 `tes_gru/`、`splits/`、`prereg/`、`round10_checks/`、`round10_resources/`。服务器不需要另装 wiki 仓库或复制 `.claude/worktrees`。
 
-保留整个 GRU 文件夹，尤其是 `tes_gru/`、`splits/`、`prereg/`、`round10_checks/` 和 `round10_resources/`。资源包已包含训练/验证物理缓存、冻结常数、旧代码回归副本和 Round 9 的分析 checkpoint。
+## 2. 核对数据位置，登记 v4 重启
 
-`round10_resources/band_calibration/` 内的两个校准报告 CSV 也必须一并同步，供 A5 重放历史统计检查。运行服务器不需要安装 `calit2-thermal-wiki` 或复制 `.claude/worktrees`。若旧版 A5 报缺少 wiki 校准目录，更新完整包后重跑预检。
-
-数据目录保持原结构：
+默认数据目录如下，保留原来的 CSV：
 
 ```text
 AI-TES/
   data/
-    Latest Database (Use this for training)/   # 311 个源 CSV
-    Test_70_cases/                            # 70 个测试 CSV
-  src/models/GRU/                             # 当前运行目录
+    Latest Database (Use this for training)/
+    Test_70_cases/
+  src/models/GRU/
 ```
 
-默认从这个 `AI-TES/data/` 读取；未设置或空值的 `DATA_ROOT` 都使用该默认值，并向检查、训练和分析子进程传递绝对路径。如果数据放在另一块盘，只设置数据根目录，保留它下面两层文件夹的名称：
+默认读取 `AI-TES/data/`。只在数据另放一块盘时设置：
 
 ```bash
-# Linux / bash：替换为服务器上的真实路径
 export DATA_ROOT="/absolute/path/to/AI-TES/data"
 ```
 
-```powershell
-# Windows / PowerShell：替换为本机真实路径
-$env:DATA_ROOT = 'D:\AI-TES\data'
+新终端只需要激活运行环境，以及按需设置 `DATA_ROOT`。物理缓存、历史校准报告和旧模型回归资源默认使用包内版本。
+
+在 GRU 目录执行：
+
+```bash
+python round10_pipeline.py --restart-v4
 ```
 
-使用新终端，只激活运行环境和设置 `DATA_ROOT` 即可。包会核对 311 个训练源文件与固定输入的哈希；不一致时停止并指出文件。不要重新生成哈希、修改数据、划分、预注册或模型参数。测试评分只在自动到达 B6 和 F11 时开放，并记录访问及中断恢复。
+这个命令审计旧流水线状态及测试访问记录，保存 `runs/_round10_v4_results/migration_v3_audit.json`。它保留旧产物，不训练、不评分、不自动复用旧 run。若旧版已经进入真实 B6/F11 测试访问，它会拒绝重启；把完整输出交给负责人，不要删除记录绕过检查。重复执行同一迁移命令应安全且幂等。
 
-通常无需设置物理缓存或旧模型目录。`PHYSICS_CACHE_DIR`、`CHAMPION_RUN_DIR`、`ROUND9_RUNS_ROOT` 未设置或为空时均使用包内资源；如确需指定其他目录，相对路径按启动命令时的当前目录解析，再以绝对路径传给子进程。冒烟后的 checkpoint 复验使用同一套数据和资源路径。
+v4 正式 run 使用 `r10v4_` 前缀，结果写到 `runs/_round10_v4_results/`。旧版的 `r10_` run 和 `runs/_round10_results/` 留在原处；旧版已完成的少量种子也不并入 v4。
 
-Windows 与 Linux 的 Git 换行转换（CRLF/LF）已兼容：固定文本输入只允许这两种换行表示，数值、列名、空格和其它内容变化仍会停止。无需为服务器转换原始 CSV 或换一批数据。若旧版预检因此报错，更新整包后重跑预检；checkpoint、测试源封存和运行记录仍按原始字节严格核验。
+## 3. 预检、查看计划、全臂冒烟
 
-## 3. 三条命令
-
-在 `AI-TES/src/models/GRU/` 中依次执行：
+按顺序执行，前一条成功后再执行下一条：
 
 ```bash
 python round10_pipeline.py --preflight
+python round10_pipeline.py --all --dry-run
 python round10_pipeline.py --smoke --parallel 3
+```
+
+- **预检**检查环境、GPU、磁盘、固定输入哈希、独立检查及验证集上的旧代码回归，不训练。
+- **dry-run**列出所有可能的 run 名和执行数量，不训练。静态计划为 **830–1090 个正式训练 run**；所有可能条件名称的并集可以更大，不能直接把打印行数当作一次运行数量。
+- **冒烟**覆盖基础臂和后续确认、F4、F1、最终配方路径，各跑一个种子、两个 epoch，检查封存产物、常数 sidecar 及 checkpoint 验证重打分。本版应输出 `SMOKE PASS 96/96`。试跑成功后自动清理本次冒烟训练目录，保留 `runs/_round10_v4_smoke/` 中的检查记录。
+
+输入哈希不一致时，程序会指出文件。将报错交给负责人核对数据版本；不要重新生成封存哈希或自行更换数据。固定文本输入兼容 CRLF/LF 换行，其他内容变化仍会停止。
+
+## 4. 启动全量
+
+```bash
 python round10_pipeline.py --all --parallel 3
 ```
 
-1. **预检**：检查环境、GPU、磁盘、输入哈希、全部独立检查和旧代码验证回归，不训练。
-2. **冒烟**：69 个臂各跑种子 7、2 轮，检查封存产物、常数 sidecar 和 checkpoint 验证重打分；成功后自动清理本次试跑目录。等到 `SMOKE PASS 69/69` 再执行正式命令。
-3. **正式运行**：从 S0 到 S9 自动运行。无条件分支共 420 个训练 run；条件臂和确认全部触发时最多 540 个。实际数量由验证侧规则决定。不同服务器的用时不同，预留一到两天并保持终端会话存活。
+这是正式运行的唯一启动命令。程序会依次完成：
 
-如果共享 GPU 上三任务并行导致显存不足，停止后把最后一条命令改为 `--parallel 1` 重跑；不改其它参数。每个臂的种子可并行，依赖阶段按顺序执行。
+| 阶段 | 自动执行的内容 |
+|---|---|
+| S0 / S1 / S1b | 预检；标签与控制实验；预注册 B6 报告、桥接和探针 |
+| S2 / S3 / S4 / S5 | 锚尺度、损失、前视、输出形式、比例、全部编码器及 G7、物理参照实验 |
+| S5b / S6 | 分析全部比较；按固定规则选取方案，在 h160 容量下确认 |
+| S7 | F4 两个新划分的配对复验 |
+| S7b | 根据 F4 判决冻结最终配方，再做 F1 留一家族：direct 与最终配方在 h128 下各跑十家族、每家族十种子；配方相同时只跑一组 |
+| S8 / S9 | F9/F10 的二十个新种子；F11 最终报告、曲线、误差预算和集成 |
 
-## 4. 进度和中断恢复
+所有基础科学臂固定 20 seeds，G7c/G7d 也固定执行。只有机器桥接 RETRAIN 保留 10。C17 入选者各 20；F4 每个新划分、每个配方 10；F1 每个家族、每个配方 10；F9/F10 使用同组 20 个新种子。
 
-终端会打印当前阶段、臂、种子与完成数。详细训练日志在 `sweep_logs/pipeline-<arm>-seed<seed>.log`；分析脚本日志在对应的 `runs/_round10_results/<stage>/` 下。
+F4 的原划分 seed 42 复用主实验完整的 20 个训练种子；新增划分 seed 43、44 各跑 10 个训练种子。每个划分内，direct 和候选方案使用相同种子配对、各自判决；三个划分不混成一个统计样本池。复用原划分不增加上表的正式训练数量。
 
-- `runs/_round10_results/pipeline_state.json`：已完成阶段、run 和冻结决定。
-- `runs/_round10_results/decision_log.md`：自动判决及使用的数字、区间和规则。
-- `runs/_round10_results/<stage>/`：该阶段的表、图、清单和分析日志。
-- `runs/_round10_results/S1b/P1_arm_levels.csv` 和同名 `.md`：给 PI 的逐通道结果，含“换材料时每种输出形式要重拟合什么”列。C16 的验证表及最终 F11 C16 表也保留此列；`physics_input_refit` 单独说明物理输入的更新要求。同目录 `material_refit_guide.csv/.md` 汇总五种输出形式的预注册说明。
-- `runs/_round10_smoke/smoke_results.csv`：服务器冒烟的逐臂检查记录。
+程序仍会按照预先写好的规则选择最终配方，但组员无需看中间结果再决定加跑。即使某种输出形式没有入选，它的完整基础比较和阴性、不确定结果也会保留。
 
-需要中断时按一次 Ctrl+C，等进程结束。保持包、数据和 `runs/` 原样，再执行同一条正式命令即可续跑。流水线会检查已完成产物，并从未完成的 run 或阶段继续；B6/F11 的恢复使用同一批冻结输入。
+F1 每折分别使用训练集、内部验证集和整类留出集：拟合常数只用该折训练数据，早停只看内部验证集，留出家族只在训练结束后评分。F1 结果不会重新改变已经冻结的配方。这是已选定配方的留一家族评估；前面的主验证/F4 接触过各家族数据，因此不能表述为整个研究流程从未见过该家族。物理臂沿用固定 nominal 物理参考，残差归一化等数据统计量才在各折训练集重新拟合。
 
-报错后保留完整错误和对应日志。环境或磁盘问题处理后重跑同一命令；哈希、封存、checkpoint 或统计输入不一致时，把日志交给负责人处理。不要删除状态文件、锁文件、失败的正式 run 或测试访问记录。
+正式运行可能持续较久，请保持服务器会话可用；实际用时以服务器进度为准，两个 epoch 的冒烟时间不能直接当作正式时长。如果三任务并行显存不足，停止并等待子进程退出后，用 `--parallel 1` 重跑同一正式命令。
 
-## 5. 完成后交回什么
+## 5. 进度、报错和恢复
 
-以终端完成 S9、`pipeline_state.json` 中全部阶段完成为准。交回：
+终端显示当前阶段、臂、种子与完成数。主要产物：
 
-- **整个 `runs/` 文件夹**：正式 checkpoint、`run_config.json`、常数 sidecar、验证预测、训练历史，以及 `_round10_results/` 和冒烟检查记录。
-- **整个 `sweep_logs/` 文件夹**：训练控制台日志。
-- **整个 `prereg/` 文件夹**：固定规则、包哈希，以及本次生成的 `test_set_access.log`、`test_access_state.json`、`test_source_seal.json`。
-- **环境与问题记录**：预检已保存环境信息；另附实际启动命令和任何异常说明。
+- `runs/_round10_v4_results/pipeline_state.json`：阶段状态、run 清单和冻结决定。
+- `runs/_round10_v4_results/decision_log.md`：自动判决、区间及依据。
+- `runs/_round10_v4_results/<stage>/`：阶段表、图、清单和分析日志。
+- `sweep_logs/pipeline-v4-<arm>-seed<seed>.log`：每个训练进程的详细日志。
+- `runs/_round10_v4_results/S9/`：最终 F11 报告及附表。
+- `runs/_round10_v4_smoke/`：本版逐臂冒烟检查记录。
 
-最终 F11 的链表、物理/线性底线、C16 测试点、误差预算、地板和集成结果位于 `runs/_round10_results/S9/`。一起交回完整文件夹即可，组员不需要挑选赢家或手动补评分。
+P1、各阶段结果和 C16/F11 表含给 PI 的逐通道“换材料时要重拟合什么”说明；它是方法适用条件说明，不是已经完成换材料实验的结果。
+
+要暂停时按一次 `Ctrl+C`，等待所有子进程退出。保持代码、数据和运行目录不变，之后直接恢复：
+
+```bash
+cd ~/AI-TES/src/models/GRU
+python round10_pipeline.py --all --parallel 3
+```
+
+程序检查已完成产物，从未完成的 run 或阶段继续。恢复已有 v4 时不需要重新执行 `--restart-v4`，也不要另起第二个全量进程。B6/F11 的中断恢复使用同一批冻结输入和访问账本。
+
+报错时记录终端最后的完整错误及程序指出的日志。环境或磁盘问题处理后重跑同一命令；遇到哈希、封存、checkpoint、测试访问或统计输入不一致，交给负责人处理。保留状态文件、锁文件、失败 run 和访问记录。
+
+## 6. 完成后交回
+
+以 S9 完成、`pipeline_state.json` 中包括 S7b 在内的全部阶段均为完成状态为准。交回这些完整目录：
+
+1. **`runs/`**：正式 checkpoint、`run_config.json`、常数 sidecar、验证预测、训练历史、v4 结果、迁移回执、冒烟记录，以及保留的旧版产物。
+2. **`sweep_logs/`**：所有训练日志。
+3. **`prereg/`**：v3 原协议、v4 协议与修订说明、固定输入哈希、测试访问账本和源文件封存记录。
+4. **运行说明**：实际启动命令、环境信息、出现过的异常以及如何恢复。
+
+组员交回整包即可，无需手动选赢家或重新运行测试评分。负责人据此确认这一轮完成，再交接 convection；本包本身不自动开始 convection 训练。
+
+## 7. 临时结果需要处理吗
+
+通常不需要手动清理。`--all --dry-run` 只打印计划，不生成训练结果。成功的全臂冒烟会删除它创建的 `r10v4smoke_*_ep2_*` 训练目录，保留 `runs/_round10_v4_smoke/` 中的检查记录；后者体积小，交接时一起带上。冒烟被中断后，重新执行完整冒烟会核对并清理对应的旧试跑目录，再重新训练。
+
+保留 `runs/_round10_v4_results/`、`r10v4_` 正式训练目录、旧版正式 run、`sweep_logs/` 和 `prereg/` 中的测试访问记录。它们用于恢复、审计和论文结果，不能当作临时文件清掉。`scratch/` 是临时目录，通常无需处理；确需腾空间时等所有本包进程结束后再处理。
+
+本机开发时创建的隔离验证副本由发布负责人清理；服务器不需要复制这些隔离目录或 wiki 仓库。

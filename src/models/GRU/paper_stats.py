@@ -2,7 +2,7 @@
 
 numpy + pandas only; importable and a CLI. Every decision of Round 10 is a
 seed-paired comparison of two arms on the validation files (prereg
-`prereg/round10_v3.json`, sections statistics / bands / vetoes_validation_side
+`prereg/round10_v4.json`, sections statistics / bands / vetoes_validation_side
 / verdict_classes). This module turns long tables into those verdicts.
 
 Input: a LONG table with one row per (arm, seed, file, channel):
@@ -79,7 +79,7 @@ N_FLIP = 50000
 EXACT_FLIP_MAX_N = 16
 VERDICTS = ("BETTER", "EQUIVALENT", "NO_WORSE", "WORSE", "UNDECIDED")
 TIDY_COLS = ["family", "label", "armA", "armB", "channel", "n_seeds", "n_files", "meanA", "meanB",
-             "diff_mean", "ci_lo", "ci_hi", "ci_halfwidth", "p_signflip", "p_holm", "holm_reject",
+             "diff_mean", "ci_lo", "ci_hi", "ci_halfwidth", "p_signflip", "signflip_method", "signflip_draws", "p_holm", "holm_reject",
              "sd_seed_diff", "se_seed_diff", "sd_case_diff", "case_halfwidth", "band_fixed", "band",
              "inside_band", "upper_within_band", "frac_files_A_better", "wording"]
 VERDICT_COLS = ["family", "label", "armA", "armB", "verdict", "vetoed", "veto_V1", "veto_V2",
@@ -98,7 +98,7 @@ def load_registered_policy(prereg=None):
     """
     if prereg is None or isinstance(prereg, (str, os.PathLike)):
         path = prereg or os.environ.get("ROUND10_PREREG") or os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "prereg", "round10_v3.json")
+            os.path.dirname(os.path.abspath(__file__)), "prereg", "round10_v4.json")
         with open(path, encoding="utf-8-sig") as f:
             prereg = json.load(f)
     text = prereg["statistics"]["paired_test"]
@@ -158,6 +158,8 @@ def paired_stats(d, rng, n_boot=None, n_flip=N_FLIP):
     (n_boot resamples), two-sided sign-flip p (exact up to 16 pairs, else
     n_flip random flips) -- analyze_round9.paired, draw for draw."""
     d = np.asarray(d, dtype=float)
+    if d.ndim != 1 or not np.isfinite(d).all():
+        raise ValueError("paired_stats needs a finite one-dimensional vector of paired differences")
     n_boot = N_BOOT if n_boot is None else int(n_boot)
     n = len(d)
     if n < 3:
@@ -171,6 +173,13 @@ def paired_stats(d, rng, n_boot=None, n_flip=N_FLIP):
         signs = rng.choice([-1.0, 1.0], size=(n_flip, n))
     p = float((np.abs((signs * d).mean(axis=1)) >= obs - 1e-12).mean())
     return dict(n=n, mean=float(d.mean()), lo=float(lo), hi=float(hi), p=p)
+
+
+def signflip_metadata(n, n_flip=N_FLIP):
+    """Describe the existing algorithm without changing its random draws."""
+    exact = int(n) <= EXACT_FLIP_MAX_N
+    return dict(signflip_method="exact" if exact else "monte_carlo",
+                signflip_draws=2 ** int(n) if exact else int(n_flip))
 
 
 def band_for(sd_case, n_files, seed_halfwidth, fixed):
@@ -226,9 +235,18 @@ def seed_file_matrix(long, arm, channel):
 
 
 def paired_matrices(long, armA, armB, channel):
-    """(seeds, files, XA, XB): common seeds and common files, arrays (S, F)."""
+    """Identical complete seed membership, common finite files, arrays (S, F).
+
+    Historical bridges must select their registered seed subset explicitly
+    before calling this function; intersections must never choose the sample.
+    """
     pa, pb = seed_file_matrix(long, armA, channel), seed_file_matrix(long, armB, channel)
-    seeds = sorted(set(pa.index) & set(pb.index))
+    expected_a = set(long.loc[long.arm == armA, "seed"])
+    expected_b = set(long.loc[long.arm == armB, "seed"])
+    if (expected_a != expected_b or set(pa.index) != expected_a or set(pb.index) != expected_b):
+        raise ValueError("%s vs %s on %s: seed membership mismatch; require identical complete seed sets" %
+                         (armA, armB, channel))
+    seeds = sorted(expected_a)
     files = sorted(set(pa.columns) & set(pb.columns))
     if len(seeds) < 3 or not files:
         raise ValueError("%s vs %s on %s: %d common seeds, %d common files" % (armA, armB, channel, len(seeds), len(files)))
@@ -240,6 +258,8 @@ def paired_difference(XA, XB, rng, fixed_band=None):
     the statistic on the per-seed means plus the file-side spread and the
     per-comparison band (NaN when fixed_band is None)."""
     XA, XB = np.asarray(XA, dtype=float), np.asarray(XB, dtype=float)
+    if XA.ndim != 2 or XA.shape != XB.shape or not np.isfinite(XA).all() or not np.isfinite(XB).all():
+        raise ValueError("paired_difference needs finite matrices with identical seed/file dimensions")
     D = XA - XB
     d_seed = D.mean(axis=1)
     st = paired_stats(d_seed, rng)
@@ -262,7 +282,8 @@ def paired_difference(XA, XB, rng, fixed_band=None):
                 inside_band=inside,
                 upper_within_band=bool(np.isfinite(band) and st["hi"] <= band),
                 frac_files_A_better=float((dbar_case < 0).mean()),
-                wording=("indistinguishable at n=%d" % n_files) if inside else "")
+                wording=("indistinguishable at n=%d" % n_files) if inside else "",
+                **signflip_metadata(st["n"]))
 
 
 def per_seed_means(long, arm):
@@ -319,8 +340,8 @@ def compare(long, armA, armB, rng, bands=None, label=None, family=""):
         rows.append(r)
         ch_rows[ch] = r
         means[ch] = (pd.Series(XA.mean(axis=1), index=seeds), pd.Series(XB.mean(axis=1), index=seeds))
-    # (T_outer + T_avg) / 2 per seed, on the seeds common to both channels
-    common = sorted(set(means["T_outer"][0].index) & set(means["T_avg"][0].index))
+    # paired_matrices has checked identical complete membership on every channel.
+    common = list(means["T_outer"][0].index)
     tA = 0.5 * (means["T_outer"][0].loc[common] + means["T_avg"][0].loc[common])
     tB = 0.5 * (means["T_outer"][1].loc[common] + means["T_avg"][1].loc[common])
     st = paired_stats((tA - tB).to_numpy(), rng)
@@ -331,7 +352,7 @@ def compare(long, armA, armB, rng, bands=None, label=None, family=""):
                 se_seed_diff=float((tA - tB).std(ddof=1) / math.sqrt(st["n"])),
                 sd_case_diff=float("nan"), case_halfwidth=float("nan"), band_fixed=float("nan"),
                 band=float("nan"), inside_band=False, upper_within_band=False,
-                frac_files_A_better=float("nan"), wording="")
+                frac_files_A_better=float("nan"), wording="", **signflip_metadata(st["n"]))
     rows.append(tota)
     # vetoes
     bu_A, bu_B = blowup_seeds(long, armA), blowup_seeds(long, armB)
@@ -339,10 +360,12 @@ def compare(long, armA, armB, rng, bands=None, label=None, family=""):
     jumps, veto2 = {}, False
     for jc in JUMP_COLS:
         sA, sB = seed_totals(long, armA, jc), seed_totals(long, armB, jc)
-        cs = sorted(set(sA.index) & set(sB.index))
-        if len(cs) < 3:
-            jumps[jc] = dict(diff=float("nan"), p=float("nan"), lo=float("nan"), hi=float("nan"), n=len(cs))
+        if sA.empty and sB.empty:
+            jumps[jc] = dict(diff=float("nan"), p=float("nan"), lo=float("nan"), hi=float("nan"), n=0)
             continue
+        if set(sA.index) != set(common) or set(sB.index) != set(common):
+            raise ValueError("%s vs %s on %s: seed membership mismatch in jump veto" % (armA, armB, jc))
+        cs = common
         d = (sA.loc[cs] - sB.loc[cs]).to_numpy(dtype=float)
         sj = paired_stats(d, rng)
         jumps[jc] = dict(diff=sj["mean"], p=sj["p"], lo=sj["lo"], hi=sj["hi"], n=sj["n"])
@@ -355,7 +378,7 @@ def compare(long, armA, armB, rng, bands=None, label=None, family=""):
                          sd_seed_diff=float(d.std(ddof=1)), se_seed_diff=float(d.std(ddof=1) / math.sqrt(len(d))),
                          sd_case_diff=float("nan"), case_halfwidth=float("nan"), band_fixed=float("nan"),
                          band=float("nan"), inside_band=False, upper_within_band=False,
-                         frac_files_A_better=float("nan"), wording=""))
+                         frac_files_A_better=float("nan"), wording="", **signflip_metadata(sj["n"])))
     vetoed = veto1 or veto2
     verdict = classify(ch_rows, tota, vetoed)
     reason = []
@@ -413,10 +436,13 @@ def _fmt(r):
 
 
 def to_markdown(tidy, verdicts, family="family"):
+    confidence = CI_PERCENTILES[1] - CI_PERCENTILES[0]
     lines = ["# %s -- seed-paired comparisons (A - B, deg C, validation files)" % family, "",
-             "Statistic: per-seed mean difference, 95 %% CI from %d seed bootstraps, exact sign-flip p; "
-             "band_c = max(fixed, sqrt((1.96 sd_case/sqrt(n))^2 + seed_halfwidth^2)); "
-             "a CI inside +/- band reads \"indistinguishable at n\"." % N_BOOT, ""]
+             "Statistic: per-seed mean difference, %g %% CI from %d seed bootstraps; "
+             "two-sided sign-flip p is exact for n <= %d, otherwise Monte Carlo with %d random flips. "
+             "band_c = max(fixed, sqrt((%g sd_case/sqrt(n))^2 + seed_halfwidth^2)); "
+             "a CI inside +/- band reads \"indistinguishable at n\"." %
+             (confidence, N_BOOT, EXACT_FLIP_MAX_N, N_FLIP, Z95), ""]
     for _, v in verdicts.iterrows():
         lines.append("## %s: %s vs %s -> **%s**%s" % (v["label"], v["armA"], v["armB"], v["verdict"],
                                                     "  (VETO)" if v["vetoed"] else ""))
@@ -424,8 +450,8 @@ def to_markdown(tidy, verdicts, family="family"):
             lines.append("")
             lines.append("_%s_" % v["reason"])
         lines.append("")
-        lines.append("| channel | n seeds | n files | mean A | mean B | diff [95% CI] | band | p sign-flip | p Holm | reading |")
-        lines.append("|---|---|---|---|---|---|---|---|---|---|")
+        lines.append("| channel | n seeds | n files | mean A | mean B | diff [%g%% CI] | band | p sign-flip | sign-flip method (draws) | p Holm | reading |" % confidence)
+        lines.append("|---|---|---|---|---|---|---|---|---|---|---|")
         sub = tidy[tidy["label"] == v["label"]]
         for _, r in sub.iterrows():
             band = ("%.3f" % r["band"]) if np.isfinite(r["band"]) else "-"
@@ -436,8 +462,10 @@ def to_markdown(tidy, verdicts, family="family"):
                                            "A better" if r["ci_hi"] < 0 else "A worse" if r["ci_lo"] > 0 else "undecided")
             else:
                 reading = "A better" if r["ci_hi"] < 0 else "A worse" if r["ci_lo"] > 0 else "noise"
-            lines.append("| %s | %d | %s | %.3f | %.3f | %s | %s | %.3f | %s | %s |" % (
-                r["channel"], r["n_seeds"], nf, r["meanA"], r["meanB"], _fmt(r), band, r["p_signflip"], ph, reading))
+            method = signflip_metadata(r["n_seeds"])
+            lines.append("| %s | %d | %s | %.3f | %.3f | %s | %s | %.3f | %s (%d) | %s | %s |" % (
+                r["channel"], r["n_seeds"], nf, r["meanA"], r["meanB"], _fmt(r), band, r["p_signflip"],
+                method["signflip_method"], method["signflip_draws"], ph, reading))
         lines.append("")
     return "\n".join(lines) + "\n"
 
@@ -458,8 +486,10 @@ def long_table_from_runs(arm_dirs, runs_root, seeds, variant="forward_direct",
     """arm_dirs: {arm: RUN_NAME_BASE}. Reads runs/<RUN_NAME_BASE>_seed<s>/
     variants/<variant>/<csv_name> (a sealed run's own validation scoring or
     eval_checkpoint --set val) and returns the long table (MAE per channel
-    per file; JumpSteps columns per file for V2). Missing runs are reported
-    and skipped."""
+    per file; JumpSteps columns per file for V2). Every requested run is required."""
+    seeds = list(map(int, seeds))
+    if len(seeds) != len(set(seeds)):
+        raise ValueError("Requested seed list contains duplicates")
     rows, missing = [], []
     for arm, base in arm_dirs.items():
         for s in seeds:
@@ -482,7 +512,7 @@ def long_table_from_runs(arm_dirs, runs_root, seeds, variant="forward_direct",
                         rows.append(dict(arm=arm, seed=int(s), file=f, channel=jc,
                                          MAE=pd.to_numeric(r[jc], errors="coerce")))
     if missing:
-        print("long_table_from_runs: %d run csv(s) missing, e.g. %s" % (len(missing), missing[0]), file=sys.stderr)
+        raise FileNotFoundError("long_table_from_runs: %d requested run csv(s) missing, e.g. %s" % (len(missing), missing[0]))
     return pd.DataFrame(rows, columns=["arm", "seed", "file", "channel", "MAE"])
 
 
@@ -502,7 +532,9 @@ def main(argv=None):
     ap.add_argument("--long", default=None, help="long table csv (arm, seed, file, channel, MAE)")
     ap.add_argument("--from-runs", default=None, help="runs root; build the long table from run dirs")
     ap.add_argument("--arm", action="append", default=[], help="arm=RUN_NAME_BASE (with --from-runs)")
-    ap.add_argument("--seeds", default="1,2,3,5,7,11,13,21,42,123")
+    ap.add_argument("--seeds", default=None, help="explicit seed subset; default is active prereg S20")
+    ap.add_argument("--prereg", default=os.environ.get("ROUND10_PREREG") or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "prereg", "round10_v4.json"))
     ap.add_argument("--csv-name", default="summary_errors_val.csv")
     ap.add_argument("--long-out", default=None, help="write the built long table here")
     ap.add_argument("--pair", action="append", default=[], help="A:B[:label]; repeatable")
@@ -511,11 +543,16 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=0, help="RNG seed for the bootstraps")
     ap.add_argument("--bands", default=None, help='json, e.g. {"T_avg": 0.1}, overriding the fixed bands')
     a = ap.parse_args(argv)
+    configure_policy(a.prereg)
     if a.from_runs:
         arm_dirs = dict(x.split("=", 1) for x in a.arm)
         if not arm_dirs:
             sys.exit("--from-runs needs at least one --arm name=RUN_NAME_BASE")
-        seeds = [int(s) for s in a.seeds.split(",") if s.strip()]
+        if a.seeds is None:
+            with open(a.prereg, encoding="utf-8-sig") as f:
+                seeds = list(map(int, json.load(f)["seeds"]["S20"]))
+        else:
+            seeds = [int(s) for s in a.seeds.split(",") if s.strip()]
         long = long_table_from_runs(arm_dirs, a.from_runs, seeds, csv_name=a.csv_name)
         if a.long_out:
             long.to_csv(a.long_out, index=False)

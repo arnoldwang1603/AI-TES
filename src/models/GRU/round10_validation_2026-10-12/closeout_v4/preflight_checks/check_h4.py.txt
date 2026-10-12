@@ -1,0 +1,172 @@
+NOTE: NUM_LAYERS=1 -> GRU dropout is a no-op; DROPOUT 0.2 normalised to 0.0 (run name dp0.0)
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; stratified_v2_s42.json read; tag vs2):
+  Case 1 (linear charging)                         train  38  val 2
+  Case 10 (Discharging + Constant)                 train  23  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  23  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 291, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+PASS  (a) sealed loader excludes all test CSVs  
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.138 C std=0.639 C  ->  KA=1.00000 KB=-0.00023 KC=0.001050
+PASS  sidecar written at checkpoints/best_gru_variant_<v>.constants.json and reloads  5859 bytes
+PASS  (a) sidecar scaler reproduces the fitted scaler's scaled inputs / targets on the 20 validation files  max |dX| 0.0e+00  |dY| 0.0e+00
+PASS  (a) predictions from the sidecar-built model equal the refit model's on the 20 validation files (< 1e-6 scaled)  max |delta| 0.00e+00 (shape (20, 1440, 3))
+PASS  (a) inverse_transform identical through the sidecar scaler  
+PASS  (b) sidecar kc equals model.tinner_anchor[2] (and ka, kb)  kc 0.00104988401
+PASS  (b) raw_affine round-trips as a tuple of pairs; unused modes are None  
+PASS  (c) every documented key present: top level ('format', 'written_at', 'variant', 'checkpoint', 'scaler', 'constants', 'loss_weights', 'loss_weights_realised', 'physics_bound_weight', 'knobs', 'split', 'git_head', 'runtime', 'tf32', 'seed')  missing []
+PASS  (c) scaler block (with column names), constants (13 attrs), split digests, runtime, tf32, git_head, timestamp  git_head None  split stratified_v2_s42.json  n_drop 0
+[constants] sidecar C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\scratch\check_h4_ml4r2jit\run_with_sidecar\checkpoints\best_gru_variant_forward_direct.constants.json (written 2026-10-12 03:07:21)
+PASS  (d) eval_checkpoint.load_or_refit_constants takes the sidecar without load_all_data (monkeypatched to raise)  
+WARNING: no constants sidecar at C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\scratch\check_h4_ml4r2jit\run_without_sidecar\checkpoints\best_gru_variant_forward_direct.constants.json -- refitting the constants from the training CSVs of the run's own split
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.138 C std=0.639 C  ->  KA=1.00000 KB=-0.00023 KC=0.001050
+PASS  (d) without a sidecar: refit fallback (with warning) when training data is given, error otherwise  
+NOTE: NUM_LAYERS=1 -> GRU dropout is a no-op; DROPOUT 0.2 normalised to 0.0 (run name dp0.0)
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; stratified_v2_s42.json read; tag vs2):
+  Case 1 (linear charging)                         train  38  val 2
+  Case 10 (Discharging + Constant)                 train  23  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  23  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 291, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[constants] sidecar C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\scratch\check_h4_ml4r2jit\run_with_sidecar\checkpoints\best_gru_variant_forward_direct.constants.json (written 2026-10-12 03:07:21)
+
+============================================================
+[forward_direct] Testing on ckpt_best_val: 20 cases
+============================================================
+  [forward_direct] 1/20: Latest Database (Use this for training)/Case 1 (linear charging)/Case 10.csv
+  [forward_direct] 2/20: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+  [forward_direct] 3/20: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+  [forward_direct] 4/20: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 8.csv
+  [forward_direct] 5/20: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+  [forward_direct] 6/20: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 3.csv
+  [forward_direct] 7/20: Latest Database (Use this for training)/Case 3 (Charging with noise)/Case 15.csv
+  [forward_direct] 8/20: Latest Database (Use this for training)/Case 3 (Charging with noise)/Case 17.csv
+  [forward_direct] 9/20: Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging)/Case 15.csv
+  [forward_direct] 10/20: Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging)/Case new 8.csv
+  [forward_direct] 11/20: Latest Database (Use this for training)/Case 5 (Linear charging + constant)/Case 21.csv
+  [forward_direct] 12/20: Latest Database (Use this for training)/Case 5 (Linear charging + constant)/Case 3.csv
+  [forward_direct] 13/20: Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging)/Case 10.csv
+  [forward_direct] 14/20: Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging)/Case 11.csv
+  [forward_direct] 15/20: Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise)/Case 14.csv
+  [forward_direct] 16/20: Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise)/Case 3.csv
+  [forward_direct] 17/20: Latest Database (Use this for training)/Case 8 (linear discharging)/Discharge 16 - Darien.csv
+  [forward_direct] 18/20: Latest Database (Use this for training)/Case 8 (linear discharging)/Discharge 24 - Aaron.csv
+  [forward_direct] 19/20: Latest Database (Use this for training)/Case 9 (non-linear discharging)/Case New 1 (Tejas).csv
+  [forward_direct] 20/20: Latest Database (Use this for training)/Case 9 (non-linear discharging)/Case New 4 (Tejas).csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\scratch\check_h4_ml4r2jit\o1\summary_errors_val.csv
+[forward_direct] avg MAE   T_inner=0.2566  T_outer=0.3699  T_avg=2.0128
+[forward_direct] avg RMSE  T_inner=0.3168  T_outer=0.4658  T_avg=2.3099
+[forward_direct] avg MAPE  T_inner=0.107%  T_outer=0.173%  T_avg=0.716%  Overall=0.332%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=0.9996  T_avg=0.9880  Overall=0.9985
+[forward_direct] avg Early/Late MAE  T_inner 0.2404 / 0.1732
+[forward_direct] inference: 4.1 ms/case  |  244.96 cases/s  |  2.83 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\scratch\check_h4_ml4r2jit\o1\predictions_val.npz
+NOTE: NUM_LAYERS=1 -> GRU dropout is a no-op; DROPOUT 0.2 normalised to 0.0 (run name dp0.0)
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; stratified_v2_s42.json read; tag vs2):
+  Case 1 (linear charging)                         train  38  val 2
+  Case 10 (Discharging + Constant)                 train  23  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  23  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 291, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+WARNING: no constants sidecar at C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\scratch\check_h4_ml4r2jit\run_without_sidecar\checkpoints\best_gru_variant_forward_direct.constants.json -- refitting the constants from the training CSVs of the run's own split
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.138 C std=0.639 C  ->  KA=1.00000 KB=-0.00023 KC=0.001050
+
+============================================================
+[forward_direct] Testing on ckpt_best_val: 20 cases
+============================================================
+  [forward_direct] 1/20: Latest Database (Use this for training)/Case 1 (linear charging)/Case 10.csv
+  [forward_direct] 2/20: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+  [forward_direct] 3/20: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+  [forward_direct] 4/20: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 8.csv
+  [forward_direct] 5/20: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+  [forward_direct] 6/20: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 3.csv
+  [forward_direct] 7/20: Latest Database (Use this for training)/Case 3 (Charging with noise)/Case 15.csv
+  [forward_direct] 8/20: Latest Database (Use this for training)/Case 3 (Charging with noise)/Case 17.csv
+  [forward_direct] 9/20: Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging)/Case 15.csv
+  [forward_direct] 10/20: Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging)/Case new 8.csv
+  [forward_direct] 11/20: Latest Database (Use this for training)/Case 5 (Linear charging + constant)/Case 21.csv
+  [forward_direct] 12/20: Latest Database (Use this for training)/Case 5 (Linear charging + constant)/Case 3.csv
+  [forward_direct] 13/20: Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging)/Case 10.csv
+  [forward_direct] 14/20: Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging)/Case 11.csv
+  [forward_direct] 15/20: Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise)/Case 14.csv
+  [forward_direct] 16/20: Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise)/Case 3.csv
+  [forward_direct] 17/20: Latest Database (Use this for training)/Case 8 (linear discharging)/Discharge 16 - Darien.csv
+  [forward_direct] 18/20: Latest Database (Use this for training)/Case 8 (linear discharging)/Discharge 24 - Aaron.csv
+  [forward_direct] 19/20: Latest Database (Use this for training)/Case 9 (non-linear discharging)/Case New 1 (Tejas).csv
+  [forward_direct] 20/20: Latest Database (Use this for training)/Case 9 (non-linear discharging)/Case New 4 (Tejas).csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\scratch\check_h4_ml4r2jit\o2\summary_errors_val.csv
+[forward_direct] avg MAE   T_inner=0.2566  T_outer=0.3699  T_avg=2.0128
+[forward_direct] avg RMSE  T_inner=0.3168  T_outer=0.4658  T_avg=2.3099
+[forward_direct] avg MAPE  T_inner=0.107%  T_outer=0.173%  T_avg=0.716%  Overall=0.332%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=0.9996  T_avg=0.9880  Overall=0.9985
+[forward_direct] avg Early/Late MAE  T_inner 0.2404 / 0.1732
+[forward_direct] inference: 4.0 ms/case  |  250.57 cases/s  |  2.77 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\scratch\check_h4_ml4r2jit\o2\predictions_val.npz
+PASS  (e) eval_checkpoint --set val: sidecar run == refit run on the 20 validation files (per-channel MAE, 1e-9 C)  max |d| 0.00e+00; val MAE Tin 0.2566 Tout 0.3699 Tavg 2.0128
+PASS  (e) champion directory untouched  
+
+check_h4: 13/13 PASS

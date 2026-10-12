@@ -1,0 +1,54 @@
+PASS  zero and negative lock PIDs never query POSIX process groups
+PASS  POSIX live and permission-denied processes stay protected; exited PID is dead
+PASS  a real exited child is not alive and our current PID remains alive
+PASS  F11 validates 20 main, 10 historical and 20 fresh seeds
+PASS  F11 validates paired fresh direct and confirmed S20 challenger
+PASS  F11 missing main seed refused before test loading
+PASS  F11 missing fresh seed refused before test loading
+PASS  F11 duplicate seed refused before test loading
+PASS  F11 missing fresh direct seed refused before test loading
+PASS  F11 missing C17 seed refused before test loading
+PASS  F11 failed membership checks never load test frames
+PASS  F11 main/fresh pairs retain 20; historical bridge explicitly selects its 10 seed labels
+PASS  F11 chain rejects seed mismatch instead of intersecting
+PASS  test-access capability absent outside the report
+PASS  F11 cannot precede a completed B6
+PASS  incomplete B1 manifest refused
+PASS  duplicate arm/seed B1 manifest refused before any scoring
+PASS  historical 10-seed B6 manifest cannot open the v4 main comparison
+PASS  interrupted window remains reserved and restores capability env
+PASS  reserved B6 refuses changed manifest
+PASS  reserved B6 refuses a different output directory
+PASS  active-process report lock refuses concurrent access
+PASS  B6 exposes exactly the registered four T_avg cases
+PASS  B6 remaining 66 and other channels have no arm levels in report
+PASS  B6 T_avg paired residual66 contrast has the expected upper bound
+PASS  all 40 synthetic score calls occur inside a logged capability; B6 reports 20 pairs
+PASS  completed B6 cannot be read again
+PASS  F11 capability matches the registered second mode
+PASS  exactly two begin events, B6 and F11; identical resume is logged
+PASS  terminated-process lock recovers only for the same reserved window
+PASS  a missing output report cannot leave a completed window
+PASS  checkpoint byte change changes the reserved manifest fingerprint
+PASS  unsealed runs cannot enter a report
+PASS  smoke checkpoints cannot enter a real report
+PASS  generic test scorer refuses unregistered calls before run/data loading
+PASS  test source hashing requires the logged lease before filesystem access
+PASS  first B6 fixes all 70 source byte hashes after the begin event
+PASS  B6 source verification is independent of filesystem listing order
+PASS  identical relative names and contents can relocate without changing the seal
+PASS  B6 resume rejects any source byte change before further scoring
+PASS  source verification rejects a missing case
+PASS  recursive loader cannot read an unsealed nested CSV
+PASS  forced F11 window still rejects changes to the first B6 source
+PASS  F11 refuses a missing first-window source seal
+PASS  B6 cache created without a source seal cannot be silently trusted
+B6: 0 immutable checkpoints, main_B6; no test access
+PASS  report dry-run never lists or hashes test sources
+B6 complete: C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\src\models\GRU\runs\_round10_check_scratch\paper_report_jtad5dr8\source_main_B6
+PASS  actual report entrypoint seals before scoring and verifies before completion
+PASS  F11 entrypoint rejects changed test bytes before any report scorer
+PASS  F11 entrypoint refuses unfrozen physics_params overrides before access
+PASS  F11 entrypoint refuses unfrozen conventions overrides before access
+
+check_paper_report: 51/51 PASS

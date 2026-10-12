@@ -28,8 +28,8 @@ def rejects(function, fragment):
         return fragment in str(error)
     return False
 
-protocol = report.read_json(str(HERE / 'prereg/round10_v3.json'))
-old = protocol['seeds']['S10']; fresh = protocol['seeds']['F9_fresh_primes']
+protocol = report.read_json(str(HERE / 'prereg/round10_v4.json'))
+old = protocol['seeds']['S20']; fresh = protocol['seeds']['F9_fresh_primes']
 frames = {}
 conventions = {}
 for case in range(1, 71):
@@ -101,8 +101,8 @@ def main():
                     result=f11.finish_f11(manifest,bundles,out,frames)
                     check(label+' artifacts and67/21 memberships',len(result['artifacts'])==12 and result['yardsticks']['strict_line_average_n']==67 and result['yardsticks']['bracket_oracle_n']==21 and all(Path(p).is_file() for p in result['artifacts'].values()))
                     summary=pd.read_csv(out/'ensemble_summary.csv')
-                    expected={'F9_20':20,'recipe_30':30} if label=='direct' else {'F9_20':20,'recipe_30':30,'F10_direct_20':20,'direct_30':30}
-                    check(label+'20/30 fixed ensemble sizes',summary.groupby('ensemble').n_models.first().to_dict()==expected)
+                    expected={'F9_20':20,'recipe_40':40} if label=='direct' else {'F9_20':20,'recipe_40':40,'F10_direct_20':20,'direct_40':40}
+                    check(label+'20/40 fixed ensemble sizes',summary.groupby('ensemble').n_models.first().to_dict()==expected)
                     if label=='direct':
                         all70=summary[(summary.ensemble=='F9_20')&(summary.subset=='all70')].set_index('channel')
                         check('ensemble averages predictions before absolute errors',abs(all70.loc['T_inner','MAE'])<1e-12 and abs(all70.loc['T_outer','MAE']-.25)<1e-12 and abs(all70.loc['T_avg','MAE']-.4)<1e-12 and all70.loc['T_inner','seed_MAE_mean_C']>.009)
@@ -124,8 +124,10 @@ def main():
                         broken=copy.deepcopy(bundles);broken[-1]['case_ids'].pop()
                         check('incomplete70case bundle rejected',rejects(lambda:f11.finish_f11(manifest,broken,out/'missing_case',frames),'incomplete prediction bundle'))
                         broken=copy.deepcopy(bundles);broken[0]['config']['other_ch_mode']='ratio_input'
-                        check('mixed30model recipe rejected',rejects(lambda:f11.finish_f11(manifest,broken,out/'mixed',frames),'mixed model recipes'))
+                        check('mixed40model recipe rejected',rejects(lambda:f11.finish_f11(manifest,broken,out/'mixed',frames),'mixed model recipes'))
                         check('missing fresh seed rejected',rejects(lambda:f11.finish_f11(manifest,bundles[:-1],out/'missing_seed',frames),'missing/extra registered seed'))
+                        check('missing existing seed rejected',rejects(lambda:f11.finish_f11(manifest,bundles[1:],out/'missing_old_seed',frames),'missing/extra registered seed'))
+                        check('duplicate existing seed rejected',rejects(lambda:f11.finish_f11(manifest,bundles+[bundles[0]],out/'duplicate_old_seed',frames),'duplicate'))
                         wrong=copy.deepcopy(manifest);wrong['conventions'][next(iter(frames))]['label']='line average'
                         check('strict yardstick count cannot silently drift',rejects(lambda:f11.finish_f11(wrong,bundles,out/'changed_metadata',frames),'67 files'))
                     report.atomic_json(str(out/'report.json'),result)

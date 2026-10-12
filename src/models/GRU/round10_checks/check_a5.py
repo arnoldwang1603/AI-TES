@@ -9,7 +9,7 @@ Items: (a) synthetic long table with a known effect -> CI covers it;
 p-values; (e) paired_stats equals analyze_round9.paired draw for draw, and
 the packaged band-calibration long table (override with BAND_CAL_DIR) replayed
 in calibrate_band's order reproduces pair_full70.csv for the champion vs
-h128x2 pair (P4) to 1e-6; (f) prereg/round10_v3.json carries data.hashes
+h128x2 pair (P4) to 1e-6; (f) prereg/round10_v4.json carries data.hashes
 that match the split json and the TAVG_MASK=split digests; (g) the
 EXPERIMENT_LOG.md [PREREG] section exists and is < 120 lines; (h) the CLI
 writes tidy csv, verdict csv and markdown.
@@ -46,7 +46,7 @@ def report(item, ok, detail=""):
 
 
 # ----------------------------------------------------------------- synthetic data
-def synth(effect, noise_sd, data_seed=0, n_files=20, n_masked=3, blow_seed=None, jumps=None, seed_sd=0.0):
+def synth(effect, noise_sd, data_seed=0, n_files=20, n_masked=3, blow_seed=None, jumps=None, seed_sd=0.0, seeds=None):
     """Long table for arms A (challenger) and B. B = base + file offset +
     seed/file noise; A = B + effect + centred noise, so the realised per-seed
     mean difference equals `effect` exactly on the scored files. T_avg of
@@ -54,26 +54,27 @@ def synth(effect, noise_sd, data_seed=0, n_files=20, n_masked=3, blow_seed=None,
     blow_seed: that seed of A is set to 2.0 C on every channel (V1).
     jumps: (per-file count for A, for B) rows for both JumpSteps channels."""
     g = np.random.default_rng(data_seed)
+    seeds = list(SEEDS10 if seeds is None else seeds)
     base = {"T_inner": 0.25, "T_outer": 0.35, "T_avg": 0.90}
     rows = []
     for ch in CH:
         scored = n_files - n_masked if ch == "T_avg" else n_files
-        B = base[ch] + g.normal(0, 0.1, n_files)[None, :] + g.normal(0, 0.03, (len(SEEDS10), n_files))
-        noise = g.normal(0, noise_sd, (len(SEEDS10), n_files))
+        B = base[ch] + g.normal(0, 0.1, n_files)[None, :] + g.normal(0, 0.03, (len(seeds), n_files))
+        noise = g.normal(0, noise_sd, (len(seeds), n_files))
         noise[:, :scored] -= noise[:, :scored].mean()
         if seed_sd:                                   # seed-level noise, shared by every file of a seed
-            so = g.normal(0, seed_sd, len(SEEDS10))
+            so = g.normal(0, seed_sd, len(seeds))
             noise += (so - so.mean())[:, None]
         A = B + effect.get(ch, 0.0) + noise
         if blow_seed is not None:
-            A[SEEDS10.index(blow_seed), :] = 2.0
-        for si, s in enumerate(SEEDS10):
+            A[seeds.index(blow_seed), :] = 2.0
+        for si, s in enumerate(seeds):
             for fi in range(n_files):
                 masked = fi >= scored
                 rows.append(("A", s, "F%02d" % fi, ch, np.nan if masked else A[si, fi]))
                 rows.append(("B", s, "F%02d" % fi, ch, np.nan if masked else B[si, fi]))
     if jumps is not None:
-        for s in SEEDS10:
+        for s in seeds:
             for fi in range(n_files):
                 for jc in ps.JUMP_COLS:
                     rows.append(("A", s, "F%02d" % fi, jc, jumps[0]))
@@ -86,10 +87,18 @@ def run_pair(long, seed=0):
     return tidy, vdf.iloc[0], {r["channel"]: r for _, r in tidy.iterrows()}
 
 
+def rejects(function, fragment):
+    try:
+        function()
+    except (ValueError, FileNotFoundError) as error:
+        return fragment in str(error)
+    return False
+
+
 def main():
     from check_h9 import block_test_csv_reads
     block_test_csv_reads()
-    registration = json.load(open(os.path.join(HERE, "prereg", "round10_v3.json"), encoding="utf-8"))
+    registration = json.load(open(os.path.join(HERE, "prereg", "round10_v4.json"), encoding="utf-8"))
     alternate = copy.deepcopy(registration)
     alternate["bands"]["fixed_bands_degC"]["T_avg"] = 0.123
     alternate["statistics"]["paired_test"] = "seed-paired mean difference; 90% CI from 500 bootstrap resamples over seeds plus exact sign-flip test"
@@ -108,6 +117,34 @@ def main():
     finally:
         ps.configure_policy(registration)
     report("(policy) thresholds, confidence and bootstrap count follow the supplied registration", policy_ok)
+    # The original S10 fixtures below retain their archived exact-test values.
+    # Active S20 comparisons must keep all pairs and label their Monte Carlo p.
+    active = synth({}, 0.01, seeds=registration["seeds"]["S20"], jumps=(1, 1))
+    active_tidy, active_verdicts = ps.compare_family(active, [("A", "B")], family="active20")
+    active_md = ps.to_markdown(active_tidy, active_verdicts)
+    report("(policy) S20 comparisons retain 20 pairs; CSV/markdown label 50,000 Monte Carlo flips",
+           active_tidy.n_seeds.eq(20).all() and active_tidy.signflip_method.eq("monte_carlo").all()
+           and active_tidy.signflip_draws.eq(50000).all() and "monte_carlo (50000)" in active_md
+           and "otherwise Monte Carlo" in active_md)
+    seed = registration["seeds"]["S20"][-1]
+    absent_arm = active[~((active.arm == "A") & (active.seed == seed))]
+    absent_channel = active[~((active.channel == "T_avg") & (active.seed == seed))]
+    absent_jump = active[~((active.arm == "A") & (active.channel == ps.JUMP_COLS[0]) & (active.seed == seed))]
+    for label, incomplete in (("one arm seed", absent_arm), ("both arms' channel seed", absent_channel),
+                              ("one jump-veto seed", absent_jump)):
+        report("(policy) rejects missing " + label + " instead of taking a seed intersection",
+               rejects(lambda incomplete=incomplete: run_pair(incomplete), "seed membership mismatch"))
+    s10 = synth({}, 0.01)
+    old_tidy, _, _ = run_pair(s10)
+    report("(policy) historical S10 fixtures retain exact 1,024-flip labeling",
+           old_tidy.signflip_method.eq("exact").all() and old_tidy.signflip_draws.eq(1024).all())
+    report("(policy) array entry refuses broadcasting unequal paired dimensions",
+           rejects(lambda: ps.paired_difference(np.ones((20, 3)), np.ones((1, 3)), np.random.default_rng(0)),
+                   "identical seed/file dimensions"))
+    with tempfile.TemporaryDirectory(prefix="check_a5_missing_") as missing_root:
+        report("(policy) run-directory loader refuses missing requested seeds",
+               rejects(lambda: ps.long_table_from_runs({"A": "synthetic"}, missing_root, [1, 2, 3]),
+                       "requested run csv(s) missing"))
     # ============================================================== (a) known effect
     eff = {"T_inner": 0.0, "T_outer": -0.05, "T_avg": -0.10}
     tidy, v, rows = run_pair(synth(eff, 0.02))
@@ -221,11 +258,17 @@ def main():
                 "sd_seed_diff", "se_seed_diff", "sd_case_diff"]
         for pid, A, B in pairs:                                   # same RNG consumption order as calibrate_band
             for c in order:
-                seeds, files, XA, XB = ps.paired_matrices(long, A, B, c)
+                row = pf[(pf["pair"] == pid) & (pf["channel"] == c)].iloc[0]
+                # Replay the archived row's explicit seed panel; P4 was a
+                # registered S10 bridge to a reference with 20 stored seeds.
+                frozen_seeds = sorted(int(s) for s in str(row["seeds"]).split())
+                replay = long[long.arm.isin([A, B]) & long.seed.isin(frozen_seeds)]
+                seeds, files, XA, XB = ps.paired_matrices(replay, A, B, c)
+                if seeds != frozen_seeds or len(seeds) != int(row["n_seeds"]):
+                    raise ValueError("Archived calibration seed membership differs from its frozen row")
                 r = ps.paired_difference(XA, XB, rng)
                 if pid != "P4":
                     continue
-                row = pf[(pf["pair"] == pid) & (pf["channel"] == c)].iloc[0]
                 for k in cols:
                     worst = max(worst, abs(float(row[k]) - r[k]))
                 worst = max(worst, abs(float(row["frac_cases_A_better"]) - r["frac_files_A_better"]))
@@ -242,7 +285,7 @@ def main():
                "missing under %s" % BAND_CAL)
 
     # ============================================================== (f) prereg file
-    pre_path = os.path.join(HERE, "prereg", "round10_v3.json")
+    pre_path = os.path.join(HERE, "prereg", "round10_v4.json")
     spec_path = os.path.join(HERE, "splits", "round10_vs3_s42.json")
     ok_f = os.path.isfile(pre_path)
     detail = "missing %s" % pre_path
@@ -261,10 +304,14 @@ def main():
             bad.append("split_json_sha256")
         ok_f = (not bad and pre["bands"]["fixed_bands_degC"] == {"T_inner": 0.02, "T_outer": 0.05, "T_avg": 0.08}
                 and pre["seeds"]["S10"] == SEEDS10 and pre["data"]["train_files"] == len(spec["train"])
+                and len(pre["seeds"]["S20"]) == len(set(pre["seeds"]["S20"])) == 20
+                and set(SEEDS10) <= set(pre["seeds"]["S20"])
+                and len(pre["seeds"]["F9_fresh_primes"]) == len(set(pre["seeds"]["F9_fresh_primes"])) == 20
+                and not set(pre["seeds"]["S20"]) & set(pre["seeds"]["F9_fresh_primes"])
                 and pre["data"]["val_files"] == len(spec["val"]) and pre["data"]["tavg_mask_files"] == len(mask)
                 and "draft" not in pre["status"].split(":")[0])
         detail = "hash mismatches %s; status '%s'" % (bad, pre["status"][:40])
-    report("(f) prereg/round10_v3.json: data.hashes match the split json + mask lists; bands / seeds / counts as pre-registered",
+    report("(f) prereg/round10_v4.json: data.hashes match the split json + mask lists; bands / seeds / counts as pre-registered",
            ok_f, detail)
     # the mask digests are the ones run_config.json records under TAVG_MASK=split
     from check_h9 import clean_env, fresh_import
@@ -283,15 +330,15 @@ def main():
 
     # ============================================================== (g) log section
     log = open(os.path.join(HERE, "EXPERIMENT_LOG.md"), encoding="utf-8").read().splitlines()
-    starts = [i for i, l in enumerate(log) if l.startswith("## 2026-10-11") and "[PREREG]" in l]
+    starts = [i for i, l in enumerate(log) if l.startswith("## ") and "[PREREG v4]" in l]
     n_lines, ok_g = -1, False
     if starts:
         i0 = starts[0]
         nxt = [i for i in range(i0 + 1, len(log)) if log[i].startswith("## ")]
         n_lines = (nxt[0] if nxt else len(log)) - i0
         body = "\n".join(log[i0:i0 + n_lines])
-        ok_g = n_lines < 120 and "prereg/round10_v3.json" in body and "0.08" in body and "1.5" in body
-    report("(g) EXPERIMENT_LOG.md has '2026-10-11 ... [PREREG]' (< 120 lines, names the prereg file, bands, veto)",
+        ok_g = n_lines < 120 and "prereg/round10_v4.json" in body and "0.08" in body and "1.5" in body
+    report("(g) EXPERIMENT_LOG.md has '[PREREG v4]' (< 120 lines, names the active prereg file, bands, veto)",
            ok_g, "%d lines" % n_lines)
 
     # ============================================================== (h) CLI

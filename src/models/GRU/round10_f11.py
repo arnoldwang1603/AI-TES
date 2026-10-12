@@ -191,17 +191,17 @@ def finish_f11(manifest, bundles, out, frames):
     out.mkdir(parents=True, exist_ok=True)
     protocol = manifest.get('prereg')
     if not isinstance(protocol, dict):
-        protocol = _read_json(protocol or HERE / 'prereg/round10_v3.json')
+        protocol = _read_json(protocol or HERE / 'prereg/round10_v4.json')
     recipe = manifest.get('frozen_recipe')
     if not isinstance(recipe, dict) or not recipe.get('arm'):
         raise RuntimeError('F11 requires the recipe frozen before the fresh seeds')
     source = recipe['arm']
     direct = source in ('direct', 'B1_mask', 'B2_mask')
     source_arm = 'B1_mask' if direct else 'C17_' + source
-    fresh = set(map(int, protocol['seeds']['F9_fresh_primes']))
-    old = set(map(int, protocol['seeds']['S10']))
-    if len(fresh) != 20 or len(old) != 10 or fresh & old:
-        raise RuntimeError('F11 requires the registered disjoint 20 fresh and 10 existing seeds')
+    from paper_report import registered_report_seeds
+    seed_groups = registered_report_seeds(protocol)
+    fresh = set(seed_groups['F9_fresh_primes'])
+    old = set(seed_groups['S20'])
     by_arm = {}
     for bundle in checked:
         by_arm.setdefault(bundle['arm'], []).append(bundle)
@@ -214,10 +214,10 @@ def finish_f11(manifest, bundles, out, frames):
     existing = members(source_arm, old)
     members('B1_mask', old)
     records = {(str(r['arm']), int(r['seed'])): r for r in manifest.get('runs', [])}
-    groups = [('F9_20', f9), ('recipe_30', existing + f9)]
+    groups = [('F9_20', f9), ('recipe_40', existing + f9)]
     if not direct:
         f10 = members('F10', fresh)
-        groups += [('F10_direct_20', f10), ('direct_30', members('B1_mask', old) + f10)]
+        groups += [('F10_direct_20', f10), ('direct_40', members('B1_mask', old) + f10)]
     for name, group in groups:
         signatures = {_recipe_signature(_recipe_config(bundle, records)) for bundle in group}
         if len(signatures) != 1:
@@ -269,6 +269,7 @@ def finish_f11(manifest, bundles, out, frames):
         raise RuntimeError('frozen challenger recipe was not confirmed before F9')
     aliases = {'F9': 'B2_mask' if direct else source, 'F10': 'B2_mask'}
     for arm in confirmed:
+        members('C17_' + arm, old)
         aliases['C17_' + arm] = arm
     selected, references = [], []
     for alias, original in sorted(aliases.items()):

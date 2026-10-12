@@ -1,60 +1,19 @@
-"""Round 10 compatibility runner and full-pipeline command aliases.
+"""Round 10 v4 compatibility entrypoint and reusable historical helpers.
 
-The ordinary launch and --dry-run inspect/launch the nine registered P1
-arms. --all and --smoke delegate to round10_pipeline; --gate delegates to
-the independent validation-only P0 regression gate. The teammate runbook
-uses round10_pipeline.py for the complete round.
+Bare invocation, --all and --dry-run use round10_pipeline.py's complete
+registered graph. --smoke runs all implementation paths; --only is allowed
+only for smoke diagnostics. --gate runs the validation-only regression gate.
+Production seeds and numerical settings come from prereg/round10_v4.json;
+SEEDS and --tf32 do not override that protocol.
 
-Every Round 10 run is SEALED: SEAL_TEST=1 is forced into every child (the
-runner refuses to start if the shell sets SEAL_TEST to anything else). A
-run never scores the 70 test cases; main.py scores the run's own validation
-files through the same test_model path and writes Val_* keys, and the test
-set is read only by paper_report.py at B6 / F11.
+Examples:
+    python run_round10.py --all --dry-run
+    python run_round10.py --smoke --parallel 3
+    python run_round10.py --all --parallel 3
 
-Defaults pinned into every arm (BASE below; run_round9.BASE supplies every
-other knob): direct model (OTHER_CH_MODE=abs), T_inner anchor l1, loss
-1-6-3, one GRU layer (dropout is a no-op at one layer and the name carries
-dp0.0), W10, MAX_EPOCHS=2000, stratified split round10_vs3_s42.json
-(284 / 20 / 7 dropped, tag vs3), TF32=0 (exact fp32), no mask, no relabel.
-
-P1 arms (seeds S10 = 1,2,3,5,7,11,13,21,42,123):
-    B1_mask     h160x1, TAVG_MASK=split                 (tag mk)
-    B1_orig     h160x1
-    RETRAIN     h160x1, SPLIT_NAME=stratified_v2_s42.json (vs2, 291 files,
-                original labels: the Round 9 champion retrained on this
-                machine; pairs with the server's h160x1 seeds by label)
-    B2_mask     h128x1, TAVG_MASK=split
-    B2_orig     h128x1
-    B2_relabel  h128x1, RELABEL_CSV=tavg_convention_by_file.csv (tag rl)
-    B2_drop9    h128x1, TAVG_MASK=split + TRAIN_EXCLUDE_TYPE=9 (tag xt9;
-                validation keeps the other nine types, 18 files)
-    B7          h128x1, TAVG_MASK=random:20261011 (tag mkr20261011; one draw
-                of 115 training files shared by every seed)
-    B8          h128x1, TAVG_MASK=valonly (tag mkv)
-The primary comparison and the controls are in the prereg file; the
-statistics are computed by paper_stats.py from each run's
-summary_errors_val.csv (or eval_checkpoint --set val).
-
-Usage (from src/models/GRU):
-    python run_round10.py --dry-run                 # env table + resolved run names, nothing launched
-    python run_round10.py                           # all nine arms, 90 runs
-    python run_round10.py --only B1_mask,B1_orig    # a subset by arm name
-    python run_round10.py --parallel 3              # seeds per arm trained concurrently (default 3)
-    python run_round10.py --all --parallel 3         # complete registered pipeline, resume-safe
-    python run_round10.py --gate                    # frozen P0/new defaults on 20 validation files, TF32=legacy
-    python run_round10.py --smoke [--keep-smoke] [--only ...]
-        MAX_EPOCHS=2, one seed per arm, all core and conditional paths;
-        each completed run is verified (sealed meta
-        without any Test_* key, Val_MAE_* present, constants sidecar on
-        disk, run_config provenance, and eval_checkpoint --set val
-        reproduces the run's own Val_MAE per channel); a table is printed
-        and the ep2 directories are deleted unless --keep-smoke.
-    --tf32 0|1|legacy   numerics for every child (default 0; legacy = the
-                        pre-Round-10 torch default, tag tf32c)
-Env: SEEDS overrides the P1-only seed list; PROGRESS_EVERY tunes
-the status cadence; CHAMPION_RUN_DIR points the gate at the Round 9
-champion run directory (default: the packaged round10_resources/round9 run).
-Resumable per seed (done.flag); Ctrl+C safe. Logs -> sweep_logs/r10-<arm>.w<k>.log
+The helper tables below retain historical P1 machinery for regression
+checks. All production launches go through the v4 pipeline, whose run prefix
+is r10v4 and whose journal is runs/_round10_v4_results/pipeline_state.json.
 """
 import glob
 import json
@@ -426,7 +385,7 @@ def regression_gate():
     import round10_validation_gate
     from paper_report import atomic_json
     result = round10_validation_gate.run_gate()
-    atomic_json(os.path.join(HERE, "runs", "_round10_results", "S0", "regression.json"), result)
+    atomic_json(os.path.join(HERE, "runs", "_round10_v4_results", "S0", "regression.json"), result)
     if not result["ok"]:
         raise RuntimeError("Independent validation regression gate failed")
     print("Independent validation gate PASS; no test access")
@@ -515,97 +474,18 @@ def smoke(names, n_workers, keep, gate):
 
 def main():
     os.environ.update(transport_env())
-    # Full-round smoke/gate use the same entrypoints as the teammate's
-    # package. The historical P1-only flags remain for inspecting its table.
-    if "--smoke" in sys.argv[1:] or "--all" in sys.argv[1:]:
-        args = sys.argv[1:]
-        import round10_pipeline
-        round10_pipeline.main()
-        return
     if "--gate" in sys.argv[1:]:
         import round10_validation_gate
-        sys.argv = [sys.argv[0], "--out", os.path.join(HERE, "runs", "_round10_results", "S0", "regression.json")]
+        sys.argv = [sys.argv[0], "--out", os.path.join(HERE, "runs", "_round10_v4_results", "S0", "regression.json")]
         round10_validation_gate.main()
         return
-    try:
-        sys.stdout.reconfigure(line_buffering=True)
-    except (AttributeError, ValueError):
-        pass
-    argv = sys.argv[1:]
-
-    def after(flag):
-        if flag not in argv:
-            return None
-        i = argv.index(flag)
-        if i + 1 >= len(argv) or argv[i + 1].startswith("--"):
-            sys.exit("%s needs a value" % flag)
-        return argv[i + 1]
-
-    refuse_unsealed()
-    tf32 = after("--tf32")
-    if tf32 is not None:
-        if tf32 not in ("0", "1", "legacy"):
-            sys.exit("--tf32 takes 0, 1 or legacy")
-        BASE["TF32"] = tf32
-        for _, e in ARMS:
-            e["TF32"] = tf32
-    only = after("--only")
-    names = {s.strip() for s in only.split(",") if s.strip()} if only else None
-    if names:
-        bad = names - set(ARM_ENV)
-        if bad:
-            sys.exit("unknown arm(s) %s; arms: %s" % (sorted(bad), ", ".join(n for n, _ in ARMS)))
-    par = after("--parallel")
-    n_workers = max(1, int(par)) if par else PARALLEL_DEFAULT
-    if "--gate" in argv and "--smoke" not in argv:
-        ok = regression_gate()
-        sys.exit(0 if ok else 1)
-    if "--smoke" in argv:
-        smoke(names, n_workers, keep="--keep-smoke" in argv, gate="--no-gate" not in argv)
-        return
-
-    seeds = os.environ.get("SEEDS", S10)
-    plan = build_plan(names, seeds)
-    if not plan:
-        sys.exit("nothing to run")
-    print_plan(plan, "ROUND 10 / %s" % STAGE)
-    tot_runs = sum(n for _, _, _, _, n, _ in plan)
-    tot_min = sum(m for _, _, _, _, _, m in plan)
-    if "--dry-run" in argv:
-        print("\nResolving run names (tes_gru.config imported under each arm's knobs):")
-        r9.preflight_arm_configs(plan)
-        for _, name, _, _, _, _ in plan:
-            print("  %-11s -> runs/%s_seed<N>" % (name, r9.RUN_NAMES[name]))
-        print("\nDry run complete -- nothing launched.")
-        return
-    os.makedirs(r9.LOG_DIR, exist_ok=True)
-    preflight_all(plan)
-    if n_workers > 1:
-        free = r9.gpu_free_gb()
-        fit = max(1, int(free // r9.GB_PER_WORKER)) if free > 0 else n_workers
-        if fit < n_workers:
-            print("  GPU has %.1f GB free: %d workers at %s GB each do not fit -> --parallel %d" % (free, n_workers, r9.GB_PER_WORKER, fit))
-            n_workers = fit
-        else:
-            print("  GPU has %.1f GB free: %d workers x %s GB fit" % (free, n_workers, r9.GB_PER_WORKER))
-    res = {}
-    try:
-        launch(plan, n_workers, "r10", res, tot_runs, tot_min)
-    except KeyboardInterrupt:
-        print("\nInterrupted:", {k: "%.2fh" % v[2] for k, v in res.items()})
-        print("Re-running resumes where it left off.")
-        sys.exit(130)
-    print("\n" + "#" * 74 + "\n# ROUND 10 SUMMARY")
-    for nm, (ok, rc, h, missing) in res.items():
-        print("#   %-12s %-12s %.2f h" % (nm, "OK" if ok else "INCOMPLETE", h))
-    bad = [nm for nm, v in res.items() if not v[0]]
-    if bad:
-        print("# %d arm(s) incomplete -- re-run the same command; finished seeds are skipped" % len(bad))
-    print("#" * 74)
-    print("# Statistics: python paper_stats.py --from-runs runs " + " ".join(
-        "--arm %s=%s" % (nm, r9.RUN_NAMES[nm]) for _, nm, _, _, _, _ in plan)
-        + " --seeds %s --pair B1_mask:B1_orig --pair B2_mask:B2_orig --family P1 --out r10_stats" % seeds)
-    print("# Export:     python export_results.py runs Round10_upload --with-plots 2")
+    # All operational entrypoints use the same v4 protocol; bare invocation
+    # no longer launches the historical P1-only S10 experiment.
+    modes = {"--all", "--preflight", "--smoke", "--stage", "--restart-v4"}
+    if not modes.intersection(sys.argv[1:]):
+        sys.argv.insert(1, "--all")
+    import round10_pipeline
+    round10_pipeline.main()
 
 
 if __name__ == "__main__":

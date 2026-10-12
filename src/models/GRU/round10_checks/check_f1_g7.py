@@ -1,4 +1,4 @@
-"""F1 frozen fit pools and G7(c)(d); no training or test data reads."""
+"""Strict F1 fold fitting and G7(c)(d); no training or test data reads."""
 import os,sys
 HERE=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));sys.path.insert(0,HERE);sys.path.insert(0,os.path.dirname(__file__))
 from check_h9 import clean_env,fresh_import
@@ -20,12 +20,15 @@ def prepare(extra):
 cfg,tr,va,te,reference,baseline=prepare({})
 anchor=baseline.tinner_anchor
 for fold in range(1,11):
-    cfg,tr,va,te,sc,m=prepare({'SPLIT_NAME':'loto_vs3_fold%d.json'%fold})
+    cfg,tr,va,te,sc,m=prepare({'SPLIT_NAME':'loto_v4_fold%d.json'%fold})
     from tes_gru.data import split_key
+    from tes_gru.data import load_split_spec
     from tes_gru.runio import run_config_dict
-    check('F1 fold%d same frozen scaler+anchor'%fold,np.array_equal(sc.scale_,reference.scale_) and np.array_equal(sc.min_,reference.min_) and anchor==m.tinner_anchor and len(sc._round10_fit_records)==284 and not te)
-    families={split_key(fn).split('/')[0] for _,fn in va}
-    check('F1 fold%d held-out family absent training'%fold,len(families)==1 and not any(split_key(fn).split('/')[0] in families for _,fn in tr) and run_config_dict()['data']['frozen_train_n']==284)
+    spec=load_split_spec()
+    fit_keys={split_key(fn) for _,fn in sc._round10_fit_records}
+    check('F1 fold%d constants fit only fold training'%fold,fit_keys==set(spec['train']) and not fit_keys & set(spec['val']+spec['holdout']) and not te)
+    family=spec['heldout_family']
+    check('F1 fold%d held-out family absent optimisation and checkpoint validation'%fold,not any(split_key(fn).split('/')[0]==family for _,fn in tr+va) and run_config_dict()['data']['frozen_train_n']==0)
 cfg,tr,va,te,sc,m=prepare({'SYNTHETIC_REST_FILES':'20'})
 rest=[(df,fn) for df,fn in tr if fn.startswith('synthetic_rest/')]
 check('G7(d) train-only20files and original scaler',len(rest)==20 and len(tr)==304 and len(va)==20 and len(sc._round10_fit_records)==284 and np.array_equal(sc.scale_,reference.scale_) and anchor==m.tinner_anchor)

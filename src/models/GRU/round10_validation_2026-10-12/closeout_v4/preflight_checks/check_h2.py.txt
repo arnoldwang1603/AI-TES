@@ -1,0 +1,63 @@
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS  (b) split mode: 115 masked training files (from the json)  115
+PASS  (b) split mode: masked validation files = Case 1/Case 16, Case 9/New 1, Case 9/New 4  ['Case 1 (linear charging)/Case 16.csv', 'Case 9 (non-linear discharging)/Case New 1 (Tejas).csv', 'Case 9 (non-linear discharging)/Case New 4 (Tejas).csv']
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\closeout_audit\isolated_0bxc_i9p\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+PASS  (b) sealed loader excludes all test CSVs  
+PASS  (b) datasets: loss_mask T_avg entry 0 on exactly 115 train / 3 val files, 1 elsewhere  train 115 val 3
+PASS  (b) item tuple: inp_last at 10, loss_mask (3,) at 11 (last)  
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+PASS  (a) all-ones mask reproduces the legacy loss (1e-7): random + real batch  random |d| 0.0e+00  real |d| 0.0e+00 (loss 1.263651)
+PASS  (a) masked denominator counts unmasked (file, step, channel) entries  den 67680, B 16 T 1440 masked files in batch 1
+PASS  (c) masked-only batch: grad of fc.weight[2] / fc.bias[2] exactly 0, rows 0-1 non-zero  |g| rows: 9.52e-05 5.44e-01 0.00e+00
+PASS  (e) validate_epoch scalar == offline masked recomputation (1e-6)  loop 1.43418245 offline 1.43418244 |d| 6.8e-09
+PASS  (e) validate_epoch per-channel == offline over unmasked files (1e-6)  |d| 2.8e-08; T_avg over 17 files, T_inner/T_outer over 20
+PASS  (e) T_avg channel averaged over 17 files, the others over 20  
+PASS  (e) all-ones masks: masked validation arithmetic == legacy (1e-7)  |d| 4.7e-08
+PASS  (f) run_config carries tavg_mask + counts + sha256 of the sorted mask lists  split 115/3 247630c7a152
+PASS  (f) eval_checkpoint.env_from_config passes TAVG_MASK  
+PASS  (f) export_results.family carries the mask tag and the recorded seal  sealed_vs3_mk_baseline
+PASS  (f) run name carries mk  r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs3_mk
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS  (d) random:7 masks exactly 115 training files, none a validation file  115 masked, 45 overlap with the json's mask
+PASS  (d) random:7 validation mask unchanged (= the json's 3 files)  
+PASS  (d) random:7 is deterministic (same draw twice)  
+PASS  (f) run name carries mkr7  r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs3_mkr7
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS  (d) valonly (B8): no training file masked, validation mask = the json's 3 files  
+PASS  (f) run name carries mkv  r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs3_mkv
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS  (f) legacy TAVG_MASK='' -> empty sets, no tag  r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs3
+
+check_h2: 23 items, 0 FAIL

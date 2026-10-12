@@ -35,7 +35,9 @@ def per_seed(records, name, column):
 
 
 def stat_pair(a, b):
-    common = sorted(set(a.index) & set(b.index))
+    if not a.index.is_unique or not b.index.is_unique or not len(a) or set(a.index) != set(b.index):
+        raise RuntimeError("Paired decision requires identical nonempty seed sets")
+    common = sorted(a.index)
     return ps.paired_stats(a.loc[common].values - b.loc[common].values, np.random.default_rng(0))
 
 

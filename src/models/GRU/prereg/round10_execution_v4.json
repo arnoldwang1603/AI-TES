@@ -1,0 +1,43 @@
+{
+  "schema": "round10.execution/2",
+  "source": "round10_arms_full.json",
+  "source_sha256": "b00277e3ead132610cff94b7426bbf5a11f2db58263ec3e70e5e2af398082330",
+  "scope": "v4 closeout, same frozen G7 parameters; every P4 arm always runs20",
+  "G7a": {
+    "weight": 5,
+    "first_steps": 10
+  },
+  "G7b": {
+    "initial_observation": "repeat t0 (no future observations)",
+    "window": 10
+  },
+  "G7c": {
+    "scoring": "discard prefix",
+    "steps": 20
+  },
+  "G7d": {
+    "implementation_choice": "Even spacing and original case length; synthetic training only",
+    "T0_grid": "linspace(50,600,20)",
+    "files": 20,
+    "rows": 1441
+  },
+  "F1": {
+    "seeds": [
+      1,
+      2,
+      3,
+      5,
+      7,
+      11,
+      13,
+      21,
+      42,
+      123
+    ],
+    "source": "v4 fixed ten seeds per family and model",
+    "constant_fit": "fold train only",
+    "checkpoint_selection": "inner validation, excluding heldout family",
+    "report_set": "holdout"
+  },
+  "P4_recipe_interpretation": "Equivalent encoder/NO_TIME/startup adaptations are separately confirmed for deployment; paper recipe still requires BETTER at both capacities and F4; source old G7 explicitly distinguishes deployment from paper recipe"
+}

@@ -1,0 +1,315 @@
+{
+  "name": "Round 10 v4 closeout pre-registration",
+  "date": "2026-10-12",
+  "status": "amended 2026-10-12 by owner request after v3 S1 started and was stopped; frozen before v4 production launch; preserve v3 unchanged",
+  "scope": "four user items (validity 1a-1e; start-up bump G7 merged with encoder ladder; physics reference C11-C13 and Yimin ratio C10; encoder shrink) plus substrate (drop 7, T_avg mask, vs3 split, batch 0/1) plus additions of 2026-10-11 (NO_TIME, E3/G11, re-fit column, linear sysID baseline, F1 LOTO direct); v4: full fixed 20-seed comparison, unconditional G7c/d, strict ten-family direct/frozen-candidate evaluation and complete convection handoff",
+  "data": {
+    "split_name": "round10_vs3_s42",
+    "split_file": "src/models/GRU/splits/round10_vs3_s42.json",
+    "train_files": 284,
+    "val_files": 20,
+    "val_tavg_scored": 17,
+    "val_tavg_masked": [
+      "Case 1 (linear charging)/Case 16.csv",
+      "Case 9 (non-linear discharging)/Case New 1 (Tejas).csv",
+      "Case 9 (non-linear discharging)/Case New 4 (Tejas).csv"
+    ],
+    "dropped": [
+      "Case 10 (Discharging + Constant)/Case 8.csv",
+      "Case 1 (linear charging)/Case new 1.csv",
+      "Case 1 (linear charging)/Case new 2.csv",
+      "Case 1 (linear charging)/Case new 3.csv",
+      "Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv",
+      "Case 1 (linear charging)/Case new 19 (1 second step).csv",
+      "Case 1 (linear charging)/Case new 20.csv"
+    ],
+    "drop_reasons": "Case 8 corrupted T_avg (val file, swapped for Case 10/Case 1); new 1/2/3 thermal diffusivity about 2x; Discharge 13 byte-identical to Discharge 11; new 19 is a copy of new 7's temperatures; new 20 shares new 18's inlet exactly and has no provenance (user decision 2026-10-11: keep new 18, drop new 20)",
+    "tavg_mask_files": 118,
+    "tavg_mask_rule": "T_avg of inner-weighted (117) and borderline (1) files excluded from the loss and from every T_avg statistic (validation scalar, ratio mu/sigma, residual z-score, early-step weights); walls unchanged",
+    "test_set": "Test_70_cases, untouched, read only at B6 and F11 through paper_report.py with an access log",
+    "hashes": {
+      "split_json_sha256": "c52cf3bfc1f313be524394621e4e94bbcf9f591da8345d3de17444b5c52956ac",
+      "tavg_mask_sha256": "47e3dccbe1abf4a1d83ba3d90c0e354e2653da2085f1497c7a0c10dc1d3ce05e",
+      "tavg_mask_train_sha256": "247630c7a15261be19c0f04c59b76be31f394944530f7327e923162da3adf13a",
+      "tavg_mask_val_sha256": "9ccfdadba0c1c7685c773411af5b852351d9f408d63aa5b249764e52dffbc608",
+      "drop_sha256": "1a70f88c03b54910ec34590d387ee04c9642c8326c9ccbb5c185808cd0c07e6c",
+      "n_mask": 118,
+      "n_mask_train": 115,
+      "n_mask_val": 3,
+      "digest": "sha256 hex; list digests = sha256 of the SORTED keys joined by newline (tes_gru.utils.sha256_lines), so tavg_mask_train/val_sha256 equal run_config.json tavg_mask_train/val_sha256 under TAVG_MASK=split"
+    }
+  },
+  "seeds": {
+    "S10": [
+      1,
+      2,
+      3,
+      5,
+      7,
+      11,
+      13,
+      21,
+      42,
+      123
+    ],
+    "F9_fresh_primes": [
+      71,
+      73,
+      79,
+      83,
+      89,
+      97,
+      101,
+      103,
+      107,
+      109,
+      113,
+      127,
+      131,
+      137,
+      139,
+      149,
+      151,
+      157,
+      163,
+      167
+    ],
+    "pairing": "by seed label; dp0.2/dp0.3 twins are identical models at 1 layer and are never both launched",
+    "S20": [
+      1,
+      2,
+      3,
+      5,
+      7,
+      11,
+      13,
+      21,
+      42,
+      123,
+      17,
+      19,
+      23,
+      29,
+      31,
+      37,
+      41,
+      43,
+      47,
+      53
+    ]
+  },
+  "statistics": {
+    "unit": "per-channel MAE in degC over the validation files (T_inner, T_outer on 20; T_avg on 17), full rollout, teacher forcing 0",
+    "paired_test": "seed-paired mean difference; 95% CI from 10,000 bootstrap resamples; sign-flip exact enumeration for n<=16 and 50,000 fixed-RNG Monte Carlo flips for n>16 (unchanged analyze_round9.paired implementation)",
+    "primary_comparisons": "one per batch; the rest descriptive or Holm within the named family",
+    "three_channel_mean": "never the deciding statistic (T_inner barely moves and dilutes T_avg)",
+    "implementation": "paper_stats.py (A5): paired_stats = analyze_round9.paired draw for draw; compare / compare_family apply the bands, vetoes, Holm and verdict classes of this file"
+  },
+  "bands": {
+    "source": "outputs/round10_plan/band_calibration_2026-10-11/band_recommendation.md (Round 9 per-case per-seed test csvs, resampled n=20)",
+    "measured_case_halfwidth_n20_median_degC": {
+      "T_inner": 0.011,
+      "T_outer": 0.038,
+      "T_avg": 0.058,
+      "overall": 0.032
+    },
+    "measured_combined_with_seed_term_degC": {
+      "T_inner": 0.018,
+      "T_outer": 0.047,
+      "T_avg": 0.078,
+      "overall": 0.041
+    },
+    "structural_change_T_avg_halfwidth_degC": 0.17,
+    "fixed_bands_degC": {
+      "T_inner": 0.02,
+      "T_outer": 0.05,
+      "T_avg": 0.08
+    },
+    "per_comparison_rule": "band_c(P) = max(fixed band_c, sqrt((1.96*sd_case/sqrt(n))^2 + seed_bootstrap_halfwidth^2)) computed from that comparison's per-file paired differences; stated in the result table",
+    "wording_inside_band": "indistinguishable at n=20",
+    "validation_set_not_enlarged": "30 files would move the T_avg case term from 0.058 to about 0.047 only; seed term unchanged; combined about 0.07; costs 10 training files"
+  },
+  "vetoes_validation_side": {
+    "V1_blowup": "any seed with mean of the three validation channel MAEs > 1.5 degC",
+    "V2_jumps": "paired JumpSteps (thresholds 2 degC and 1 degC, T_outer+T_avg only, step t0->t1 included) increase across seeds with sign-flip p < 0.05",
+    "computed_by": "eval_checkpoint --set val under SEAL_TEST=1; the FLAGGED/SWITCHED test-id sets are never applied to validation files"
+  },
+  "verdict_classes": {
+    "BETTER": "CI of (T_outer+T_avg)/2 entirely < 0 AND T_avg CI upper <= 0 AND T_outer CI upper <= +band_T_outer AND T_inner CI upper <= +band_T_inner AND no veto",
+    "NO_WORSE": "every channel's CI upper <= +band_c and no veto",
+    "EQUIVALENT": "every channel's CI inside +/- band_c",
+    "otherwise": "WORSE or undecided"
+  },
+  "recipe_change_rule": "a challenger replaces direct only if BETTER vs C1 at h128x1, BETTER vs B1-mask at h160x1 (C17, 20 seeds) and the top-2 order holds on the F4 draws (2 of 3 required because band_T_avg > 0.05); the candidate is fixed before F4; the final recipe is frozen after F4 and before F1/F9; F1 never changes it; no selection after F9 launches",
+  "physics_reference_row_E1": {
+    "parameters": "r_o = 0.127 m, diffusivity scale s = 1.0 (training-file grid optimum; identical to nominal; grid in physics_cache_vs3/E1_training_grid.csv)",
+    "training_284": {
+      "T_outer_RMSE_mean": 0.646,
+      "T_outer_MAE_mean": 0.508,
+      "T_avg_line_RMSE_mean_169_files": 0.403,
+      "T_avg_line_MAE_mean": 0.343
+    },
+    "validation_20": {
+      "T_outer_MAE": 0.543,
+      "T_outer_RMSE": 0.7,
+      "T_avg_line_MAE_17": 0.409,
+      "T_avg_line_RMSE_17": 0.475,
+      "T_inner_ref_MAE": 0.588
+    },
+    "cache": "outputs/round10_plan/physics_cache_vs3/{nominal,calibrated}/ (identical), index.csv, params.json; 0.066 s per file",
+    "test_row": "at F11 only"
+  },
+  "batches": {
+    "P0": {
+      "serves": "substrate, 1a-1d validation side",
+      "content": "hooks A0+H9, H1, H2, H3, H4, A4, A5, A6; 1b calibration (done); A8 cache and E1 row (done); A7 bridge on validation files; G1 port; A9 tables",
+      "gate_to_P1": "prereg committed with the bands above; smoke runs pass; sidecar round-trips to 1e-6 scaled on the 20 val files; all-ones mask reproduces current loss to 1e-7; runner forces SEAL_TEST=1"
+    },
+    "P1": {
+      "serves": "labels; 1a controls; machine bridge",
+      "arms": {
+        "B1": "direct h160x1, mask vs orig, S20 (40)",
+        "retrain": "champion h160x1 abs 1-6-3 vs2 291 files orig labels S10 (10)",
+        "B2": "direct h128x1 mask / orig / relabel / drop-Case9, S20 (80)",
+        "B7": "random mask of the same number of training files, orig labels, h128x1 S20 (20); validation mask = same 3 masked val files",
+        "B8": "orig training labels, only masked val files masked in validation scalar, h128x1 S20 (20)"
+      },
+      "primary": "mask minus orig NO_WORSE on T_outer and on T_avg separately AND hot-discharge side score (Case 9 New 1, New 4: model T_avg vs s-inverse line average, seed-paired, n=2 files, no case-level claim) lower under mask with CI excluding 0",
+      "controls": "B7 must not lower the side score; if B8 explains more than half of (mask minus orig) on the side score, K04 is written 'label content plus stopping rule'",
+      "descriptive": "relabel, drop-Case9; retrain vs Round 9 server meta.json per channel with CI (K17 becomes a cross-machine mean difference)",
+      "then": "B6 test read #1; G1 probe on B1/B2/B7/B8 checkpoints"
+    },
+    "P2": {
+      "serves": "1e",
+      "arms": "ANCHOR_SCALE x INPUT_LOOKAHEAD cells (6,0) (12,0) (1,1) (6,1) (12,1) (100); LOSS_W0_MODE=inv_kc share arm (20); C14 anchor off (20); C15 ANCHOR_LEAD=0 (20); direct h128x1 mask S20",
+      "rule": "two families registered separately; a cell adopted only if overall and T_inner CIs entirely < 0 AND T_outer/T_avg uppers <= +band; share arm same rule in its own family; C14 'anchor unnecessary' only if overall and T_inner CIs inside +/-band; C15 exploratory",
+      "readouts": "per channel; first-20-step T_inner on validation ramp files; T_inner on validation step files; spill-over; realised w0"
+    },
+    "P3": {
+      "serves": "item 3 ratio (Yimin), C16 points, Arnold's direct/subtractive/ratio table",
+      "arms": "C10 R3 all three ratios (primary, replaces the anchor); R1 T_outer only; R2 T_outer+T_avg; R2C Celsius floored at 20 degC (numerical control); C3 anchor_input on T_outer; C2 initial-value additive; each 20 seeds, h128x1 mask",
+      "definition": "Ref(t) = Input_T(t+1) + 273.15 K; ratio on raw degC; mu/sigma on training files only, T_avg from unmasked files; loss on reconstructed temperature; rollout and evaluate mirrored; identity gate 1e-4 degC on 5 files",
+      "rule": "R3 vs C1 by the verdict classes with T_inner included; BETTER -> C17; EQUIVALENT keeps direct; WORSE = second multiplicative counter-example on C16",
+      "re_fit_column": "anchor: mu/sigma; EMA: tau; ratio: mu/sigma; physics residual: k, rho, cp or one diffusivity; direct: none"
+    },
+    "P4": {
+      "serves": "items 2 and 4; NO_TIME",
+      "arms": "G7(a) EARLY_STEP_WEIGHT steps 1-10; G7(b) window encoder; ENC linear 4->H; ENC 4-16-16-H; H0_MODE tanh with 256-256; H0_MODE zero; NO_TIME (feat_cols = [Input_T]); each 20 seeds h128x1 mask; G7(c) burn-in and G7(d) synthetic rest files also always run with 20 seeds; adoption remains conditional on the registered criteria",
+      "encoder_rule": "smallest encoder by parameter count with per-channel CI upper <= +band_c vs C1 on all three channels AND first-5-step spike share (max |err| > 1 degC on T_outer+T_avg per seed x val file) not worse than C1 becomes the reported encoder and parameter count",
+      "G7_rule": "treatment adopted only if the T0 sweep (constant inlet 50:600:10, 60 steps) stays within 0.5 degC on every channel AND first-5-step max error halves vs C1 with CI < 0 AND whole-run per-channel uppers <= +band_c; preference to an encoder change over step weighting",
+      "NO_TIME_rule": "adopted for deployability if every channel inside +/-band_c vs C1 (then confirmed at h160x1); otherwise reported as 'the model is a function of the step index' and the time column stays"
+    },
+    "P5": {
+      "serves": "item 3 physics reference",
+      "arms": "C11 residual on physics for T_outer and T_avg; C12 C11 + physics series as input; C13 physics series as input only; each 20 seeds h128x1 mask; scored on masked labels only",
+      "prereq": "epoch-0 identity: zeroed residual rows give validation MAE equal to the E1 row (T_outer 0.543, T_avg 0.409) to 1e-3 degC",
+      "rule": "C11 vs C1 BETTER AND C11 beats the E1 validation row on T_avg (17) and T_outer (20) with CI < 0 -> C17; tie with C1 and both lose to E1 on T_avg -> written per decision tree 2b; C12 over C11 only if C12 minus C11 CI entirely < 0 on (T_outer+T_avg)/2; C13 exploratory; C11 never reported on the hot-discharge side score",
+      "after": "E3 and G11 inference-only on 1-D-generated property-shifted truth (k x 0.8 / 1.2): direct GRU zero-shot, C11 with the base shifted, pure 1-D nominal; G11 re-fits one diffusivity from the first N minutes (10/30/60); descriptive; C16 curves computed after P5"
+    },
+    "linear_sysID": {
+      "serves": "G11' rows and C16 points; the 'why ML' sentence",
+      "method": "least squares on the 284 training files: T_outer and T_avg_line as fixed-weight sums over 8-16 log-spaced exponential kernels of the inlet history (tau 10-3000 steps), Tikhonov; T_inner = Input_T(t+1) + FIR of inlet differences; global and per-100-degC-start-bin variants; order and regularisation chosen on the 20 validation files; test row at F11 only",
+      "rule": "descriptive; if the binned linear model lands within 0.5 degC of the GRU on T_outer, the paper's ML-value sentence is rewritten"
+    },
+    "P6": {
+      "serves": "C17 confirmations",
+      "arms": "one 20-seed h160x1 arm per adopted family from P2/P3/P5 (0-3), plus up to three adopted P4 encoder/startup/NO_TIME arms; capacity confirmation uses S20, not fresh seeds",
+      "rule": "winner minus B1-mask BETTER at h160x1 else direct stays; encoder/treatment per the P4 rules vs B1-mask"
+    },
+    "P7": {
+      "serves": "F4 redraws; F1 LOTO",
+      "arms": "F4: splits seed43/44 x {direct, confirmed challenger}, h128x1 S10 (20..40); then freeze final recipe. F1: all ten inlet-family holdouts x {direct, frozen recipe if different}, h128x1 S10 (100..200), inner validation from non-heldout families; all fitted constants use fold training only; heldout-family labels excluded from fold fitting, early stopping and checkpoint selection; F1 results cannot alter the previously selected recipe; near-duplicate groups stay together",
+      "rule_F4": "top-2 order unchanged across vs3/43/44; a flip larger than the band on any draw -> three-draw mean decides",
+      "readout_F1": "per-family error as a multiple of the in-distribution error; '8 of 10 families within 2x' as the envelope statement (K15); envelope figure",
+      "f1_splits": [
+        "loto_v4_fold1.json",
+        "loto_v4_fold2.json",
+        "loto_v4_fold3.json",
+        "loto_v4_fold4.json",
+        "loto_v4_fold5.json",
+        "loto_v4_fold6.json",
+        "loto_v4_fold7.json",
+        "loto_v4_fold8.json",
+        "loto_v4_fold9.json",
+        "loto_v4_fold10.json"
+      ],
+      "f1_interpretation": "Report per-model per-family errors and candidate-direct paired differences; each model uses its own S42 in-distribution reference on S10. Ten repetitions are final, not screening.",
+      "f4_pairing": "Split42 reuses the complete main S20 panel; new splits43/44 use S10 each. Both arms have identical seeds within each split. Each split is judged separately; no across-split seed pooling.",
+      "f1_split_sha256": {
+        "loto_v4_fold1.json": "c5e8b91d7b2a3dd47dbc7cad400bfabd0d5a5a8b5189fedb8dc5966b53617e88",
+        "loto_v4_fold2.json": "0ca2e6d86deb6c4b1aa4deb1adee5123deaef0948ce564bad5172556947f390a",
+        "loto_v4_fold3.json": "97fd005d49d25b590f8ddf4ea171612a5efabf294df14b48f47f0e0e418fe995",
+        "loto_v4_fold4.json": "8f33fbad52b384d6775df30480dd7333ad481d4897b77735ede0532ee1dd4238",
+        "loto_v4_fold5.json": "282654c1e731be348a12fe7993548894fd8a63d29741e8d1c8248bc71866bb50",
+        "loto_v4_fold6.json": "920b21bc049de6fb0c78e86df150885f1a1ce455832a089283faa8d6f9e409f1",
+        "loto_v4_fold7.json": "b63dcacfb2b66f249b09e0e8dd253caa399020205dc5c6f411ab2ea1635d310e",
+        "loto_v4_fold8.json": "5c419e0c2e51f530a0ce2a68a6fbd3e05692c3e5048156269340107321c64f26",
+        "loto_v4_fold9.json": "3e4201d4b3894c033ec5c4d75b033a060b2661c4dd9a05209fb82d6e6223b189",
+        "loto_v4_fold10.json": "33cf00fbd406025c3ddffb14fb7f85f1eb8abc94034660109d090160e9fd6dda"
+      },
+      "f1_selection_scope": "Post-selection family-holdout evaluation of the fixed recipe. Main validation/F4 before F1 include examples from the inlet families; this is not nested family-unseen selection of the entire research pipeline.",
+      "f1_physics_scope": "C11/C12 use fixed FE-report nominal r_o=0.127 m, diffusivity scale s=1.0 driven only by inlet history. Material/geometry are not recalibrated within F1; residual mu/sigma/z0 are fit per fold train. Historical full284 E1 grid search selected the same nominal values and remains disclosed; globally calibrated reference branch is not used."
+    },
+    "P8": {
+      "serves": "paper numbers",
+      "arms": "F9 frozen recipe h160x1 on the 20 fresh prime seeds; F10 direct h160x1 on the same seeds only if the recipe is not direct",
+      "rule": "none; no selection after launch"
+    },
+    "P9": {
+      "serves": "test read #2",
+      "content": "paper_report.py once: F9 (+F10); B1 pair with Round 9 h160x1 twins and the 4090 retrain (chain table); E1 physics test row; linear sysID test row; C16 test-side points for confirmed arms; 1d error budget on B1-mask and F9 with test floors (67-file 1-D yardstick, 21-case bracket-clip oracle, per-file residual upper bound); ensembles fresh20 and S20+fresh20 (40); historical machine bridge remains original S10"
+    }
+  },
+  "test_reads": {
+    "B6": "after P1: B1 mask vs orig h160x1 pairs on cases 70/42/66/67 only; values and paired-difference CIs; thresholds case 70 <= 1.5, 42 <= 2.0, 66/67 <= 1.0 degC; the other 66 cases summarised only as the paired-difference CI upper <= +0.03 without printing any arm's level; logged before the call; no decision changes",
+    "F11": "after P8: as in P9",
+    "nothing_else": "SEAL_TEST=1 on every run; resume asserts sealed; probes on synthetic inlets or validation files only"
+  },
+  "deviations_and_disclosures": [
+    "B6 is a pre-registered single look at four test cases after P1",
+    "1b (band calibration) used Round 9 per-case per-seed TEST csvs that had already been read in Round 9; no Round 10 model touched the test set",
+    "the origin/yash (PINN) branch evaluated on the 70-case set about 20 times between 2026-08 and 2026-09, and Round 9's main.py wrote Test_MAE on every run; the seal statement reads 'sealed from Round 10 onward, read at B6 and F11'",
+    "the T_inner anchor last-step off-by-one is fixed in Round 10; Round 9 T_inner numbers are not quoted next to Round 10 ones without this note",
+    "E1 parameter re-selection on training files only returned the nominal parameters (r_o 0.127 m, s 1.0); the earlier selection that touched test files is therefore immaterial but is disclosed",
+    "case 70 is an extrapolation after masking (only 4 Case 8 files with scored T_avg start at or above 500 degC in pure discharge)",
+    "v4 amendment made after owner stopped v3 S1; original registration preserved. Scientific thresholds, losses, epoch limits and datasets unchanged; more seeds do not establish novelty. F1 replaces full-train constants and heldout-family early stopping with strict inner validation and separate heldout scoring."
+  ],
+  "hygiene": [
+    "no arm runs that is not in this file",
+    "no post-hoc validation-set change",
+    "smoke directories deleted before real runs",
+    "each arm has a unique run-name tag",
+    "champion retrain uses vs2/291/orig exactly as Round 9",
+    "TF32 flags pinned and recorded in run_config and sidecar",
+    "No 10-seed screening; all base scientific arms run20, including G7c/d, regardless of outcomes",
+    "Negative and undecided results are delivered, never used to request result-dependent extra seeds",
+    "Old v3 outputs are preserved in their original namespace and excluded from v4 inference"
+  ],
+  "source_draft": "round10_v3.json plus owner-authorized 2026-10-12 closeout amendment",
+  "protocol_id": "round10-v4-closeout-2026-10-12",
+  "amendment": {
+    "parent": "round10_v3.json",
+    "parent_sha256": "4999e24fcde3b13d8912855cc821c1af2ae0f4ac1a0532f11110a43e98f3c5ca",
+    "execution_parent_sha256": "841d8d9b954d1492b28263739223f2e72826c15ba7e9ea67cefa5e3a906a92eb",
+    "reason": "One complete run, no 10-seed screening or later seed top-ups; hand off completed Round10 before convection",
+    "known_prior_execution": "User reported v3 S0 passed, S1 B1_mask seed3 and seed1 completed, then stopped; complete process/run inventory not remotely verified. No B6/F11 access reported. restart-v4 audits server state and refuses prior test windows.",
+    "reuse_policy": "New r10v4 run namespace. Preserve all v3 runs/state; do not reuse v3 checkpoints or inspect their validation scores for selection.",
+    "f1_change": "Strict train/inner-validation/family-holdout separation. All fitted preprocessing from fold train; heldout family never used for checkpoint selection.",
+    "budget": "34 base arms x20 plus RETRAIN x10; F4/F1 x10; C17 x20; F9/F10 x20 fresh. 830..1090 training runs.",
+    "run_counts": {
+      "base": 690,
+      "mandatory": 830,
+      "maximum": 1090,
+      "max_C17_arms": 6
+    }
+  },
+  "seed_policy": {
+    "main": "S20",
+    "RETRAIN": "S10",
+    "C17": "S20",
+    "F4": "S10",
+    "F1": "S10",
+    "F9_F10": "F9_fresh_primes",
+    "pairing": "Every named comparison uses identical registered seeds; no silent intersection or optional topping up."
+  }
+}

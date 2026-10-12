@@ -230,7 +230,7 @@ def evaluate_one(run_dir, which, which_set="val", out_dir=None, physics_override
     with time/T_outer_phys/T_avg_line_phys. The shipping cache contains only
     training/validation files; this boundary never falls back to test caches.
     """
-    assert which_set in ("test", "val"), which_set
+    assert which_set in ("test", "val", "holdout"), which_set
     lease = None
     if which_set == "test":
         from paper_report import assert_test_access
@@ -250,12 +250,14 @@ def evaluate_one(run_dir, which, which_set="val", out_dir=None, physics_override
         os.environ.pop(var, None)
     for k, v in env.items():
         os.environ[k] = v
+    if which_set == "holdout":
+        os.environ["SEAL_TEST"] = "1"
     for m in [m for m in list(sys.modules) if m.startswith("tes_gru")]:
         del sys.modules[m]
     sys.path.insert(0, HERE)
     import torch
     from tes_gru import config
-    from tes_gru.data import load_all_data, ThermalDataset, get_tavg_mask_sets, is_tavg_masked
+    from tes_gru.data import load_all_data, load_holdout_data, ThermalDataset, get_tavg_mask_sets, is_tavg_masked
     from tes_gru.models import build_model
     from tes_gru.rollout import variant_to_encoder
     from tes_gru.evaluate import test_model
@@ -264,7 +266,24 @@ def evaluate_one(run_dir, which, which_set="val", out_dir=None, physics_override
     from tes_gru.config import DEVICE, LATEST_PARAMS, set_seed
     variant = c["variants"][0]
     set_seed(c["seed"])
-    train_dfs, val_dfs, test_dfs, scaler = load_all_data(include_test=which_set == "test")
+    if which_set == "holdout":
+        # A fold's family is scored only after its checkpoint was selected on
+        # inner validation. Do not refit anything while opening the family.
+        sidecar_path = constants_sidecar_path(run_dir, variant)
+        if not c.get("sealed") or not os.path.isfile(sidecar_path):
+            raise RuntimeError("F1 holdout scoring requires a sealed run and fitted constants sidecar")
+        from paper_report import sha256
+        from tes_gru.config import split_file_path
+        with open(sidecar_path, encoding="utf-8") as stream:
+            sidecar = json.load(stream)
+        digest = sha256(split_file_path())
+        if (sidecar.get("split", {}).get("split_sha256") != digest or
+                c.get("data", {}).get("split_sha256") != digest):
+            raise RuntimeError("F1 split changed since the checkpoint constants were fitted")
+        holdout_dfs, holdout_mask = load_holdout_data()
+        train_dfs, val_dfs, test_dfs, scaler = None, [], [], None
+    else:
+        train_dfs, val_dfs, test_dfs, scaler = load_all_data(include_test=which_set == "test")
     if which_set == 'test' and config.PHYS_MODE:
         expected = {fn for _, fn in test_dfs}
         if len(expected) != 70 or set(physics_overrides) != expected:
@@ -279,7 +298,12 @@ def evaluate_one(run_dir, which, which_set="val", out_dir=None, physics_override
     scaler, const_src = load_or_refit_constants(model, variant, run_dir, train_dfs, scaler)
     model.load_state_dict(torch.load(checkpoint_path(run_dir, variant, which), map_location=DEVICE))
     model.eval()
-    if which_set == "val":
+    if which_set == "holdout":
+        sets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn,
+                               tavg_masked=is_tavg_masked(fn, holdout_mask)) for df, fn in holdout_dfs]
+        suffix = "_holdout"
+        dest = out_dir or os.path.join(run_dir, "variants", variant)
+    elif which_set == "val":
         # H3: the run's own validation files; masked ones (H2) are built with
         # tavg_masked so test_model leaves their T_avg metrics NaN.
         _tr_m, va_m = get_tavg_mask_sets()
@@ -293,7 +317,9 @@ def evaluate_one(run_dir, which, which_set="val", out_dir=None, physics_override
                 for df, fn in test_dfs]
         suffix = ""
         dest = out_dir                   # None: nothing of the test scoring is kept
-    scratch = tempfile.mkdtemp(prefix="evalckpt_")
+    if dest:
+        os.makedirs(dest, exist_ok=True)
+    scratch = tempfile.mkdtemp(prefix="evalckpt_", dir=dest)
     # test_model's legacy npz write goes to runs/<config.RUN_NAME>/variants/<v>/
     # -- switch it off and point RUN_NAME at a throwaway name so the original
     # run dir is never touched by accident (it was, before 2026-09-19). The
@@ -343,8 +369,8 @@ def main():
     ap.add_argument("path", help="a run dir, or a runs root when --glob is given")
     ap.add_argument("--glob", default=None)
     ap.add_argument("--which", default="final", choices=["final", "best"])
-    ap.add_argument("--set", dest="which_set", default="val", choices=["test", "val"],
-                    help="score the fixed test set (default) or the run's own validation files (H3)")
+    ap.add_argument("--set", dest="which_set", default="val", choices=["test", "val", "holdout"],
+                    help="score own validation (default), independent F1 holdout, or access-gated Test70")
     ap.add_argument("--out-dir", default=None,
                     help="where summary_errors[_val].csv + predictions[_val].npz go "
                          "(val default: the run's variant dir; test default: nowhere)")

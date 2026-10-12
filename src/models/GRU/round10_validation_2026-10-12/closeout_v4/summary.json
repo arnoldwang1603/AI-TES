@@ -1,0 +1,29 @@
+{
+  "statuses": {
+    "preflight": 0,
+    "dry_run": 0
+  },
+  "smoke_status": "Interrupted on owner request after first B1_mask seed7 two-epoch run completed; full-arm verification deferred to server",
+  "package_files": 756,
+  "training_files": 311,
+  "guard_processes": 62,
+  "forbidden_access_attempts": [],
+  "isolated_root": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\closeout_audit\\isolated_0bxc_i9p",
+  "newline_mode": "LF",
+  "runtime_platform": "win32",
+  "runtime_python": "3.12.12 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 20:05:38) [MSC v.1929 64 bit (AMD64)]",
+  "real_test_source_copied": false,
+  "initial_data_root": "unset",
+  "initial_resource_paths": "empty",
+  "launch_cwd": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\closeout_audit\\isolated_0bxc_i9p",
+  "smoke_full_pass": false,
+  "preflight_check_scripts": 30,
+  "python39_ast_files": 89,
+  "prereg_sha256": "29872c0c27209d8c0858310b1e915d275416ea31f10c2f7a1ee2dab38018ad73",
+  "package_seal_sha256": "e0690b779a5033a26dd90fc3aa11eebccd4349888e861366fcfe13d236ae2b3c",
+  "original_v3_preserved": true,
+  "original_execution_preserved": true,
+  "formal_training_started": false,
+  "actual_test_access": false,
+  "full_arm_smoke_pending_on_server": true
+}

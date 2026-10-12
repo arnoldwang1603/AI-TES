@@ -365,6 +365,7 @@ def load_split_spec(path=None):
         if not isinstance(spec.get(k), list):
             raise RuntimeError("split file {}: key {!r} missing or not a list".format(path, k))
     val, train = set(spec["val"]), set(spec["train"])
+    holdout = set(spec.get("holdout") or [])
     drop = set(spec.get("drop") or [])
     mask = set(spec.get("tavg_mask") or [])
     if val & train:
@@ -376,10 +377,49 @@ def load_split_spec(path=None):
     if drop & train:
         raise RuntimeError("split file {}: drop list names {} training file(s): {} -- refusing".format(
             path, len(drop & train), sorted(drop & train)[:3]))
-    if mask - (val | train):
+    if holdout:
+        if holdout & (train | val | drop):
+            raise RuntimeError("F1 holdout overlaps training, inner validation or drop")
+        if (spec.get("constants_fit_scope") != "fold_train_only"
+                or spec.get("checkpoint_selection_scope") != "inner_validation_only"
+                or spec.get("frozen_train") or spec.get("frozen_constants_split")):
+            raise RuntimeError("F1 holdout requires fold-train statistics and inner-validation checkpointing")
+        family = spec.get("heldout_family")
+        if not family or any(key.startswith(family + "/") for key in train | val):
+            raise RuntimeError("F1 held-out family leaked into training or inner validation")
+        for name in ("train", "val", "holdout"):
+            if not spec.get(name) or len(spec[name]) != len(set(spec[name])):
+                raise RuntimeError("F1 split pool is empty or has duplicate keys: " + name)
+            if any(".." in key.replace("\\", "/").split("/") or
+                   key.startswith(("/", "\\")) or ":" in key or
+                   "test_70_cases" in key.lower() for key in spec[name]):
+                raise RuntimeError("F1 pools must contain training-source relative keys only")
+    if mask - (val | train | holdout):
         raise RuntimeError("split file {}: tavg_mask names {} file(s) in neither list, e.g. {}".format(
-            path, len(mask - (val | train)), sorted(mask - (val | train))[:3]))
+            path, len(mask - (val | train | holdout)), sorted(mask - (val | train | holdout))[:3]))
     return spec
+
+
+def load_holdout_data():
+    """Explicit post-training F1 scoring pool; never read the sealed Test70.
+
+    This entry point does not fit a scaler or constants and is never called
+    by load_all_data/train_model. The evaluator must restore the sidecar.
+    """
+    spec = load_split_spec()
+    if not spec.get("holdout"):
+        raise RuntimeError("run has no independently held-out F1 scoring pool")
+    if CONSTANTS_FROM:
+        raise RuntimeError("F1 holdout prohibits externally fitted constants")
+    root = _resolve_new_data_root(BASE_DIR)
+    if root is None:
+        raise RuntimeError("F1 holdout requires the registered training data root")
+    train_dir = os.path.join(root, spec["train_subdir"])
+    if not os.path.isdir(train_dir):
+        train_dir = os.path.join(root, "training_data", spec["train_subdir"])
+    frames = [(pd.read_csv(os.path.join(train_dir, *key.split("/"))),
+               spec["train_subdir"] + "/" + key) for key in spec["holdout"]]
+    return frames, set(spec["holdout"]) & set(spec.get("tavg_mask") or [])
 
 
 def get_tavg_mask_sets(split=None):
@@ -712,6 +752,14 @@ def load_all_data(include_test=None):
                         len(not_on_disk), not_on_disk[:2]))
                 dropped = sorted(p for p in raw_train_paths if rel(p) in drop_rel)
                 raw_train_paths = [p for p in raw_train_paths if rel(p) not in drop_rel]
+            if spec.get("holdout"):
+                if CONSTANTS_FROM:
+                    raise RuntimeError("F1 v4 prohibits frozen or external constants")
+                holdout_rel = set(spec["holdout"])
+                if holdout_rel - {rel(p) for p in raw_train_paths}:
+                    raise RuntimeError("F1 holdout names missing training-source files")
+                # Remove before by_type, loading, scaler fit or any constants.
+                raw_train_paths = [p for p in raw_train_paths if rel(p) not in holdout_rel]
         elif SPLIT_NAME:
             raise RuntimeError("SPLIT_NAME={!r}: {} does not exist".format(SPLIT_NAME, split_path))
         # Leave-one-type-out: drop the held-out type from train + val before

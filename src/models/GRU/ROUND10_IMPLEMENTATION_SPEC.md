@@ -1,8 +1,8 @@
 # Round 10 implementation spec (hand-off document)
 
-**2026-10-12 package status:** section 5.3 is implemented. Use `ROUND10_RUNBOOK.md` for teammate execution and `ROUND10_VALIDATION_2026-10-12.md` for the verification record. Earlier P0 descriptions below are historical; their former test-scored regression gate is superseded by the independent **validation-only** frozen-P0 gate. Real Round 10 training and B6/F11 test scoring have not been launched during packaging.
+**2026-10-12 active protocol: v4; local preflight and dry-run passed, full-arm smoke pending on the lab server.** See `prereg/round10_v4.json`, `prereg/ROUND10_V4_AMENDMENT.md` and section 5 below. `round10_v3.json` and the earlier P0/v3 implementation notes remain historical records. The owner reported stopping a v3 server run in early S1; migration must independently reject any existing real test access. Use `ROUND10_RUNBOOK.md` for teammate execution. Previous validation and 69-arm smoke evidence describe v3 and do not certify v4.
 
-Written 2026-10-11 on top of commit c2153d6 ("round9.1"). This file is the single source of truth for the Round 10 code changes so that any person or model can continue from a consistent state. Keep the **Status** table at the bottom up to date after every hook.
+Written 2026-10-11 on top of commit c2153d6 ("round9.1"), with the v4 amendment added 2026-10-12. This file describes implementation; the active preregistration defines the scientific rules. Historical notes preserve what was implemented at each point.
 
 Plan and pre-registration live in the wiki worktree:
 `calit2-thermal-wiki/.claude/worktrees/pensive-cohen-d3486a/outputs/round10_plan/` — `round10_scope_v3_2026-10-11.md` (plan), `prereg_round10_v3.draft.json` (rules), `split_vs3/round10_vs3_s42.draft.json` (split), `band_calibration_2026-10-11/` (equivalence bands), `physics_cache_vs3/` (1-D physics cache and E1 row).
@@ -14,7 +14,7 @@ Plan and pre-registration live in the wiki worktree:
 - Behaviour preservation: every new knob defaults to the legacy behaviour so an unchanged environment reproduces Round 9 numbers bit-for-bit. The only deliberate numeric change is the H9 anchor off-by-one fix.
 - Knob plumbing (all five places, every knob): `config.py` env read -> `RUN_NAME_BASE` tag (config.py ~877-937) -> `run_config.json` snapshot (runio.py ~49-117) -> `eval_checkpoint.env_from_config` / `KEYS` (eval_checkpoint.py ~40-72) -> `export_results.leaf_name/family` (export_results.py ~37-144).
 - Checks: one script per hook in `round10_checks/check_<hook>.py`, runnable from `src/models/GRU` with `python round10_checks/check_<hook>.py`, no training, prints PASS/FAIL per item, non-zero exit on FAIL. Champion checkpoint for regression checks: `calit2-thermal-wiki/round9/GRU-runs-round9/runs/2026-08-06_forward_direct_W10_Tin-anchor_l1_w1-6-3_oth-abs_h160x1dp0.2_ep2000_vs2_seed7/` (checkpoints/best_gru_variant_forward_direct.pth, run_config.json, variants/forward_direct/{meta.json,predictions.npz,summary_errors.csv}).
-- Smoke: `MAX_EPOCHS=2`, seeds 7 and 21, h128x1, tag `ep2`; delete the `ep2` directories afterwards.
+- Current smoke: `MAX_EPOCHS=2`, one seed per planned path, prefix `r10v4smoke_`; validate checkpoint round-trips and remove only this smoke's training directories, retaining its check records.
 
 ## 1. Pre-launch hooks (P0), in implementation order
 
@@ -87,14 +87,14 @@ Check `check_a5.py`: synthetic long table with known effect -> CI covers it; zer
 - **NO_TIME** `FEAT_COLS` knob to drop the Time column (`INPUT_DIMS` 1); tag `nt`.
 - **H5** `OTHER_CH_MODE=ratio_input`, `RATIO_CHANNELS=R1|R2|R3`, `RATIO_REF=kelvin|celsius20`: mu/sigma of `T(t+1)/Ref(t+1)` on raw C over training files (T_avg via the H2 mask), `Ref = Input_T(t+1)+273.15` or `max(Input_T(t+1),20)`; reconstruct in raw space then re-scale per channel; loss on reconstructed scaled temperature; mirror in evaluate; R3 bypasses the T_inner anchor (rollout.py ~305-316, evaluate.py ~93-100); exclusivity asserts vs `TOUTER_MODE`/`OTHER_CH_MODE`/`MODEL_SPLIT`; sigma floor as train.py ~276; tag `rt<R><k|c>`; identity check 1e-4 C on 5 files through both reconstruction sites.
 - **H6** `PHYS_MODE=residual|input|input_residual` + physics cache loader: cache already built in the wiki (`physics_cache_vs3/nominal/<folder>__<file>.npz`, keys time, T_inner_phys, T_outer_phys, T_avg_line_phys); env `PHYSICS_CACHE_DIR` pointing at it (do not write under `data/`); dataset loads `T_outer_phys`, `T_avg_line_phys` scaled with the target channel's scaler; residual heads 1,2 z-scored on training (T_avg unmasked only); physics input columns inserted BEFORE `CASE_FLAG` (data.py ~178-195, evaluate.py ~196), `INPUT_DIMS` patched (config.py ~583); zero-init `fc.weight[1:3]` and bias; epoch-0 validation MAE must equal the E1 row (T_outer 0.543, T_avg 0.409 on 17 files) to 1e-3 C.
-- **F1 LOTO** fold jsons (10) with constants frozen to the full-train fit; **F4** split files seeds 43/44; **C16** curve script; **F11** `paper_report.py` (single test-scoring path with `prereg/test_set_access.log`).
+- **F1 LOTO (v4)**: ten `loto_v4_foldN.json` files separate fold training, internal validation and held-out family. Fit scaler/model constants on fold training; use internal validation for stopping; score the held-out family only after training with `eval_checkpoint --set holdout`, using training-source CSVs. **F4** uses split seeds 43/44; **C16** provides comparison curves; **F11** remains the sole final test-report capability path.
 
 ## 3. Conflicting knobs (assert exclusivity)
 `TOUTER_MODE=anchor_input|anchor_ema` vs ratio R2/R3 and C11 on T_outer; `OTHER_CH_MODE=pos_head|anchor*|persistence` vs ratio/physics; `MODEL_SPLIT` must be `shared` under new modes; `TINNER_MODE=anchor` vs R3; `CASE_FLAG_INPUT` stays last; drop list applied before `EXCLUDE_BOTH_PHASE` / `TRAIN_EXCLUDE_TYPE`; `PHYSICS_BOUND_WEIGHT` stays 0 under z-heads; `preflight_stale_dirs` must know every new tag.
 
 ## 3b. Run-name prefix (2026-10-12)
 
-The fixed leading token `2026-08-06` was replaced by `r10` (env `RUN_PREFIX`, read by both `tes_gru.config` and `run_round9.RUN_PREFIX`); `forward_direct` names no longer carry `W<window>`. Round 9 directories keep their old names. Example: `r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h160x1dp0.0_ep2000_vs3_mk_seed7`.
+The active formal prefix is `r10v4` (env `RUN_PREFIX`, read by `tes_gru.config` and the runner); smoke uses `r10v4smoke_<arm>`. `forward_direct` names omit `W<window>`. Earlier Round 9 and `r10` directories retain their names and contents. A v4 run never automatically imports v3 results.
 
 ## 4. Status
 
@@ -111,10 +111,10 @@ The fixed leading token `2026-08-06` was replaced by `r10` (env `RUN_PREFIX`, re
 | H8 | done 2026-10-12 | inverse-kc realised weight, name/config/sidecar/evaluation/export plumbing | check_h8.py; old seven checks rerun |
 | H7 / NO_TIME / H10 | done 2026-10-12 | encoder widths and h0 modes; one-feature input; weighted early steps, per-channel spikes and T0 sweep | check_h7.py / check_no_time.py / check_h10.py; old seven after each |
 | H5 / H6 | done 2026-10-12 | ratio reconstruction mirrored in training/scoring; train-only masked constants; physical input/residual modes, zero-residual E1 equality | check_h5.py / check_h6.py; old seven after each |
-| F4 / F1 | done 2026-10-12 | s43/s44 redraws; all ten family folds; near-duplicate connected components on one side; immutable full-284 scaler/anchor constants | check_f4_f1.py / check_f1_all_masked.py / check_f1_g7.py |
+| F4 / F1 | v4 local checks/dry-run passed; server smoke pending | s43/s44 redraws; v4 ten-family train/internal-val/holdout folds; near-duplicate components on one side; fold-training scaler/model constants; direct/frozen-recipe pairing at h128 | check_f4_f1.py / F1 checks / check_pipeline.py |
 | Analyses | done 2026-10-12 | C16, E3/G11, linear sysID, error budget/floors/oracle, G1, A7, F1 envelope; portable physics and archived R9 resources | check_analyses.py; actual checkpoint CLI checks |
 | B6 / F11 | done 2026-10-12 | sole test capability gate, write-ahead ledger, frozen-input fingerprint and interrupted resume; pure-memory F11 analysis adapters | check_paper_report.py / check_f11.py / check_f11_physics_boundary.py |
-| Pipeline / teammate docs | done 2026-10-12 | S0–S9, prereg-driven decisions, h160 confirmations, recipe freeze, persistent resume; 69-arm smoke and all-name dry run; group runbook | check_decisions.py / check_pipeline.py / ROUND10_VALIDATION_2026-10-12.md |
+| Pipeline / teammate docs | v4 local checks/dry-run passed; server smoke pending | S0–S9 including S7b, 34 fixed scientific arms × 20, h160 confirmations, pre-F1 recipe freeze, migration audit and isolated resume; updated teammate runbook | check_decisions.py / check_pipeline.py; v4 dry-run passed; server full-arm smoke pending |
 
 Implementation notes (H9 / H1 / H2, 2026-10-11):
 - **TF32 reality check.** Torch's framework default is `matmul.allow_tf32=False, cudnn.allow_tf32=True`, not "both on". Probed on the 4090 against the champion's `predictions.npz` (test cases 56, 40, 10): that default reproduces every archived step **bit-for-bit**; `TF32=1` (both on) differs by 3e-2..6e-2 C per step and `TF32=0` (both off) by 1e-2..2e-2 C. The knob therefore takes `0` (default, exact fp32, new runs) | `1` | `legacy` (tag `tf32c`, the pre-Round-10 numerics). `eval_checkpoint` sets `TF32=legacy` for any run_config without a `tf32` key. **H3 (a) and the A6 regression gate must run under `TF32=legacy`, not `TF32=1`.**
@@ -140,38 +140,60 @@ Implementation notes (A5 / A6, 2026-10-11):
 - **Future tags in STALE_TAGS** assume these run_config keys: rt -> `other_ch_mode == "ratio_input"` + `ratio_channels`; ph -> `phys_mode`; enc -> `enc_widths`; w0ikc -> `loss_w0_mode == "inv_kc"`; h0t / h0z -> `h0_mode`. H5-H8 must write those keys (or edit STALE_TAGS) or their dirs read as stale. B2_drop9 (TRAIN_EXCLUDE_TYPE=9) validates on 18 files (T_avg on 17); the runner's child check still asserts 284/20/70 under BASE only.
 
 
-## 5. One-shot pipeline (added 2026-10-12; owner's requirement)
+## 5. Active v4 one-pass execution
 
-The whole round must be runnable by a teammate with one command and no human decisions in between. Implement after sections 1-2 are complete.
+### 5.1 Protocol, migration and identity
 
-### 5.1 Entry points
-- `python round10_pipeline.py --preflight`: runs every `round10_checks/check_*.py`, the regression gate (`TF32=legacy`), verifies the sha256 of `prereg/round10_v3.json`, `splits/round10_vs3_s42.json`, the mask list and the physics cache index; checks Python version, GPU, free disk; no training.
-- `python round10_pipeline.py --all --parallel 3`: runs stages S0-S9 below; resume-safe (reuses `done.flag` per run and a per-stage marker in `runs/_round10_results/pipeline_state.json`); any failure stops with the reason; rerunning the same command continues.
-- `--stage S2` / `--until S5` / `--dry-run` (prints every run name and the total count) / `--smoke` (one seed, 2 epochs, every arm of every stage).
+`protocol()` reads `prereg/round10_v4.json`. The frozen v3 JSON and its historical experiment-log entry remain intact; `prereg/ROUND10_V4_AMENDMENT.md` records why v4 was introduced after the owner stopped early v3 training.
 
-### 5.2 Stages and dependencies
-S0 preflight -> S1 P1 (B1_mask, B1_orig, RETRAIN, B2_mask, B2_orig, B2_relabel, B2_drop9, B7, B8) -> S1b (paper_stats P1 table; `paper_report.py --b6`; G1 probe on B1/B2/B7/B8 checkpoints; A7 bridge on the 12 common validation files) -> S2 P2 (anchor grid 5 cells, inv_kc share arm, C14, C15) -> S3 P3 (R3, R1, R2, R2C, C3, C2) -> S4 P4 (G7a, G7b, ENC linear, ENC 16-16, H0 tanh, H0 zero, NO_TIME; G7c/G7d only if no core arm passes the prereg P4 rule) -> S5 P5 (C11, C12, C13) -> S5b analyses (C16 curves; E3/G11 inference-only; linear sysID rows; validation-side error budget and floors) -> S6 automatic verdicts per family from `prereg/round10_v3.json` via `paper_stats`; C17 confirmation (10 seeds h160x1) only for arms classed BETTER; adopted encoder/G7 treatment confirmed likewise -> S7 F4 redraws (direct + best challenger if any) and F1 LOTO (direct, 5 seeds x 10 families, constants frozen to the full-train fit) -> S8 recipe freeze (direct unless a challenger passed C17 and 2 of 3 F4 draws), F9 (20 prime seeds), F10 if recipe != direct -> S9 `paper_report.py --f11` (test read #2; chain table; E1 and linear test rows; C16 test-side points; error budget with test floors; ensembles).
-All stage outputs (csv + md) go to `runs/_round10_results/<stage>/`; every automatic verdict is appended to `runs/_round10_results/decision_log.md` with the rule, numbers and band used. Rules are READ from the prereg json, never duplicated in code.
+- `--restart-v4` audits old state and real test-access records, refuses any existing access window (including an interrupted/reserved window), and writes `runs/_round10_v4_results/migration_v3_audit.json` idempotently. It does not train, score, delete, rename or reuse old runs.
+- Formal runs use `RUN_PREFIX=r10v4`; results and journal use `runs/_round10_v4_results/`. Smoke uses `r10v4smoke_<arm>` and retains records in `runs/_round10_v4_smoke/`.
+- Resume verifies protocol/package, dataset and run identities. Completed v3 runs are never silently imported into v4. Repeating a completed migration is safe; it is not a reset command.
+- Test reads remain B6 and F11 through the report capability and journal. Migration and preflight do not inspect test CSV contents. No test-result-dependent recipe change is permitted.
 
-### 5.3 Prerequisites to build first (in order)
-1. `paper_report.py` (modes `--b6`, `--f11`; the only script allowed to score the test set; appends to `prereg/test_set_access.log`; `--b6` prints only cases 70/42/66/67 for B1 mask vs orig plus the 66-case paired-difference CI upper bound, never an arm's level).
-2. Hooks H8, H7, NO_TIME, H10, H5, H6 (section 2), each with a check script; rerun check_h9..check_a5 after each.
-3. Split files: F4 seeds 43/44 (`splits/round10_vs3_s43.json`, `_s44.json`, same drop and mask rules, Case 9 validation files masked in each draw) and F1 fold jsons (`splits/loto_vs3_fold<k>.json`, k = 1..10, holding out one inlet family; near-duplicates on one side; constants frozen = scaler and anchor fitted on the full 284-file training set and written to the sidecar before training).
-4. Analysis scripts: `c16_curves.py`, `e3_g11_shift.py` (recompute the physics cache with k x 0.8 / 1.2 under `PHYSICS_CACHE_DIR`, score direct GRU, C11 with shifted base, pure 1-D; G11 re-fit of one diffusivity from the first N minutes), `linear_sysid.py` (least-squares FIR/exponential-kernel rows, global and per-100-degC-start bin, order chosen on validation), `error_budget.py` (validation side now, test side at F11), G1 probe port, A7 bridge.
-5. `round10_pipeline.py` itself; extend `run_round10.py` arms for P2-P5/F1/F4/F9 or let the pipeline own the arm table (one table, not two).
-6. Smoke every arm (1 seed, 2 epochs) and `--all --dry-run`.
-7. Rewrite `ROUND10_RUNBOOK.md` for the teammate: install, data paths, the three commands, how to monitor, what to hand back (`runs/` incl. checkpoints, sidecars, predictions, and `_round10_results/`).
+### 5.2 Entrypoints and stage order
 
-Exact implemented count: 420 unconditional runs (P1 **90**, P2 80, P3 60, P4 core 70, P5 30, F1 50, F4 direct 20, F9 20), up to 540 on an actual conditional branch (G7 20, at most six C17 confirmations 60, challenger F4 20, F10 20). The union of all possible conditional names is larger than any executable branch. Earlier P1=170 and the wall-time estimate were arithmetic/planning errors, not a change to the registered arms or seed lists. Run `--all --dry-run` for exact names. Python 3.10/3.11 needs one server `--smoke` before `--all`.
+```bash
+python round10_pipeline.py --restart-v4
+python round10_pipeline.py --preflight
+python round10_pipeline.py --all --dry-run
+python round10_pipeline.py --smoke --parallel 3
+python round10_pipeline.py --all --parallel 3
+```
 
-### 5.4 Final implementation clarifications (2026-10-12)
+The last command is also the resume command. A stage failure stops dependent work and preserves its evidence; no human screening decision is required between successful stages.
 
-- All decision thresholds, bootstrap sizes, bands and registered populations are read from `prereg/round10_v3.json`, whose original bytes remain frozen. `round10_execution_protocol.json` records already-listed G7/F1 parameters missing from that file and their earlier protocol source hash.
-- P2's explicit overall and T_inner negative-difference readout is used; grid and inverse-kc are separate Holm families, followed by one P2 confirmation winner. Only R3 is a ratio recipe candidate. C12 requires C11 to pass and then improves on C11; C13 stays descriptive.
-- Equivalent encoder/NO_TIME and accepted startup adaptations can receive separate h160 deployment confirmation. A changed paper recipe still requires BETTER at both capacities and two of three F4 draws. The large-draw flip condition also checks the signed three-draw mean.
-- F1 family 9 has no scored T_avg files. It retains null/NaN T_avg metrics and plots the two scored walls; it never fills the missing score with zero. Full-284 constants remain identical across all folds.
-- B6 shows only the four registered T_avg case levels/differences and the remaining-66 paired CI upper bound. F11's ID66 population instead excludes 54–57. Ensemble 20/30 uses one frozen recipe, with matching S10 checkpoints; it never mixes recipes.
-- Physical F11 arms receive complete physical trajectories computed in the F11 lease from its already-loaded 70 frames. No test cache is bundled, and ordinary validation inference requires no test capability.
-- The first B6 lease seals all 70 test-source names and byte hashes. B6 recovery and F11 verify the same content before scoring and before completing the window; nested extra CSVs are refused. No test-source hashing occurs in preflight/dry-run. Real F11 manifests cannot override the frozen physics parameters or convention table.
-- The portable regression gate uses unchanged archived P0 code and the same checkpoint on all 20 validation files, not test CSVs or a cached-meta comparison. Packaging observed zero prediction and weighted-loss difference under TF32=legacy.
-- PI material-change column: `round10_refit.py` reads `batches.P3.re_fit_column` without duplicating its parameter descriptions. P1/all-stage arm-level CSV/Markdown and C16 training/validation rows receive per-channel annotations from each actual run config; F11 C16 points inherit the frozen training-side columns. Physics-input maintenance is separate, so C13 is not described as an entire model requiring no update. The five-form guide retains EMA as a protocol explanation without adding an EMA arm or any measured transfer result. `check_material_refit.py` checks actual export files and unchanged numerical results.
+S0 preflight -> S1 P1 -> S1b P1 statistics/B6/G1/A7 -> S2 P2 -> S3 P3 -> S4 all P4 arms -> S5 P5 -> S5b analyses -> S6 registered selection and C17 -> S7 F4 -> S7b freeze final recipe, then F1 -> S8 F9/F10 from that frozen recipe -> S9 F11.
+
+F1 must use the result of F4, not merely the best S6 candidate. `full_arm_table(..., frozen_candidate="direct")` explicitly plans a return to direct; `None` retains the supplied candidate for planning. F1 cannot alter the recipe. S8 reads the prior frozen decision rather than repeating selection.
+
+### 5.3 Fixed scientific work and bounded follow-ups
+
+| Stage | Arm allocation | Runs |
+|---|---|---:|
+| S1 | Eight scientific arms × 20; RETRAIN × 10 | 170 |
+| S2 | Five scale/lookahead cells, inv_kc, C14, C15 × 20 | 160 |
+| S3 | R3, R1, R2, R2C, C3, C2 × 20 | 120 |
+| S4 | G7a/b/c/d, ENC_linear, ENC_16_16, H0_tanh, H0_zero, NO_TIME × 20 | 180 |
+| S5 | C11, C12, C13 × 20 | 60 |
+| S6 | At most six eligible C17 confirmations, h160 × 20 | 0–120 |
+| S7 | Two new F4 splits, direct plus optional challenger × 10 | 20–40 |
+| S7b | Ten F1 families, direct plus distinct final recipe × 10, h128 | 100–200 |
+| S8 | F9 plus optional F10, paired fresh 20 seeds | 20–40 |
+| Total | 34 fixed base scientific arms × 20, bridge, follow-ups | 830–1090 |
+
+G7c/G7d have no training eligibility condition in v4. Their existing adoption requirements still apply. Every base result is retained, including negative and inconclusive comparisons; C17 does not replace the base comparison table. The full table reports the actual reconstructed output form per channel: B2_mask/C1 retains the T_inner anchor, C14 is the all-absolute control, and C3 adds only the T_outer inlet anchor.
+
+The seed populations are read from v4 JSON, not inferred from the old `S10` label. F4 reuses the complete S20 main-experiment comparison on split seed 42; new split seeds 43 and 44 each use S10. Direct and challenger have matched training seeds within each split and receive separate paired verdicts; the three splits are not pooled. Reusing split 42 adds no new training runs. F1 uses its registered ten-seed population; F9/F10 share the disjoint fresh set. The maximum counts an executable branch; the union of candidate names printed by dry-run can be larger.
+
+### 5.4 F1 isolation and inference
+
+Use `splits/loto_v4_foldN.json`, N=1..10. Each fold contains disjoint training, internal-validation and held-out-family populations, with near-duplicate connected components kept together. The held-out family does not drive early stopping or scheduler changes.
+
+`FROZEN_CONSTANTS` is empty for F1; fit scaler and all data-dependent model constants from that fold's training partition, respecting its T_avg mask. C11/C12 use fixed nominal physics; only residual normalization is refit per fold. Historical full-284 E1 selection remains disclosed. This is post-selection holdout evaluation of a recipe chosen by earlier main validation/F4, not nested family-unseen selection of the complete research pipeline. The legacy full-284 constant sidecar is not a source for v4 F1.
+
+After training, `eval_checkpoint --set holdout` evaluates the held-out family from the training-source root, without reading Test_70_cases. Direct arms are `F1_1` through `F1_10`; challenger arms are `F1_<candidate>_1` through `_10`. Both use h128. If the frozen recipe is direct, do not train duplicate arms. Missing T_avg scores remain NaN and are excluded with the scored-file counts disclosed.
+
+### 5.5 Required verification before release
+
+Status: local complete preflight and `--all --dry-run` passed; 830–1090 executable runs. All 30 independent check scripts and P0 regression passed. Protocol counts/pairing, unconditional G7, pre-F1 freeze, migration and immutable resume are covered. At the owner's request, full-arm smoke is deferred to the lab server and must report 96/96 before production. The interrupted first local two-epoch run and v3's 69/69 do not certify v4. See `ROUND10_V4_VALIDATION_2026-10-12.md` for evidence and limits.

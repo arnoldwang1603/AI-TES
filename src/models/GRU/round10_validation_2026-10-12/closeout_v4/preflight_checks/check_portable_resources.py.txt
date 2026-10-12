@@ -1,0 +1,9 @@
+PASS standalone A5 defaults to packaged calibration reports
+PASS standalone A4 defaults to packaged physics cache
+PASS standalone H9 defaults to a packaged champion
+PASS P1 runner defaults to the same packaged champion
+PASS both historical calibration fixtures retain their source identity
+PASS calibration fixtures and provenance are sealed package inputs
+PASS pipeline ignores an inherited external calibration override
+PASS pipeline pins existing packaged physics and R9 defaults
+check_portable_resources: 8/8 PASS

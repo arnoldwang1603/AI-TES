@@ -1,0 +1,6 @@
+PASS child command, training env and manifest DATA_ROOT=None
+PASS child command, training env and manifest DATA_ROOT=''
+PASS child command, training env and manifest DATA_ROOT='C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\closeout_audit\\isolated_0bxc_i9p\\AI-TES\\src\\models\\GRU\\scratch\\root_transport_j0usx6v7\\custom data'
+PASS child command, training env and manifest DATA_ROOT='relative-data'
+PASS explicit override and empty override resolve deterministically
+check_data_root: 5/5 PASS

@@ -4,6 +4,45 @@ Newest entries on top. **New to the project? Read "Start here" below first.**
 It explains what the model does and what the words in the entries mean. The
 entries themselves are a lab record, written for whoever runs the next round.
 
+## 2026-10-12 — Round 10 v4 one-pass amendment `[PREREG v4]` `[VERIFICATION PENDING]`
+
+The owner stopped v3 in early S1 and requested completion of all scientific
+comparisons in one execution, without a ten-seed screening round. v3 remains
+archived in `prereg/round10_v3.json`; v4 is a disclosed amendment after v3
+training began, recorded in `prereg/round10_v4.json` and
+`prereg/ROUND10_V4_AMENDMENT.md`. The old runs and results remain intact.
+The server migration audit must confirm no real B6/F11 access has occurred;
+the owner's posted progress alone is not that audit.
+
+The fixed equivalence bands remain T_inner 0.02, T_outer 0.05 and T_avg
+0.08 degC, with the registered per-comparison enlargement rule. The V1
+blow-up threshold remains a three-channel validation mean above 1.5 degC;
+V2 jump checks and the registered decision rules remain in force.
+
+- All 34 base scientific arms run 20 seeds, including G7c/G7d unconditionally;
+  RETRAIN keeps 10. C17 confirmations use 20; F4 uses 10 per split/recipe;
+  F1 uses 10 per family/recipe; F9/F10 share 20 fresh seeds. Static planned
+  range: 830–1090 runs, pending exact dry-run verification.
+- S7 F4 precedes S7b recipe freeze and F1; S8 cannot change the frozen recipe.
+  F1 includes direct and the final recipe at h128, omitting a duplicate when
+  direct is retained. All ten held-out families are covered.
+- F1 now separates fold training, internal validation for stopping, and final
+  held-out-family scoring. Scalers and fitted constants use fold training
+  only. This supersedes v3's full-284 constants and held-out early stopping.
+- Formal prefix `r10v4`, output `runs/_round10_v4_results`; `--restart-v4`
+  audits old state without deleting or reusing it and refuses prior test
+  access. Existing v3 partial training is not pooled into v4.
+- All base results, including negative/inconclusive output-form comparisons,
+  remain in the report. C17 confirms eligible candidates; it cannot turn
+  unconfirmed h128 findings into cross-capacity claims. C1/B2_mask retains
+  the T_inner anchor; C14 is the all-absolute control; C3 anchors T_outer
+  additionally while T_avg remains absolute.
+
+Implementation verification, complete dry-run and v4 full-arm smoke are
+pending. Earlier v3 PASS counts below are historical, not v4 evidence.
+No new-material/convection training, scientific result, Git commit or push
+is implied by this amendment. Follow `ROUND10_RUNBOOK.md` for execution.
+
 ## 2026-10-11 — PI material-refit column `[REPORT FIX]`
 
 The registered `batches.P3.re_fit_column` had no result-table export. Added

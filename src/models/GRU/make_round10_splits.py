@@ -3,8 +3,9 @@
 Near duplicates are connected components of raw inlet trajectory RMS<1C
 (row-aligned); every component remains on one side of each split. This
 conservative criterion is disclosed rather than inferred as a new decision.
-F1 scaler/anchor fit keys stay the full s42 training284; optimisation keys
-exclude the held-out family. No source dataset is modified.
+The archived v3 folds retain their full-s42 constants protocol. New v4 folds
+isolate training, inner validation and final family scoring, and fit every
+constant on fold training only. No source dataset is modified.
 """
 import argparse
 import hashlib
@@ -112,23 +113,67 @@ def update_counts(spec):
                 n_mask=len(mask), n_mask_train=len(set(spec["train"]) & mask),
                 n_mask_val=len(set(spec["val"]) & mask),
                 n_val_tavg_scored=len(set(spec["val"]) - mask))
+    if "holdout" in spec:
+        spec.update(n_holdout=len(spec["holdout"]),
+                    n_mask_holdout=len(set(spec["holdout"]) & mask),
+                    n_holdout_tavg_scored=len(set(spec["holdout"]) - mask))
     return spec
+
+
+def strict_loto(base, groups, family, provenance):
+    """V4: three disjoint pools, with no held-out labels used for selection.
+
+    Inner validation starts from the existing s42 validation files outside
+    the held-out component. Expand whole inlet components deterministically.
+    """
+    universe = set(base["train"]) | set(base["val"])
+    held = {key for key in universe if key.split("/")[0] == family}
+    for group in groups:
+        if held & set(group):
+            held.update(group)
+    inner_val = set(base["val"]) - held
+    for group in groups:
+        if inner_val & set(group):
+            inner_val.update(group)
+    if inner_val & held or not inner_val:
+        raise ValueError("F1 cannot construct an isolated inner validation pool")
+    fold = int(family.split()[1])
+    spec = dict(base)
+    for key in ("frozen_train", "frozen_constants_split", "frozen_constants_note"):
+        spec.pop(key, None)
+    spec.update(train=sorted(universe - held - inner_val), val=sorted(inner_val),
+                holdout=sorted(held), heldout_family=family, fold=fold,
+                split_name="loto_v4_fold%d" % fold, tag="v4lo%d" % fold,
+                val_per_type=0, constants_fit_scope="fold_train_only",
+                checkpoint_selection_scope="inner_validation_only",
+                near_duplicate_protocol=provenance,
+                note="F1 v4: ten paired seeds; train-only fitted statistics; inner validation early stopping; held-out family scored after training")
+    return update_counts(spec)
 
 
 def verify(spec, groups, universe):
     train, val, drop = (set(spec[name]) for name in ("train", "val", "drop"))
-    if train & val or train & drop or val & drop or train | val != set(universe):
+    holdout = set(spec.get("holdout") or [])
+    if (train & val or train & drop or val & drop or holdout & (train | val | drop)
+            or train | val | holdout != set(universe)):
         raise ValueError("split coverage/disjointness failed")
     for group in groups:
-        if train & set(group) and val & set(group):
+        if sum(bool(pool & set(group)) for pool in (train, val, holdout)) > 1:
             raise ValueError("near-duplicate component crosses split: %s" % group)
-    if not set(spec["tavg_mask"]) <= train | val:
+    if not set(spec["tavg_mask"]) <= train | val | holdout:
         raise ValueError("mask outside clean universe")
     if not spec.get("heldout_family"):
         if len(train) != 284 or len(val) != 20:
             raise ValueError("F4 must remain284/20")
         if any(key.startswith("Case 9 ") and key not in spec["tavg_mask"] for key in val):
             raise ValueError("F4 Case9 validation labels must be masked")
+    elif holdout:
+        if any(key.startswith(spec["heldout_family"] + "/") for key in train | val):
+            raise ValueError("held-out family remains in training or inner validation")
+        if (not val or spec.get("constants_fit_scope") != "fold_train_only"
+                or spec.get("checkpoint_selection_scope") != "inner_validation_only"
+                or any(spec.get(key) for key in ("frozen_train", "frozen_constants_split"))):
+            raise ValueError("F1 v4 requires isolated fold fitting and checkpoint selection")
     else:
         if any(key.startswith(spec["heldout_family"] + "/") for key in train):
             raise ValueError("held-out family remains in optimisation train")
@@ -160,6 +205,7 @@ def main(argv=None):
                   "n_nontrivial_groups": len(nontrivial), "groups": nontrivial,
                   "input_csv_sha256": {key: digest(root / key) for key in keys}}
     generated = {}
+    strict_generated = {}
     for seed in (43, 44):
         spec = redraw(base, groups, seed)
         spec["near_duplicate_protocol"] = provenance
@@ -182,8 +228,11 @@ def main(argv=None):
         spec = update_counts(spec)
         verify(spec, groups, keys)
         generated["loto_vs3_fold%d.json" % fold] = spec
+        strict = strict_loto(base, groups, family, provenance)
+        verify(strict, groups, keys)
+        strict_generated["loto_v4_fold%d.json" % fold] = strict
     out.mkdir(parents=True, exist_ok=True)
-    for name, spec in generated.items():
+    for name, spec in dict(generated, **strict_generated).items():
         path = out / name
         if path.exists():
             with open(path, encoding="utf-8") as stream:
@@ -197,7 +246,11 @@ def main(argv=None):
     with open(out / "round10_split_generation_audit.json", "w", encoding="utf-8") as stream:
         json.dump({"protocol": provenance, "files": {name: digest(out / name) for name in generated}},
                   stream, ensure_ascii=False, indent=2)
-    print("Generated12splits; near-duplicate groups:%d; no dataset modified" % len(nontrivial))
+    with open(out / "round10_f1_v4_generation_audit.json", "w", encoding="utf-8") as stream:
+        json.dump({"protocol": provenance, "files": {name: digest(out / name) for name in strict_generated},
+                   "constants_fit_scope": "fold_train_only", "checkpoint_selection_scope": "inner_validation_only"},
+                  stream, ensure_ascii=False, indent=2)
+    print("Verified12legacy and10strict F1 splits; near-duplicate groups:%d; no dataset modified" % len(nontrivial))
     return 0
 
 

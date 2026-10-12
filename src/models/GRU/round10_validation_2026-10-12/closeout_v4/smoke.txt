@@ -1,0 +1,2 @@
+[S1] B1_mask: 1 seeds (3 workers)
+  B1_mask seed7 complete (1/1)
