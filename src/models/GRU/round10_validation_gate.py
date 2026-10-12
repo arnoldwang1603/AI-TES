@@ -11,6 +11,7 @@ import os
 import sys
 
 from paper_report import atomic_json, read_json, sha256
+from round10_integrity import matches_frozen_sha256
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LEGACY = os.path.join(HERE, "round10_resources", "legacy_code")
@@ -19,9 +20,9 @@ LEGACY = os.path.join(HERE, "round10_resources", "legacy_code")
 def verify_baseline(verify_source=False):
     manifest = read_json(os.path.join(LEGACY, "manifest.json"))
     for relative, expected in manifest["files"].items():
-        if sha256(os.path.join(LEGACY, relative)) != expected:
+        if not matches_frozen_sha256(os.path.join(LEGACY, relative), expected):
             raise RuntimeError("Frozen P0 baseline changed: " + relative)
-        if verify_source and sha256(os.path.join(manifest["source_root"], relative)) != expected:
+        if verify_source and not matches_frozen_sha256(os.path.join(manifest["source_root"], relative), expected):
             raise RuntimeError("Original P0 source changed after baseline capture: " + relative)
     return manifest
 

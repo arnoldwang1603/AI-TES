@@ -1,0 +1,95 @@
+PASS  registered unconditional graph has 420 runs with P1=90 and F4-direct=20
+PASS  only the two existing G7 treatments are conditional in the core table
+PASS  all ten F1 folds use the specified five seeds and frozen full-train constants
+PASS  challenger branch adds paired F4 arms and exactly the optional fresh F10 control
+PASS  every planned training arm seals test access and pins fresh F9 primes
+PASS  legacy frozen-constants env alias cannot contaminate any pipeline arm
+PASS  resume accepts identical numeric env semantics 0.0 versus0
+PASS  resume refuses a genuinely changed numeric model knob
+PASS  resume refuses a checkpoint seed that disagrees with its manifest
+PASS  a failing stage is durably failed and later stages never launch
+PASS  same-command resume skips completed stages and continues at the failed stage
+PASS  manual later-stage entry refuses missing dependencies
+PASS  an equivalent small encoder alone does not suppress conditional startup repair
+PASS  a core startup treatment that passes suppresses both conditional G7 arms
+PASS  a changed dataset seal cannot mix resumed stage results
+PASS  changed registered package input cannot reuse completed stage markers
+PASS  changed package identity cannot resume old stages even with the same prereg
+
+check_pipeline: 17/17 PASS
+PASS  registered unconditional graph has 420 runs with P1=90 and F4-direct=20
+PASS  only the two existing G7 treatments are conditional in the core table
+PASS  all ten F1 folds use the specified five seeds and frozen full-train constants
+PASS  challenger branch adds paired F4 arms and exactly the optional fresh F10 control
+PASS  every planned training arm seals test access and pins fresh F9 primes
+PASS  legacy frozen-constants env alias cannot contaminate any pipeline arm
+PASS  resume accepts identical numeric env semantics 0.0 versus0
+PASS  resume refuses a genuinely changed numeric model knob
+PASS  resume refuses a checkpoint seed that disagrees with its manifest
+PASS  a failing stage is durably failed and later stages never launch
+PASS  same-command resume skips completed stages and continues at the failed stage
+PASS  manual later-stage entry refuses missing dependencies
+PASS  an equivalent small encoder alone does not suppress conditional startup repair
+PASS  a core startup treatment that passes suppresses both conditional G7 arms
+PASS  a changed dataset seal cannot mix resumed stage results
+PASS  changed registered package input cannot reuse completed stage markers
+PASS  changed package identity cannot resume old stages even with the same prereg
+
+check_pipeline: 17/17 PASS
+PASS  registered unconditional graph has 420 runs with P1=90 and F4-direct=20
+PASS  only the two existing G7 treatments are conditional in the core table
+PASS  all ten F1 folds use the specified five seeds and frozen full-train constants
+PASS  challenger branch adds paired F4 arms and exactly the optional fresh F10 control
+PASS  every planned training arm seals test access and pins fresh F9 primes
+PASS  legacy frozen-constants env alias cannot contaminate any pipeline arm
+PASS  resume accepts identical numeric env semantics 0.0 versus0
+PASS  resume refuses a genuinely changed numeric model knob
+PASS  resume refuses a checkpoint seed that disagrees with its manifest
+PASS  a failing stage is durably failed and later stages never launch
+PASS  same-command resume skips completed stages and continues at the failed stage
+PASS  manual later-stage entry refuses missing dependencies
+PASS  an equivalent small encoder alone does not suppress conditional startup repair
+PASS  a core startup treatment that passes suppresses both conditional G7 arms
+PASS  a changed dataset seal cannot mix resumed stage results
+PASS  changed registered package input cannot reuse completed stage markers
+PASS  changed package identity cannot resume old stages even with the same prereg
+
+check_pipeline: 17/17 PASS
+PASS  registered unconditional graph has 420 runs with P1=90 and F4-direct=20
+PASS  only the two existing G7 treatments are conditional in the core table
+PASS  all ten F1 folds use the specified five seeds and frozen full-train constants
+PASS  challenger branch adds paired F4 arms and exactly the optional fresh F10 control
+PASS  every planned training arm seals test access and pins fresh F9 primes
+PASS  legacy frozen-constants env alias cannot contaminate any pipeline arm
+PASS  resume accepts identical numeric env semantics 0.0 versus0
+PASS  resume refuses a genuinely changed numeric model knob
+PASS  resume refuses a checkpoint seed that disagrees with its manifest
+PASS  a failing stage is durably failed and later stages never launch
+PASS  same-command resume skips completed stages and continues at the failed stage
+PASS  manual later-stage entry refuses missing dependencies
+PASS  an equivalent small encoder alone does not suppress conditional startup repair
+PASS  a core startup treatment that passes suppresses both conditional G7 arms
+PASS  a changed dataset seal cannot mix resumed stage results
+PASS  changed registered package input cannot reuse completed stage markers
+PASS  changed package identity cannot resume old stages even with the same prereg
+
+check_pipeline: 17/17 PASS
+PASS  registered unconditional graph has 420 runs with P1=90 and F4-direct=20
+PASS  only the two existing G7 treatments are conditional in the core table
+PASS  all ten F1 folds use the specified five seeds and frozen full-train constants
+PASS  challenger branch adds paired F4 arms and exactly the optional fresh F10 control
+PASS  every planned training arm seals test access and pins fresh F9 primes
+PASS  legacy frozen-constants env alias cannot contaminate any pipeline arm
+PASS  resume accepts identical numeric env semantics 0.0 versus0
+PASS  resume refuses a genuinely changed numeric model knob
+PASS  resume refuses a checkpoint seed that disagrees with its manifest
+PASS  a failing stage is durably failed and later stages never launch
+PASS  same-command resume skips completed stages and continues at the failed stage
+PASS  manual later-stage entry refuses missing dependencies
+PASS  an equivalent small encoder alone does not suppress conditional startup repair
+PASS  a core startup treatment that passes suppresses both conditional G7 arms
+PASS  a changed dataset seal cannot mix resumed stage results
+PASS  changed registered package input cannot reuse completed stage markers
+PASS  changed package identity cannot resume old stages even with the same prereg
+
+check_pipeline: 17/17 PASS

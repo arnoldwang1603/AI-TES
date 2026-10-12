@@ -19,6 +19,7 @@ import threading
 import time
 
 from paper_report import atomic_json, read_json, sha256, pid_alive
+from round10_integrity import matches_frozen_sha256
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 VARIANT = "forward_direct"
@@ -304,11 +305,11 @@ def preflight(out):
         raise RuntimeError("Need >=30GiB free disk, found%.1f" % free)
     lock = read_json(os.path.join(HERE, "prereg", "round10_package_hashes.json"))
     for relative, digest in lock["files"].items():
-        if sha256(os.path.join(HERE, relative)) != digest:
+        if not matches_frozen_sha256(os.path.join(HERE, relative), digest):
             raise RuntimeError("Frozen package input changed: " + relative)
     p = protocol()
     split_path = os.path.join(HERE, "splits", "round10_vs3_s42.json")
-    if sha256(split_path) != p["data"]["hashes"]["split_json_sha256"]:
+    if not matches_frozen_sha256(split_path, p["data"]["hashes"]["split_json_sha256"]):
         raise RuntimeError("vs3 split hash differs from prereg")
     for script in sorted(glob.glob(os.path.join(HERE, "round10_checks", "check_*.py"))):
         command(os.path.relpath(script, HERE), [], out)
@@ -329,7 +330,7 @@ def verify_dataset_hashes():
     root = os.path.abspath(os.environ.get("DATA_ROOT") or os.path.join(HERE, "..", "..", "..", "data"))
     train = os.path.join(root, expected["train_subdir"])
     for key, digest in expected["files"].items():
-        if sha256(os.path.join(train, *key.split("/"))) != digest:
+        if not matches_frozen_sha256(os.path.join(train, *key.split("/")), digest):
             raise RuntimeError("Training source changed or differs from the sealed dataset: " + key)
     return sha256(path)
 
@@ -397,7 +398,7 @@ class Pipeline:
         package_identity = sha256(package_path)
         package = read_json(package_path)
         for relative, expected in package["files"].items():
-            if sha256(os.path.join(HERE, relative)) != expected:
+            if not matches_frozen_sha256(os.path.join(HERE, relative), expected):
                 raise RuntimeError("Package input changed during a pipeline: " + relative)
         dataset_identity = verify_dataset_hashes()
         self.state = read_json(self.state_path) if os.path.isfile(self.state_path) else dict(

@@ -256,7 +256,10 @@ def main():
                "tavg_mask_train_sha256": sha256_lines([k for k in mask if k in set(spec["train"])]),
                "tavg_mask_val_sha256": sha256_lines([k for k in mask if k in set(spec["val"])]),
                "drop_sha256": sha256_lines(spec["drop"])}
-        bad = [k for k, v in exp.items() if h.get(k) != v]
+        from round10_integrity import matches_frozen_sha256
+        bad = [k for k, v in exp.items() if k != "split_json_sha256" and h.get(k) != v]
+        if not matches_frozen_sha256(spec_path, h.get("split_json_sha256")):
+            bad.append("split_json_sha256")
         ok_f = (not bad and pre["bands"]["fixed_bands_degC"] == {"T_inner": 0.02, "T_outer": 0.05, "T_avg": 0.08}
                 and pre["seeds"]["S10"] == SEEDS10 and pre["data"]["train_files"] == len(spec["train"])
                 and pre["data"]["val_files"] == len(spec["val"]) and pre["data"]["tavg_mask_files"] == len(mask)

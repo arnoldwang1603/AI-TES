@@ -9,6 +9,7 @@ import pandas as pd
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 from make_round10_splits import digest, near_groups, verify
+from round10_integrity import matches_frozen_sha256
 
 
 def main():
@@ -20,7 +21,7 @@ def main():
     for name, expected_sha in audit["files"].items():
         try:
             path = split_dir / name
-            assert digest(path) == expected_sha, "split hash changed"
+            assert matches_frozen_sha256(path, expected_sha), "split hash changed"
             spec = json.loads(path.read_text(encoding="utf-8"))
             verify(spec, audit["protocol"]["groups"], universe)
             assert spec["drop"] == base["drop"] and spec["tavg_mask"] == base["tavg_mask"]
@@ -43,7 +44,7 @@ def main():
         failures.append("graph")
         print("FAIL near-duplicate graph transitive closure")
     data_root = Path(os.environ.get("DATA_ROOT", HERE.parents[2] / "data")) / base["train_subdir"]
-    unchanged = all(digest(data_root / key) == expected for key, expected in audit["protocol"]["input_csv_sha256"].items())
+    unchanged = all(matches_frozen_sha256(data_root / key, expected) for key, expected in audit["protocol"]["input_csv_sha256"].items())
     if unchanged:
         print("PASS all304source CSV hashes unchanged")
     else:

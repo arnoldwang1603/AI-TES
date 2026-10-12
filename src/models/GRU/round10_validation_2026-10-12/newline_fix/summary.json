@@ -1,0 +1,19 @@
+{
+  "cause": "Git CRLF/LF checkout conversion confirmed by server hash",
+  "newline_checks": 26,
+  "training_files": 311,
+  "package_files": 733,
+  "python39_grammar_files": 95,
+  "preflight_exit": 0,
+  "dry_run_exit": 0,
+  "branch_runs": [
+    420,
+    540
+  ],
+  "prereg_unchanged": true,
+  "training_source_manifest_unchanged": true,
+  "test_source_and_runtime_hashes": "strict raw bytes",
+  "real_test_access": false,
+  "formal_training_started": false,
+  "linux_runtime_validated": false
+}
