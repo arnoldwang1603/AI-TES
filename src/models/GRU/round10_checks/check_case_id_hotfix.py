@@ -80,8 +80,12 @@ def check_real_run_audit(parent):
     root = parent / "run_audit"
     root.mkdir()
     atomic_json(str(root / "prereg/round10_v4.json"), {})
-    cases = read_json(str(HERE / "splits/round10_vs3_s42.json"))["val"]
-    atomic_json(str(root / "splits/round10_vs3_s42.json"), dict(val=cases))
+    split = read_json(str(HERE / "splits/round10_vs3_s42.json"))
+    cases = split["val"]
+    # The split is relative to train_dir, while data._case_id/evaluate emit
+    # paths relative to data_root. Preserve that production distinction.
+    emitted_cases = [split["train_subdir"] + "/" + case for case in cases]
+    atomic_json(str(root / "splits/round10_vs3_s42.json"), split)
     seeds = read_json(str(HERE / "prereg/round10_v4.json"))["seeds"]
     names = sorted(hotfix.COMPARISON_ARMS) + ["B2_relabel", "B2_drop9", "RETRAIN"]
     table = [dict(arm=name, stage="S1", env={}, run_name="r10v4_" + name,
@@ -100,7 +104,7 @@ def check_real_run_audit(parent):
                     with open(path, "w", newline="", encoding="utf-8") as stream:
                         writer = csv.DictWriter(stream, fieldnames=["Case", "CaseFile"])
                         writer.writeheader()
-                        writer.writerows(dict(Case=case, CaseFile=Path(case).name) for case in cases)
+                        writer.writerows(dict(Case=case, CaseFile=Path(case).name) for case in emitted_cases)
         state = dict(runs=records)
         check("production run audit accepts 170 registered runs and 120 panels matching frozen paths", hotfix._audit_runs(root, state) == dict(s1_runs=170, comparison_runs=120, validation_cases=20))
         check("production run audit refuses a missing run", refuses(lambda: hotfix._audit_runs(root, dict(runs=records[:-1])), "incomplete"))
@@ -113,11 +117,21 @@ def check_real_run_audit(parent):
         done.return_value = True
         path = Path(records[0]["run_dir"]) / "variants/forward_direct/summary_errors_val.csv"
         original = path.read_bytes()
-        text = original.decode("utf-8").replace(cases[0], "Other family/Other case.csv")
-        path.write_text(text, encoding="utf-8")
-        check("production run audit refuses 20 unique paths that differ from frozen split", refuses(lambda: hotfix._audit_runs(root, state), "frozen validation split"))
-        path.write_text(original.decode("utf-8").replace(cases[0], cases[1]), encoding="utf-8")
+        for label, substitute in (
+                ("unprefixed train-relative Case", cases[0]),
+                ("wrong training-directory prefix", "Other Database/" + cases[0]),
+                ("arbitrary leading directory", "extra/" + emitted_cases[0]),
+                ("absolute Case path", "/home/cymaker/AI-TES/data/" + emitted_cases[0]),
+                ("bare basename Case", Path(cases[0]).name),
+                ("different full case path", split["train_subdir"] + "/Other family/Other case.csv")):
+            path.write_text(original.decode("utf-8").replace(emitted_cases[0], substitute), encoding="utf-8")
+            check("production run audit refuses " + label,
+                  refuses(lambda: hotfix._audit_runs(root, state), "frozen validation split"))
+        path.write_text(original.decode("utf-8").replace(emitted_cases[0], emitted_cases[1]), encoding="utf-8")
         check("production run audit refuses duplicate full Case paths", refuses(lambda: hotfix._audit_runs(root, state), "missing or duplicated"))
+        path.write_text(original.decode("utf-8").replace("/", "\\"), encoding="utf-8")
+        check("production run audit accepts Windows separators without removing the frozen prefix",
+              hotfix._audit_runs(root, state) == dict(s1_runs=170, comparison_runs=120, validation_cases=20))
         path.write_bytes(original)
 
 

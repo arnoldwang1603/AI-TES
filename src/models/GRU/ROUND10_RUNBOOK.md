@@ -139,6 +139,8 @@ python round10_pipeline.py --all --parallel 3
 
 这次修复不改变模型、权重、验证划分、训练参数、种子、统计阈值或测试访问规则。修复说明和审核范围见 `ROUND10_CASE_ID_HOTFIX_2026-10-12.md`。专用脚本不带 `--apply` 时仅检查，不迁移状态。
 
+如果先前版本的恢复脚本报 `S1b validation paths differ from the frozen validation split`，它可能是把带训练目录前缀的导出路径与不带前缀的 split 键直接比较。负责人已修正为训练程序实际导出的路径格式；更新完整补丁后重新执行上述恢复命令即可。该拒绝发生在状态迁移和备份写入前，勿为此删除状态或重训。更新后若仍不匹配，错误会列出具体 run 以及缺失/多出的路径，交给负责人核对。
+
 ## 6. 完成后交回
 
 以 S9 完成、`pipeline_state.json` 中包括 S7b 在内的全部阶段均为完成状态为准。交回这些完整目录：

@@ -99,8 +99,13 @@ def _audit_runs(root, state):
     require(len(keys) == len(set(keys)) and set(keys) == set(expected),
             "S1 run journal is incomplete, duplicated, or contains unregistered runs")
     require(len(keys) == 170, "This hotfix expects the registered 170 completed S1 runs")
-    registered_cases = read_json(str(root / "splits/round10_vs3_s42.json"))["val"]
-    case_set = {key.replace("\\", "/") for key in registered_cases}
+    split = read_json(str(root / "splits/round10_vs3_s42.json"))
+    registered_cases = split["val"]
+    # Split keys are relative to train_dir, but load_all_data._case_id and
+    # evaluate export Case relative to DATA_ROOT, including train_subdir.
+    # Match that exact registered prefix, never basename or arbitrary suffix.
+    prefix = split["train_subdir"].replace("\\", "/") + "/"
+    case_set = {prefix + key.replace("\\", "/") for key in registered_cases}
     require(len(registered_cases) == len(case_set) == 20,
             "Frozen split does not contain exactly 20 distinct validation paths")
     comparison_runs = 0
@@ -119,7 +124,9 @@ def _audit_runs(root, state):
                       if row.get("Case") != "AVERAGE"]
         require(len(identities) == 20 and all(identities) and len(set(identities)) == 20,
                 "Validation Case paths are missing or duplicated in " + str(path))
-        require(set(identities) == case_set, "S1b validation paths differ from the frozen validation split")
+        require(set(identities) == case_set,
+                "S1b validation paths differ from the frozen validation split in %s; missing=%s; unexpected=%s"
+                % (str(path), sorted(case_set - set(identities))[:3], sorted(set(identities) - case_set)[:3]))
         comparison_runs += 1
     require(comparison_runs == 120, "Expected all 120 S1b comparison runs")
     return dict(s1_runs=len(keys), comparison_runs=comparison_runs, validation_cases=len(case_set))

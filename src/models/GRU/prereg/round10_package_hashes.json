@@ -757,9 +757,9 @@
     "tes_gru/train.py": "8c0d9037a351b7a2da79863cbc705425dfe9b2b91bb731062e31044863aaf336",
     "tes_gru/utils.py": "1e86ff25602f817c3029860e9e5ad1f538abd2fc0678fb1d7ee4364be34164af",
     "tes_gru/__init__.py": "5fbcbd677c1577ffe3d7fcaae0414a2dc113fb50e3cad68679533e4625af8032",
-    "round10_checks/check_case_identity.py": "350cfcc675f27c149b05bcd56e60b63d2dac6b423033e3c29a8b2057e8fc4727",
-    "round10_checks/check_case_id_hotfix.py": "513fb6d6aa18cedfaecd155efaf51cbe3fd7c7f016805c78d60562fa3f4f6cf8",
-    "round10_case_id_hotfix.py": "ac5293cb3a66ba086a332648b03b6459add41d9b97f8bc687a5d114aca4637c2",
+    "round10_checks/check_case_identity.py": "c29bb894a3c9c6266e03b1d62d3ad06de51487efb0b509ba04b2677c8d6dfc35",
+    "round10_checks/check_case_id_hotfix.py": "79940dceafec5b5865b9ff17cb27e0feb441998f98f3a88b5c8341f763238a00",
+    "round10_case_id_hotfix.py": "2cee6195c156d60308794855937eccbdc22d9524eb6512adc4dc0d2aa3d208cc",
     "prereg/round10_package_hashes_v4_before_case_id_fix.json": "e0690b779a5033a26dd90fc3aa11eebccd4349888e861366fcfe13d236ae2b3c"
   },
   "scope": "immutable code, versioned protocols and splits, historical constants, train/val physics cache and archived R9 resources; strict F1 fits per-fold constants"

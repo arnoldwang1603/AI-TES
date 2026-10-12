@@ -60,9 +60,12 @@ def main():
     with open(HERE / "prereg/round10_v4.json", encoding="utf-8") as stream:
         prereg = json.load(stream)
     with open(HERE / "splits/round10_vs3_s42.json", encoding="utf-8") as stream:
-        paths = json.load(stream)["val"]
+        split = json.load(stream)
+    # data._case_id emits data_root-relative identifiers, including train_subdir;
+    # split and preregistration mask lists remain train_dir-relative.
+    paths = [split["train_subdir"] + "/" + key for key in split["val"]]
     seeds = prereg["seeds"]["S20"]
-    masked = set(prereg["data"]["val_tavg_masked"])
+    masked = {split["train_subdir"] + "/" + key for key in prereg["data"]["val_tavg_masked"]}
     require(len(paths) == len(set(paths)) == 20 and len(seeds) == 20,
             "fixture requires the registered 20 cases and S20")
     require(len({Path(key).name for key in paths}) < 20,
