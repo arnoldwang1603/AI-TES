@@ -21,6 +21,8 @@ PyTorch 安装命令来自 [官方 2.8.0 / CUDA 12.6 安装说明](https://pytor
 
 保留整个 GRU 文件夹，尤其是 `tes_gru/`、`splits/`、`prereg/`、`round10_checks/` 和 `round10_resources/`。资源包已包含训练/验证物理缓存、冻结常数、旧代码回归副本和 Round 9 的分析 checkpoint。
 
+`round10_resources/band_calibration/` 内的两个校准报告 CSV 也必须一并同步，供 A5 重放历史统计检查。运行服务器不需要安装 `calit2-thermal-wiki` 或复制 `.claude/worktrees`。若旧版 A5 报缺少 wiki 校准目录，更新完整包后重跑预检。
+
 数据目录保持原结构：
 
 ```text

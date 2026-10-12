@@ -7,7 +7,7 @@ Items: (a) synthetic long table with a known effect -> CI covers it;
 (b) zero effect -> EQUIVALENT with "indistinguishable at n=20"; (c) a veto
 (V1 blow-up seed, V2 jump increase) flips BETTER; (d) Holm order on known
 p-values; (e) paired_stats equals analyze_round9.paired draw for draw, and
-the band-calibration long table (wiki, override with BAND_CAL_DIR) replayed
+the packaged band-calibration long table (override with BAND_CAL_DIR) replayed
 in calibrate_band's order reproduces pair_full70.csv for the champion vs
 h128x2 pair (P4) to 1e-6; (f) prereg/round10_v3.json carries data.hashes
 that match the split json and the TAVG_MASK=split digests; (g) the
@@ -34,9 +34,8 @@ import paper_stats as ps                                   # noqa: E402
 from tes_gru.utils import sha256_file, sha256_lines        # noqa: E402
 
 RESULTS = []
-BAND_CAL = os.environ.get("BAND_CAL_DIR") or os.path.normpath(os.path.join(
-    HERE, "..", "..", "..", "..", "calit2-thermal-wiki", ".claude", "worktrees", "pensive-cohen-d3486a",
-    "outputs", "round10_plan", "band_calibration_2026-10-11"))
+BAND_CAL = os.environ.get("BAND_CAL_DIR") or os.path.join(
+    HERE, "round10_resources", "band_calibration")
 SEEDS10 = [1, 2, 3, 5, 7, 11, 13, 21, 42, 123]
 CH = ps.CHANNELS
 

@@ -84,7 +84,7 @@ CH = ("T_inner", "T_outer", "T_avg")
 SMOKE_TOL_C = 1e-3          # eval_checkpoint --set val vs the run's own Val_MAE (same weights, same numerics)
 PARALLEL_DEFAULT = int(os.environ.get("PARALLEL_SEEDS", "3"))
 CHAMP = os.environ.get("CHAMPION_RUN_DIR") or os.path.normpath(os.path.join(
-    HERE, "..", "..", "..", "..", "calit2-thermal-wiki", "round9", "GRU-runs-round9", "runs",
+    HERE, "round10_resources", "round9",
     "2026-08-06_forward_direct_W10_Tin-anchor_l1_w1-6-3_oth-abs_h160x1dp0.2_ep2000_vs2_seed7"))
 
 # Every knob the child reads is pinned (run_round9.BASE pins the position-head

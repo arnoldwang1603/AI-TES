@@ -4,8 +4,8 @@ src/models/GRU:  python round10_checks/check_a4.py
 No training. PASS / FAIL per item, non-zero exit on any FAIL. Needs the data
 under AI-TES/data, splits/tavg_convention_by_file.csv and
 splits/hot_discharge_side_reference_vs3.csv (both made by
-round10_checks/make_side_reference_vs3.py) and the wiki physics cache
-(physics_cache_vs3/nominal; override with PHYSICS_CACHE_DIR).
+round10_checks/make_side_reference_vs3.py) and the packaged physics cache
+(round10_resources/physics/nominal; override with PHYSICS_CACHE_DIR).
 """
 import glob
 import json
@@ -26,9 +26,8 @@ from check_h9 import clean_env, fresh_import   # noqa: E402
 RESULTS = []
 VS3 = "round10_vs3_s42.json"
 LABELS = "tavg_convention_by_file.csv"
-CACHE = os.environ.get("PHYSICS_CACHE_DIR") or os.path.normpath(os.path.join(
-    HERE, "..", "..", "..", "..", "calit2-thermal-wiki", ".claude", "worktrees", "pensive-cohen-d3486a",
-    "outputs", "round10_plan", "physics_cache_vs3", "nominal"))
+CACHE = os.environ.get("PHYSICS_CACHE_DIR") or os.path.join(
+    HERE, "round10_resources", "physics", "nominal")
 NEW18 = "Case 1 (linear charging)/Case new 18 (1 second step).csv"
 NEW18_C9 = "Case 9 (non-linear discharging)/Case New 18 (Tejas).csv"
 SIDE_KEYS = ["Case 1 (linear charging)/Case 16.csv",

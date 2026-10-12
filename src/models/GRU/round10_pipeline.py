@@ -135,6 +135,9 @@ def isolated_env(overrides):
     champion = os.path.join(resource_root,
         "2026-08-06_forward_direct_W10_Tin-anchor_l1_w1-6-3_oth-abs_h160x1dp0.2_ep2000_vs2_seed7")
     env.setdefault("CHAMPION_RUN_DIR", champion)
+    # Statistical replay is part of this frozen package, not a developer's
+    # sibling wiki checkout or a research-shell fixture override.
+    env["BAND_CAL_DIR"] = os.path.join(HERE, "round10_resources", "band_calibration")
     os.makedirs(env["TEMP"], exist_ok=True)
     return env
 

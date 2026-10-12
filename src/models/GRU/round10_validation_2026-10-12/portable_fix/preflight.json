@@ -1,0 +1,12 @@
+{
+  "python": "3.12.12 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 20:05:38) [MSC v.1929 64 bit (AMD64)]",
+  "torch": "2.8.0+cu126",
+  "cuda": "12.6",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "free_disk_GiB": 513.6222190856934,
+  "prereg_sha256": "2650a314fe808d2baa7976a12d9368d7950c8bf55b3790e744c9cb50344767ec",
+  "test_access": false,
+  "package_hashes_verified": 738,
+  "dataset_sha256": "4fb1db3f184de63fabf4b726d35be2684528f044225d1da1bfddc75518d61b40",
+  "training_source_files_verified": 311
+}

@@ -117,3 +117,13 @@ shipped 物理缓存仅含训练/验证文件。物理臂的测试评分必须�
 - 修复后完整 preflight 退出 0，核对 **733 个包输入、311 个训练源文件、95 个 Python 源文件的 3.9 语法**；独立旧 P0 回归的预测与加权损失差仍为 0。`--all --dry-run` 退出 0，仍为 420–540 run。
 - 证据在 `round10_validation_2026-10-12/newline_fix/`；检查日志保留此前追加内容，最新执行位于文件末尾。此次是本机换行模拟和预检，没有声称 Linux 整体运行已通过，没有重跑训练或打开真实 Test CSV。
 - 原目录补丁由限定文件名单的安装器同步，回执为 `round10_validation_2026-10-12/install_newline_receipt.json`。服务器更新这版代码后重跑 preflight，无需转换 CSV、替换数据或重建封存哈希。
+
+### A5 校准报告随包交付与外部路径修复（2026-10-12）
+
+服务器 A5 的 19/20 失败来自缺少开发者 wiki 工作树内的校准报告。现将已有 Round 9 派生报告 `long_table.csv` 与 `pair_full70.csv` 连同来源和哈希纳入 `round10_resources/band_calibration/`，A5 默认读取包内文件，流水线固定该路径。A4 的物理缓存与 H9/旧调度器的冠军默认路径也统一到已有包内资源。没有重新标定阈值或读取原始 Test CSV。
+
+- 新增可携带资源检查 8/8 PASS；A5 20/20 PASS；Python 3.9 语法检查覆盖 96 个源文件。
+- 创建独立副本：738 个固定包输入和 311 个训练 CSV，全部文本转换为 LF；没有复制真实 Test 数据，仅保留数据加载器要求的空目录。
+- 完整 `--preflight` 退出 0。审计钩子覆盖 43 个 Python 进程，禁止访问原 AI-TES、原工作包以及 wiki 开发工作树等路径，禁止路径访问尝试为 0。独立旧 P0 的 20 个验证文件预测差与加权损失差均为 0。
+- 这次隔离验证实际运行在 Windows / Python 3.12.12；LF 文件模拟验证不等于服务器 Linux / Python 3.10 已运行通过。服务器更新完整包后仍需重跑预检。
+- 证据保存在 `round10_validation_2026-10-12/portable_fix/`；补丁安装回执为 `round10_validation_2026-10-12/install_portable_receipt.json`。本次没有重跑全臂训练，既有 69/69 冒烟证据保持独立；正式 Round 10 与真实 B6/F11 尚未执行。

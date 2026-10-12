@@ -1,0 +1,12 @@
+{
+  "preflight_exit": 0,
+  "package_files": 738,
+  "training_files": 311,
+  "guard_processes": 43,
+  "forbidden_access_attempts": [],
+  "isolated_root": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\portability_audit\\isolated_8m7tx9kr",
+  "newline_mode": "LF",
+  "runtime_platform": "win32",
+  "runtime_python": "3.12.12 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 20:05:38) [MSC v.1929 64 bit (AMD64)]",
+  "real_test_source_copied": false
+}

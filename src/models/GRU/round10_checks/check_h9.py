@@ -3,7 +3,7 @@ guard, TF32 knob. Run from src/models/GRU:  python round10_checks/check_h9.py
 
 No training. Prints PASS / FAIL per item, exits non-zero on any FAIL.
 Needs the data under AI-TES/data and the Round 9 champion run directory
-(sibling checkout calit2-thermal-wiki; override with CHAMPION_RUN_DIR).
+(packaged in round10_resources/round9; override with CHAMPION_RUN_DIR).
 """
 import json
 import os
@@ -17,7 +17,7 @@ sys.path.insert(0, HERE)
 os.chdir(HERE)
 
 CHAMP = os.environ.get("CHAMPION_RUN_DIR") or os.path.normpath(os.path.join(
-    HERE, "..", "..", "..", "..", "calit2-thermal-wiki", "round9", "GRU-runs-round9", "runs",
+    HERE, "round10_resources", "round9",
     "2026-08-06_forward_direct_W10_Tin-anchor_l1_w1-6-3_oth-abs_h160x1dp0.2_ep2000_vs2_seed7"))
 TOL_STEPS = 1e-6          # C, old tail-hold vs true-last-input on validation
 TOL_LAST = 1e-4           # C, last step vs ka*Input_T(N)+kb+kc*z
