@@ -1,0 +1,109 @@
+PASS F11 adapter refuses no capability
+PASS direct artifacts and67/21 memberships
+PASS direct20/30 fixed ensemble sizes
+PASS direct distinct B6remaining66 and distribution66
+PASS directC16 confirmed-only and frozen reference mapping
+PASS direct error budget only B1mask/F9 and MSE identity
+PASS direct figures saved and numeric ensemble archive
+PASS changed truth across seeds rejected
+PASS incomplete70case bundle rejected
+PASS mixed30model recipe rejected
+PASS missing fresh seed rejected
+PASS strict yardstick count cannot silently drift
+PASS challenger artifacts and67/21 memberships
+PASS challenger20/30 fixed ensemble sizes
+PASS challenger distinct B6remaining66 and distribution66
+PASS challengerC16 confirmed-only and frozen reference mapping
+PASS challenger error budget only B1mask/F9 and MSE identity
+PASS challenger figures saved and numeric ensemble archive
+check_f11: 18/18 PASS
+PASS F11 adapter refuses no capability
+PASS direct artifacts and67/21 memberships
+PASS direct20/30 fixed ensemble sizes
+PASS ensemble averages predictions before absolute errors
+PASS signed seed cancellation gains remain positive
+PASS direct distinct B6remaining66 and distribution66
+PASS directC16 confirmed-only and frozen reference mapping
+PASS direct error budget only B1mask/F9 and MSE identity
+PASS direct figures saved and numeric ensemble archive
+PASS changed truth across seeds rejected
+PASS incomplete70case bundle rejected
+PASS mixed30model recipe rejected
+PASS missing fresh seed rejected
+PASS strict yardstick count cannot silently drift
+PASS challenger artifacts and67/21 memberships
+PASS challenger20/30 fixed ensemble sizes
+PASS challenger distinct B6remaining66 and distribution66
+PASS challengerC16 confirmed-only and frozen reference mapping
+PASS challenger error budget only B1mask/F9 and MSE identity
+PASS challenger figures saved and numeric ensemble archive
+check_f11: 20/20 PASS
+PASS F11 adapter refuses no capability
+PASS direct artifacts and67/21 memberships
+PASS direct20/30 fixed ensemble sizes
+PASS ensemble averages predictions before absolute errors
+PASS signed seed cancellation gains remain positive
+PASS direct distinct B6remaining66 and distribution66
+PASS directC16 confirmed-only and frozen reference mapping
+PASS direct error budget only B1mask/F9 and MSE identity
+PASS direct registered residual upper comes from fitted convention, distinct from raw physics
+PASS direct figures saved and numeric ensemble archive
+PASS changed truth across seeds rejected
+PASS incomplete70case bundle rejected
+PASS mixed30model recipe rejected
+PASS missing fresh seed rejected
+PASS strict yardstick count cannot silently drift
+PASS challenger artifacts and67/21 memberships
+PASS challenger20/30 fixed ensemble sizes
+PASS challenger distinct B6remaining66 and distribution66
+PASS challengerC16 confirmed-only and frozen reference mapping
+PASS challenger error budget only B1mask/F9 and MSE identity
+PASS challenger registered residual upper comes from fitted convention, distinct from raw physics
+PASS challenger figures saved and numeric ensemble archive
+check_f11: 22/22 PASS
+PASS F11 adapter refuses no capability
+PASS direct artifacts and67/21 memberships
+PASS direct20/30 fixed ensemble sizes
+PASS ensemble averages predictions before absolute errors
+PASS signed seed cancellation gains remain positive
+PASS direct distinct B6remaining66 and distribution66
+PASS directC16 confirmed-only and frozen reference mapping
+PASS direct error budget only B1mask/F9 and MSE identity
+PASS direct registered residual upper comes from fitted convention, distinct from raw physics
+PASS direct figures saved and numeric ensemble archive
+PASS changed truth across seeds rejected
+PASS incomplete70case bundle rejected
+PASS mixed30model recipe rejected
+PASS missing fresh seed rejected
+PASS strict yardstick count cannot silently drift
+PASS challenger artifacts and67/21 memberships
+PASS challenger20/30 fixed ensemble sizes
+PASS challenger distinct B6remaining66 and distribution66
+PASS challengerC16 confirmed-only and frozen reference mapping
+PASS challenger error budget only B1mask/F9 and MSE identity
+PASS challenger registered residual upper comes from fitted convention, distinct from raw physics
+PASS challenger figures saved and numeric ensemble archive
+check_f11: 22/22 PASS
+PASS F11 adapter refuses no capability
+PASS direct artifacts and67/21 memberships
+PASS direct20/30 fixed ensemble sizes
+PASS ensemble averages predictions before absolute errors
+PASS signed seed cancellation gains remain positive
+PASS direct distinct B6remaining66 and distribution66
+PASS directC16 confirmed-only and frozen reference mapping
+PASS direct error budget only B1mask/F9 and MSE identity
+PASS direct registered residual upper comes from fitted convention, distinct from raw physics
+PASS direct figures saved and numeric ensemble archive
+PASS changed truth across seeds rejected
+PASS incomplete70case bundle rejected
+PASS mixed30model recipe rejected
+PASS missing fresh seed rejected
+PASS strict yardstick count cannot silently drift
+PASS challenger artifacts and67/21 memberships
+PASS challenger20/30 fixed ensemble sizes
+PASS challenger distinct B6remaining66 and distribution66
+PASS challengerC16 confirmed-only and frozen reference mapping
+PASS challenger error budget only B1mask/F9 and MSE identity
+PASS challenger registered residual upper comes from fitted convention, distinct from raw physics
+PASS challenger figures saved and numeric ensemble archive
+check_f11: 22/22 PASS

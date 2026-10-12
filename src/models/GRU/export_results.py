@@ -29,14 +29,71 @@ import re
 import shutil
 import statistics as st
 
-METRICS = ("meta.json", "summary_errors.csv", "train_history.json", "done.flag")
+METRICS = ("meta.json", "summary_errors.csv", "summary_errors_val.csv",     # _val: sealed runs (H3)
+           "train_history.json", "done.flag")
 CHANNELS = ("T_inner", "T_outer", "T_avg")
 DEFAULT_W = (1.0, 6.0, 3.0)
+
+
+def _pfx(meta):
+    """Round 10 / H3: a sealed run (test set never read) carries Val_<metric>
+    keys in meta.json instead of Test_<metric>."""
+    return "Val_" if meta.get("sealed") else "Test_"
+
+
+def _m(meta, key):
+    """meta[<Test_|Val_><key>], e.g. _m(meta, "MAE_Overall")."""
+    return meta[_pfx(meta) + key]
+
+
+def _mask_tag(c):
+    """Round 10 / H2 run-name token for the T_avg mask knob, or ""."""
+    m = str(c.get("tavg_mask") or "")
+    if not m:
+        return ""
+    if m == "split":
+        return "mk"
+    if m == "valonly":
+        return "mkv"
+    if m.startswith("random:"):
+        return "mkr" + m.split(":", 1)[1]
+    return "mk_" + m
 
 
 def family(c):
     """Coarse bucket: which experiment arm is this, ignoring capacity."""
     fam = _family_core(c)
+    tags = []
+    if c.get('init_burnin_steps'):
+        tags.append('bi%d' % c['init_burnin_steps'])
+    if c.get('synthetic_rest_files'):
+        tags.append('rest%d' % c['synthetic_rest_files'])
+    if c.get('constants_from_sha256'):
+        tags.append('cf' + c['constants_from_sha256'][:12])
+    if c.get('phys_mode'):
+        tags.append('ph' + str(c['phys_mode']))
+    if c.get('other_ch_mode') == 'ratio_input':
+        tags.append('rt' + str(c.get('ratio_channels', 'R3')) + ('k' if c.get('ratio_ref', 'kelvin') == 'kelvin' else 'c'))
+    if c.get('other_ch_mode') == 'anchor_initial':
+        tags.append('init')
+    # Keep combinations distinct when an adopted encoder is paired with a
+    # ratio/physics challenger in the confirmation and final-seed stages.
+    if c.get('enc_widths', '256,256') != '256,256':
+        tags.append('enc' + (str(c['enc_widths']).replace(',', '-') or 'l'))
+    if c.get('h0_mode', 'linear') != 'linear':
+        tags.append(str(c['h0_mode']))
+    if c.get('loss_w0_mode'):
+        tags.append(str(c['loss_w0_mode']))
+    if tags:
+        fam += '_' + '_'.join(tags)
+    # Round 10 / H3: a sealed run is scored on its 20 validation files, never
+    # on the test set -- its own family, never ranked next to a test-scored one.
+    if c.get("sealed"):
+        return "sealed_" + _family_split(c, fam)
+    return _family_split(c, fam)
+
+
+def _family_split(c, fam):
     # Round-7 sanity arms are scored on a REDUCED test set (both-phase runs
     # removed), so their numbers must never sit next to full-set ones.
     if c.get("exclude_both_phase"):
@@ -52,11 +109,26 @@ def family(c):
     if xt:
         return "loto_xt{}_".format(xt) + fam
     if (c.get("data") or {}).get("val_split") == "stratified":
-        return "vs{}_".format((c.get("data") or {}).get("val_per_type", 2)) + fam
-    return fam
+        # Round 10 / H1: the json's own tag (vs3) when the run recorded one.
+        d = c.get("data") or {}
+        tag = str(d.get("split_tag") or "vs{}".format(d.get("val_per_type", 2)))
+        if _mask_tag(c):
+            tag += "_" + _mask_tag(c)              # H2: masked-label runs are their own family
+        if c.get("relabel_csv"):
+            tag += "_rl"                           # A4: algebraically relabelled T_avg
+        return tag + "_" + fam
+    return ("rl_" if c.get("relabel_csv") else "") + fam
 
 
 def _family_core(c):
+    if c.get("early_step_weight", 1) != 1:
+        return "early_step_weight"
+    if c.get("feat_cols", "Time (s),Input Temperature (C)").lower() in ("input temperature (c)", "input_t", "input", "no_time"):
+        return "no_time"
+    if c.get("enc_widths", "256,256") != "256,256" or c.get("h0_mode", "linear") != "linear" or c.get("init_encoder", "point") != "point":
+        return "encoder_" + str(c.get("enc_widths", "256,256")).replace(",", "-") + "_" + str(c.get("h0_mode", "linear")) + "_" + str(c.get("init_encoder", "point"))
+    if c.get("loss_w0_mode") == "inv_kc":
+        return "anchor_inverse_kc"
     v = (c.get("variants") or ["?"])[0]
     if v == "abs_sliding":
         # The AR arms differ in other_ch_mode too -- without this the
@@ -92,6 +164,30 @@ def _family_core(c):
 def leaf_name(c, lp):
     """Layer level: layers, dropout, and anything else that still differs."""
     p = ["L{}".format(lp["num_layers"]), "dp{:g}".format(lp["dropout"])]
+    if c.get('init_burnin_steps'):
+        p.append('bi%d' % c['init_burnin_steps'])
+    if c.get('synthetic_rest_files'):
+        p.append('rest%d' % c['synthetic_rest_files'])
+    if c.get('constants_from_sha256'):
+        p.append('cf' + c['constants_from_sha256'][:12])
+    if c.get('phys_mode'):
+        p.append('ph' + str(c['phys_mode']))
+    if c.get('other_ch_mode') == 'ratio_input':
+        p.append('rt' + str(c.get('ratio_channels', 'R3')) + ('k' if c.get('ratio_ref', 'kelvin') == 'kelvin' else 'c'))
+    if c.get('other_ch_mode') == 'anchor_initial':
+        p.append('init')
+    if c.get("early_step_weight", 1) != 1:
+        p.append("esw%g" % c["early_step_weight"])
+    if c.get("feat_cols", "Time (s),Input Temperature (C)").lower() in ("input temperature (c)", "input_t", "input", "no_time"):
+        p.append("nt")
+    if c.get("loss_w0_mode") == "inv_kc":
+        p.append("w0ikc")
+    if c.get("enc_widths", "256,256") != "256,256":
+        p.append("enc" + (str(c.get("enc_widths", "")).replace(",", "-") or "l"))
+    if c.get("h0_mode", "linear") != "linear":
+        p.append("h0t" if c["h0_mode"] == "tanh" else "h0z")
+    if c.get("init_encoder", "point") != "point":
+        p.append("ew%d" % c.get("window_size", 10))
     if c.get("pos_gap_floor", 0):
         p.append("floor{:g}".format(c["pos_gap_floor"])
                  + ("s" if c.get("pos_floor_soft") else ""))
@@ -117,6 +213,9 @@ def leaf_name(c, lp):
         p.append("ah")
     if c.get("input_lookahead", 0):
         p.append("la{}".format(c["input_lookahead"]))
+    tf = c.get("tf32")
+    if tf not in (None, False, "0"):
+        p.append("tf32" if tf in (True, "1") else "tf32c")   # H9 (Round 10)
     if c.get("case_flag_input"):
         p.append("fi" + str(c["case_flag_input"])[0])
     if c.get("exclude_both_phase"):
@@ -176,10 +275,15 @@ def write_csv(path, rows):
         w.writerows(rows)
 
 
+def summary_csv_name(r):
+    return "summary_errors_val.csv" if r["meta"].get("sealed") else "summary_errors.csv"
+
+
 def n_test_cases(r):
     """Rows of summary_errors.csv minus the AVERAGE line (70 on the full
-    test set, 49 for the round-7 sanity arms)."""
-    p = os.path.join(r["vd"], "summary_errors.csv")
+    test set, 49 for the round-7 sanity arms, 20 validation files for a
+    sealed run)."""
+    p = os.path.join(r["vd"], summary_csv_name(r))
     if not os.path.isfile(p):
         return ""
     return sum(1 for row in csv.DictReader(open(p, newline=""))
@@ -187,18 +291,19 @@ def n_test_cases(r):
 
 
 def stats_row(rs, **extra):
-    o = [x["meta"]["Test_MAE_Overall"] for x in rs]
+    o = [_m(x["meta"], "MAE_Overall") for x in rs]
     row = dict(extra)
-    row.update(seeds=len(o), test_cases=n_test_cases(rs[0]),
+    row.update(seeds=len(o), scored_on=("validation" if rs[0]["meta"].get("sealed") else "test"),
+               test_cases=n_test_cases(rs[0]),
                overall_mean=round(st.mean(o), 4),
                overall_sd=round(st.stdev(o) if len(o) > 1 else 0.0, 4),
                overall_best=round(min(o), 4), overall_worst=round(max(o), 4),
                runs_above_1_5C=sum(1 for x in o if x > 1.5))
     for c in CHANNELS:
         row[c + "_mean"] = round(
-            st.mean([x["meta"]["Test_MAE_" + c] for x in rs]), 4)
+            st.mean([_m(x["meta"], "MAE_" + c) for x in rs]), 4)
     row["R2_mean"] = round(
-        st.mean([x["meta"]["Test_R2_Overall"] for x in rs]), 6)
+        st.mean([_m(x["meta"], "R2_Overall") for x in rs]), 6)
     return row
 
 
@@ -391,7 +496,7 @@ def write_readme(dst, runs, fams_present, index, with_plots):
     """A legend for the folder: what each configuration actually means."""
     leaves = " ".join(r["leaf"] for r in runs)
     # "vs" is carried as the family prefix (vs2_...), never as a leaf token
-    has_vs = any(re.match(r"vs\d+_", f) for f in fams_present)
+    has_vs = any(re.match(r"(sealed_)?vs\d+_", f) for f in fams_present)
     used = [(k, t) for k, t in KNOB_DOC
             if k == "h"
             or (k == "L" and re.search(r"\bL\d", leaves))
@@ -445,7 +550,8 @@ def write_readme(dst, runs, fams_present, index, with_plots):
     documented = {n for n, _ in FAMILY_DOC}
     for name, text in FAMILY_DOC:
         hits = sorted(f for f in fams_present
-                      if f == name or (re.match(r"vs\d+_", f) and f[f.index("_") + 1:] == name
+                      if f == name or (re.match(r"(sealed_)?vs\d+_", f)
+                                       and re.sub(r"^(sealed_)?vs\d+_", "", f) == name
                                        and f not in documented))
         for f in hits:
             out += ["**{}**".format(f), "", _wrap(text), ""]
@@ -481,23 +587,32 @@ def main():
         cfgs.setdefault((r["fam"], r["h"], r["leaf"]), []).append(r)
     # Round-7 sanity arms (EXCLUDE_BOTH_PHASE) are scored on 49 test cases,
     # so they never compete for the ranking, the plots or "(cur best)"; they
-    # are listed after every full-set family instead.
-    full = [k for k in cfgs if not cfgs[k][0]["cfg"].get("exclude_both_phase")]
-    sanity = [k for k in cfgs if k not in full]
+    # are listed after every full-set family instead. Round 10 / H3: sealed
+    # runs are scored on their validation files; they rank among themselves
+    # only (a Round 10 export is all sealed, a mixed one ranks the
+    # test-scored runs and lists the sealed families after them).
+    sanity = [k for k in cfgs if cfgs[k][0]["cfg"].get("exclude_both_phase")]
+    sealed = [k for k in cfgs if k not in sanity and cfgs[k][0]["meta"].get("sealed")]
+    full = [k for k in cfgs if k not in sanity and k not in sealed]
+    if not full and sealed:
+        full, sealed = sealed, []
+        print("all runs are sealed (validation-scored): ranking them among themselves")
     if not full:
         raise SystemExit("only sanity (reduced test set) runs found -- "
                          "nothing to rank")
-    ranked = sorted(full, key=lambda k: st.mean(
-        [x["meta"]["Test_MAE_Overall"] for x in cfgs[k]]))
+    def _score(k):
+        return st.mean([_m(x["meta"], "MAE_Overall") for x in cfgs[k]])
+    ranked = sorted(full, key=_score)
     heavy = set(ranked[:args.with_plots])
 
     fams = {}
     for k in cfgs:
         fams.setdefault(k[0], []).append(k)
-    fam_order = sorted([f for f in fams if not f.startswith("sanity_xb_")],
-                       key=lambda f: min(
-        st.mean([x["meta"]["Test_MAE_Overall"] for x in cfgs[k]]) for k in fams[f]))
-    fam_order += sorted(f for f in fams if f.startswith("sanity_xb_"))
+    def _side(f):
+        return f.startswith("sanity_xb_") or (sealed and f.startswith("sealed_"))
+    fam_order = sorted([f for f in fams if not _side(f)],
+                       key=lambda f: min(_score(k) for k in fams[f]))
+    fam_order += sorted(f for f in fams if _side(f))
 
     print("{} runs | {} configurations | {} families".format(
         len(runs), len(cfgs), len(fam_order)))
@@ -509,12 +624,12 @@ def main():
         # hidden size, then layer count, then the rest. _family.csv ranks them.
         keys = sorted(fams[fam],
                       key=lambda k: (k[1], cfgs[k][0]["lp"]["num_layers"], k[2]))
-        best = st.mean([x["meta"]["Test_MAE_Overall"] for x in cfgs[keys[0]]])
+        best = _score(keys[0])
         print("\n  {:02d} {:<26} {} configs, best {:.3f}".format(
             frank, fam, len(keys), best))
         frows = []
         for k in keys:
-            rs = sorted(cfgs[k], key=lambda x: x["meta"]["Test_MAE_Overall"])
+            rs = sorted(cfgs[k], key=lambda x: _m(x["meta"], "MAE_Overall"))
             _, h, leaf = k
             # The single best configuration of the round gets a visible tag on
             # its folder, so it can be found by browsing without opening a CSV.
@@ -527,7 +642,7 @@ def main():
             for r in rs:
                 sd = os.path.join(ldir, "seed{:03d}".format(r["seed"]))
                 os.makedirs(sd, exist_ok=True)
-                want = METRICS + (("predictions.npz",) if k in heavy else ())
+                want = METRICS + (("predictions.npz", "predictions_val.npz") if k in heavy else ())
                 for f in want:
                     s = os.path.join(r["vd"], f)
                     if os.path.isfile(s):
@@ -537,10 +652,10 @@ def main():
                                     os.path.join(sd, "plots"))
                 th = os.path.join(r["vd"], "train_history.json")
                 row = dict(seed=r["seed"],
-                           overall_MAE_C=round(r["meta"]["Test_MAE_Overall"], 4))
+                           overall_MAE_C=round(_m(r["meta"], "MAE_Overall"), 4))
                 for c in CHANNELS:
-                    row[c + "_MAE_C"] = round(r["meta"]["Test_MAE_" + c], 4)
-                row["R2_overall"] = round(r["meta"]["Test_R2_Overall"], 6)
+                    row[c + "_MAE_C"] = round(_m(r["meta"], "MAE_" + c), 4)
+                row["R2_overall"] = round(_m(r["meta"], "R2_Overall"), 6)
                 row["best_epoch"] = (json.load(open(th)).get("best_epoch", "")
                                      if os.path.isfile(th) else "")
                 row["run_dir"] = r["dir"]
@@ -560,9 +675,11 @@ def main():
 
     os.makedirs(os.path.join(args.dst, "summary"), exist_ok=True)
     # Full-set configurations ranked; sanity (49-case) configurations go to
-    # their own file so a reader cannot line the two up by accident.
+    # their own file so a reader cannot line the two up by accident (sealed
+    # families likewise, when test-scored runs are present).
     sanity_rows = [r for r in index if r["family"].startswith("sanity_xb_")]
-    index = [r for r in index if not r["family"].startswith("sanity_xb_")]
+    sealed_rows = [r for r in index if _side(r["family"]) and not r["family"].startswith("sanity_xb_")]
+    index = [r for r in index if not _side(r["family"])]
     index.sort(key=lambda r: r["overall_mean"])
     for i, r in enumerate(index, 1):
         r_ = dict(rank=i)
@@ -573,35 +690,42 @@ def main():
         sanity_rows.sort(key=lambda r: r["overall_mean"])
         write_csv(os.path.join(args.dst, "summary", "sanity_xb_reduced_testset.csv"),
                   sanity_rows)
+    if sealed_rows:
+        # H3: validation-scored (sealed) configurations next to test-scored
+        # ones -- their own file, never lined up with the test numbers.
+        sealed_rows.sort(key=lambda r: r["overall_mean"])
+        write_csv(os.path.join(args.dst, "summary", "sealed_validation_scored.csv"),
+                  sealed_rows)
 
-    # per-case table for the winner
+    # per-case table for the winner (validation files, keyed by name, for a
+    # sealed winner; NaN T_avg on masked files is skipped)
     acc = {}
     for r in cfgs[ranked[0]]:
-        path = os.path.join(r["vd"], "summary_errors.csv")
+        path = os.path.join(r["vd"], summary_csv_name(r))
         if not os.path.isfile(path):
             continue
         for row in csv.DictReader(open(path, newline="")):
             if row["Case"] == "AVERAGE":
                 continue
             m = re.search(r"\((\d+)\)", row["CaseFile"])
-            if not m:
-                continue
-            a = acc.setdefault(int(m.group(1)),
-                               dict(file=row["CaseFile"], max_in=[],
-                                    **{c: [] for c in CHANNELS}))
+            cid = int(m.group(1)) if m else row["Case"]
+            a = acc.setdefault(cid, dict(file=row["CaseFile"], max_in=[],
+                                         **{c: [] for c in CHANNELS}))
             for c in CHANNELS:
-                a[c].append(float(row["MAE_{} (C)".format(c)]))
+                v = float(row["MAE_{} (C)".format(c)] or "nan")
+                if v == v:
+                    a[c].append(v)
             a["max_in"].append(float(row["MaxErr_T_inner (C)"]))
     rows = []
-    for cid in sorted(acc):
+    for cid in sorted(acc, key=lambda k: (1, 0, k) if isinstance(k, str) else (0, k, "")):
         a = acc[cid]
-        means = [st.mean(a[c]) for c in CHANNELS]
+        means = [st.mean(a[c]) if a[c] else float("nan") for c in CHANNELS]
         row = dict(case=cid, file=a["file"])
         for c, v in zip(CHANNELS, means):
             row[c + "_MAE_C"] = round(v, 4)
-        row["overall_MAE_C"] = round(st.mean(means), 4)
+        row["overall_MAE_C"] = round(st.mean([v for v in means if v == v]), 4)
         row["MaxErr_T_inner_C"] = round(st.mean(a["max_in"]), 3)
-        row["seeds"] = len(a["T_avg"])
+        row["seeds"] = len(a["T_inner"])
         rows.append(row)
     write_csv(os.path.join(args.dst, "summary", "best_config_per_case.csv"), rows)
 

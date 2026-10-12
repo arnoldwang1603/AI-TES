@@ -1,0 +1,75 @@
+PASS  CSV MAE readouts are normalised and produce the registered BETTER verdict
+PASS  C11 must beat the pure-physics E1 row on both relevant channels
+PASS  C12 qualifies only with a qualifying C11 and a ToTa improvement over it
+PASS  C12 cannot bypass C11's E1 gate
+PASS  joint first-five spike share respects masked T_avg and rejects disjoint channel spikes
+PASS  NO_TIME equivalence is an adoption predicate without requiring a BETTER verdict
+PASS  NO_TIME full-width confirmation uses the B1_mask baseline and the same P4 rule
+PASS  P2 evaluates its registered overall/T_inner predicate independently of generic BETTER
+PASS  P1 labels and stopping-control interpretation use paired hot-discharge scores
+PASS  a random mask that significantly lowers the side score fails the P1 control
+PASS  F4 adopts a capacity-qualified challenger with two of three wins
+PASS  F4 large rank reversal cannot be rescued by win count when three-draw mean is worse
+PASS  absence of a confirmed challenger freezes direct without fabricating comparisons
+
+check_decisions: 13/13 PASS
+PASS  CSV MAE readouts are normalised and produce the registered BETTER verdict
+PASS  C11 must beat the pure-physics E1 row on both relevant channels
+PASS  C12 qualifies only with a qualifying C11 and a ToTa improvement over it
+PASS  C12 cannot bypass C11's E1 gate
+PASS  joint first-five spike share respects masked T_avg and rejects disjoint channel spikes
+PASS  NO_TIME equivalence is an adoption predicate without requiring a BETTER verdict
+PASS  NO_TIME full-width confirmation uses the B1_mask baseline and the same P4 rule
+PASS  P2 evaluates its registered overall/T_inner predicate independently of generic BETTER
+PASS  P1 labels and stopping-control interpretation use paired hot-discharge scores
+PASS  a random mask that significantly lowers the side score fails the P1 control
+PASS  F4 adopts a capacity-qualified challenger with two of three wins
+PASS  F4 large rank reversal cannot be rescued by win count when three-draw mean is worse
+PASS  absence of a confirmed challenger freezes direct without fabricating comparisons
+
+check_decisions: 13/13 PASS
+PASS  CSV MAE readouts are normalised and produce the registered BETTER verdict
+PASS  C11 must beat the pure-physics E1 row on both relevant channels
+PASS  C12 qualifies only with a qualifying C11 and a ToTa improvement over it
+PASS  C12 cannot bypass C11's E1 gate
+PASS  joint first-five spike share respects masked T_avg and rejects disjoint channel spikes
+PASS  NO_TIME equivalence is an adoption predicate without requiring a BETTER verdict
+PASS  NO_TIME full-width confirmation uses the B1_mask baseline and the same P4 rule
+PASS  P2 evaluates its registered overall/T_inner predicate independently of generic BETTER
+PASS  P1 labels and stopping-control interpretation use paired hot-discharge scores
+PASS  a random mask that significantly lowers the side score fails the P1 control
+PASS  F4 adopts a capacity-qualified challenger with two of three wins
+PASS  F4 large rank reversal cannot be rescued by win count when three-draw mean is worse
+PASS  absence of a confirmed challenger freezes direct without fabricating comparisons
+
+check_decisions: 13/13 PASS
+PASS  CSV MAE readouts are normalised and produce the registered BETTER verdict
+PASS  C11 must beat the pure-physics E1 row on both relevant channels
+PASS  C12 qualifies only with a qualifying C11 and a ToTa improvement over it
+PASS  C12 cannot bypass C11's E1 gate
+PASS  joint first-five spike share respects masked T_avg and rejects disjoint channel spikes
+PASS  NO_TIME equivalence is an adoption predicate without requiring a BETTER verdict
+PASS  NO_TIME full-width confirmation uses the B1_mask baseline and the same P4 rule
+PASS  P2 evaluates its registered overall/T_inner predicate independently of generic BETTER
+PASS  P1 labels and stopping-control interpretation use paired hot-discharge scores
+PASS  a random mask that significantly lowers the side score fails the P1 control
+PASS  F4 adopts a capacity-qualified challenger with two of three wins
+PASS  F4 large rank reversal cannot be rescued by win count when three-draw mean is worse
+PASS  absence of a confirmed challenger freezes direct without fabricating comparisons
+
+check_decisions: 13/13 PASS
+PASS  CSV MAE readouts are normalised and produce the registered BETTER verdict
+PASS  C11 must beat the pure-physics E1 row on both relevant channels
+PASS  C12 qualifies only with a qualifying C11 and a ToTa improvement over it
+PASS  C12 cannot bypass C11's E1 gate
+PASS  joint first-five spike share respects masked T_avg and rejects disjoint channel spikes
+PASS  NO_TIME equivalence is an adoption predicate without requiring a BETTER verdict
+PASS  NO_TIME full-width confirmation uses the B1_mask baseline and the same P4 rule
+PASS  P2 evaluates its registered overall/T_inner predicate independently of generic BETTER
+PASS  P1 labels and stopping-control interpretation use paired hot-discharge scores
+PASS  a random mask that significantly lowers the side score fails the P1 control
+PASS  F4 adopts a capacity-qualified challenger with two of three wins
+PASS  F4 large rank reversal cannot be rescued by win count when three-draw mean is worse
+PASS  absence of a confirmed challenger freezes direct without fabricating comparisons
+
+check_decisions: 13/13 PASS

@@ -1,0 +1,32 @@
+{
+  "test_csv_attempts": 0,
+  "blocked_test_csv": [],
+  "allowed_csv_unique": 25,
+  "allowed_csv_paths": [
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 3.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 3 (Charging with noise)/Case 15.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 3 (Charging with noise)/Case 17.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging)/Case 15.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging)/Case 19.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 5 (Linear charging + constant)/Case 21.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 5 (Linear charging + constant)/Case 23.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging)/Case 10.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging)/Case 11.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise)/Case 14.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise)/Case 3.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 8 (linear discharging)/Discharge 16 - Darien.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 8 (linear discharging)/Discharge 18 - Darien.csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 9 (non-linear discharging)/Case New 1 (Tejas).csv",
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 9 (non-linear discharging)/Case New 4 (Tejas).csv",
+    "C:/Users/FEvMo/Documents/GitHub/calit2-thermal-wiki/outputs/round10_package_2026-10-12/GRU/splits/tavg_convention_by_file.csv",
+    "runs/_round10_analysis_checks/real_ep2/error_budget/error_budget.csv",
+    "runs/_round10_analysis_checks/real_ep2/error_budget/error_budget_summary.csv",
+    "runs/_round10_analysis_checks/real_ep2/error_budget/error_floors.csv",
+    "runs/_round10_analysis_checks/real_ep2/error_budget/error_oracle.csv"
+  ]
+}

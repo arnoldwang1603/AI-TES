@@ -1,0 +1,21 @@
+PASS  P1-only preflight explicitly excludes test loading and accepts284/20/0
+PASS  P1-only preflight pins SEAL_TEST=1 and checks both train/validation detectors
+PASS  legacy callable gate delegates to validation and records its result
+PASS  missing champion fails instead of being treated as a skipped success
+PASS  failed numerical validation gate cannot return success
+
+check_runner_legacy_paths: 5/5 PASS
+PASS  P1-only preflight explicitly excludes test loading and accepts284/20/0
+PASS  P1-only preflight pins SEAL_TEST=1 and checks both train/validation detectors
+PASS  legacy callable gate delegates to validation and records its result
+PASS  missing champion fails instead of being treated as a skipped success
+PASS  failed numerical validation gate cannot return success
+
+check_runner_legacy_paths: 5/5 PASS
+PASS  P1-only preflight explicitly excludes test loading and accepts284/20/0
+PASS  P1-only preflight pins SEAL_TEST=1 and checks both train/validation detectors
+PASS  legacy callable gate delegates to validation and records its result
+PASS  missing champion fails instead of being treated as a skipped success
+PASS  failed numerical validation gate cannot return success
+
+check_runner_legacy_paths: 5/5 PASS

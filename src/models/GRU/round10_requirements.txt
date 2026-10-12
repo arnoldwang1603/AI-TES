@@ -1,0 +1,13 @@
+# Python 3.11/3.12: match the package's verified numerical environment.
+# Install torch==2.8.0 separately using the CUDA index in the runbook.
+numpy==2.4.2; python_version >= "3.11"
+pandas==3.0.1; python_version >= "3.11"
+scipy==1.17.1; python_version >= "3.11"
+scikit-learn==1.8.0; python_version >= "3.11"
+matplotlib==3.10.8; python_version >= "3.11"
+# Older lab environments require their own preflight and full-arm smoke.
+numpy>=1.24,<3; python_version < "3.11"
+pandas>=1.5,<4; python_version < "3.11"
+scipy>=1.10,<2; python_version < "3.11"
+scikit-learn>=1.2,<2; python_version < "3.11"
+matplotlib>=3.7,<4; python_version < "3.11"

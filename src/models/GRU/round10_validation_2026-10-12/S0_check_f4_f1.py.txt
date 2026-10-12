@@ -1,0 +1,75 @@
+PASS round10_vs3_s43.json
+PASS round10_vs3_s44.json
+PASS loto_vs3_fold1.json
+PASS loto_vs3_fold2.json
+PASS loto_vs3_fold3.json
+PASS loto_vs3_fold4.json
+PASS loto_vs3_fold5.json
+PASS loto_vs3_fold6.json
+PASS loto_vs3_fold7.json
+PASS loto_vs3_fold8.json
+PASS loto_vs3_fold9.json
+PASS loto_vs3_fold10.json
+PASS conservative near-duplicate graph transitive closure
+PASS all304source CSV hashes unchanged
+14checks,0FAIL
+PASS round10_vs3_s43.json
+PASS round10_vs3_s44.json
+PASS loto_vs3_fold1.json
+PASS loto_vs3_fold2.json
+PASS loto_vs3_fold3.json
+PASS loto_vs3_fold4.json
+PASS loto_vs3_fold5.json
+PASS loto_vs3_fold6.json
+PASS loto_vs3_fold7.json
+PASS loto_vs3_fold8.json
+PASS loto_vs3_fold9.json
+PASS loto_vs3_fold10.json
+PASS conservative near-duplicate graph transitive closure
+PASS all304source CSV hashes unchanged
+14checks,0FAIL
+PASS round10_vs3_s43.json
+PASS round10_vs3_s44.json
+PASS loto_vs3_fold1.json
+PASS loto_vs3_fold2.json
+PASS loto_vs3_fold3.json
+PASS loto_vs3_fold4.json
+PASS loto_vs3_fold5.json
+PASS loto_vs3_fold6.json
+PASS loto_vs3_fold7.json
+PASS loto_vs3_fold8.json
+PASS loto_vs3_fold9.json
+PASS loto_vs3_fold10.json
+PASS conservative near-duplicate graph transitive closure
+PASS all304source CSV hashes unchanged
+14checks,0FAIL
+PASS round10_vs3_s43.json
+PASS round10_vs3_s44.json
+PASS loto_vs3_fold1.json
+PASS loto_vs3_fold2.json
+PASS loto_vs3_fold3.json
+PASS loto_vs3_fold4.json
+PASS loto_vs3_fold5.json
+PASS loto_vs3_fold6.json
+PASS loto_vs3_fold7.json
+PASS loto_vs3_fold8.json
+PASS loto_vs3_fold9.json
+PASS loto_vs3_fold10.json
+PASS conservative near-duplicate graph transitive closure
+PASS all304source CSV hashes unchanged
+14checks,0FAIL
+PASS round10_vs3_s43.json
+PASS round10_vs3_s44.json
+PASS loto_vs3_fold1.json
+PASS loto_vs3_fold2.json
+PASS loto_vs3_fold3.json
+PASS loto_vs3_fold4.json
+PASS loto_vs3_fold5.json
+PASS loto_vs3_fold6.json
+PASS loto_vs3_fold7.json
+PASS loto_vs3_fold8.json
+PASS loto_vs3_fold9.json
+PASS loto_vs3_fold10.json
+PASS conservative near-duplicate graph transitive closure
+PASS all304source CSV hashes unchanged
+14checks,0FAIL

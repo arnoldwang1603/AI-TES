@@ -1,4 +1,6 @@
 """Small serialization / formatting helpers (leaf module)."""
+import hashlib
+
 import numpy as np
 import torch
 
@@ -15,6 +17,24 @@ def format_duration(seconds):
     m, s = divmod(rem, 60)
     return f"{int(h)}h {int(m)}m {s:.0f}s"
 
+
+
+def sha256_file(path, chunk=1 << 20):
+    """Hex sha256 of a file (manual loop: hashlib.file_digest is 3.11+)."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            b = f.read(chunk)
+            if not b:
+                break
+            h.update(b)
+    return h.hexdigest()
+
+
+def sha256_lines(items):
+    """Hex sha256 of a list of strings, SORTED and newline-joined (utf-8), so
+    the digest names the SET of files, not an ordering."""
+    return hashlib.sha256("\n".join(sorted(str(x) for x in items)).encode("utf-8")).hexdigest()
 
 
 def _to_jsonable(obj):

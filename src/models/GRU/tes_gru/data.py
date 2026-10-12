@@ -61,6 +61,40 @@ def input_phase_flag_np(inp):
 # ============================================================
 # 2. Dataset (variant-aware)
 # ============================================================
+# Positions of the per-file items in ThermalDataset.__getitem__'s tuple that
+# the loops pick out by index (the first five are unpacked by name).
+ITEM_INP_LAST = 10      # H9: scaled Input_T(N)
+ITEM_LOSS_MASK = 11     # H2: per-file loss mask (3,), T_avg entry 0 when masked
+ITEM_PHYS_TARGETS = 12  # H6 only: scaled physical references at target t+1
+
+
+def load_physics_cache(case_id, times, directory=None, physics_override=None):
+    """Physical outer/line-average in raw Celsius at the requested times.
+
+    An explicit mapping supports E3/G11 shifted references without writing
+    or overwriting the nominal cache. Cache content is never a target label.
+    """
+    if physics_override is None:
+        name = split_key(case_id).replace('\\', '/').replace('/', '__') + '.npz'
+        path = os.path.join(directory or PHYSICS_CACHE_DIR, name)
+        if not os.path.isfile(path):
+            raise RuntimeError('missing physical reference: %s' % path)
+        with np.load(path, allow_pickle=False) as z:
+            physical = {k: np.asarray(z[k], dtype=float) for k in ('time', 'T_outer_phys', 'T_avg_line_phys')}
+    else:
+        physical = physics_override
+    source_time = np.asarray(physical['time'], dtype=float).reshape(-1)
+    times = np.asarray(times, dtype=float).reshape(-1)
+    if len(source_time) < 2 or np.any(np.diff(source_time) <= 0):
+        raise RuntimeError('physical reference times must increase')
+    if times.min() < source_time[0] - 1e-6 or times.max() > source_time[-1] + 1e-6:
+        raise RuntimeError('physical reference does not cover the requested horizon')
+    result = np.column_stack([np.interp(times, source_time, physical[k]) for k in ('T_outer_phys', 'T_avg_line_phys')])
+    if not np.isfinite(result).all():
+        raise RuntimeError('nonfinite physical reference')
+    return result
+
+
 class ThermalDataset(Dataset):
     """
     Per variant returns the appropriate input feature layout.
@@ -73,13 +107,24 @@ class ThermalDataset(Dataset):
       window_obs   (W, 4)   first W rows of [T_outer, T_inner, T_avg, Input_T]
                             (only used by abs_window; otherwise ignored)
       full_*                full series for plotting / inverse_transform
+      inp_last     ()       scaled Input_T at step N (the row the [:-1] cut
+                            removes from X); the T_inner anchor's reference
+                            for the LAST step under ANCHOR_LEAD=1 (H9 fix)
+
+    Item tuple order (see ITEM_* below): X, Y, time_values, init_cond,
+    window_obs, full_time, full_t_outer, full_t_inner, full_t_avg,
+    full_input_temp, inp_last, loss_mask. New per-file items are appended at
+    the END.
+      loss_mask    (3,)     1 for every trained channel; T_avg entry 0 when
+                            the file's T_avg label is masked (H2, tavg_masked)
     """
 
     BASE_COLS = ['Time (s)', 'T_outer (C)', 'T_inner (C)', 'T_avg (C)',
                  'Input Temperature (C)']
 
     def __init__(self, csv_or_df, variant, scaler=None, file_name=None,
-                 window_size=WINDOW_SIZE):
+                 window_size=WINDOW_SIZE, tavg_masked=False,
+                 physics_override=None, physics_cache_dir=None):
         if isinstance(csv_or_df, str):
             self.file_name = os.path.basename(csv_or_df)
             df = pd.read_csv(csv_or_df)
@@ -89,6 +134,7 @@ class ThermalDataset(Dataset):
 
         self.variant = variant
         self.window_size = window_size
+        self.tavg_masked = bool(tavg_masked)
 
         df.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
         if "Input Temperature (C)" not in df.columns:
@@ -101,6 +147,16 @@ class ThermalDataset(Dataset):
         else:
             self.scaler = scaler
 
+        if PHYS_MODE:
+            if physics_override is None and self.file_name.startswith('synthetic_rest/'):
+                temperature = float(df['T_outer (C)'].iloc[0])
+                physics_override = {'time': df['Time (s)'].to_numpy(float),
+                                    'T_outer_phys': np.full(len(df), temperature),
+                                    'T_avg_line_phys': np.full(len(df), temperature)}
+            physical = load_physics_cache(self.file_name, df['Time (s)'].to_numpy(float),
+                                         directory=physics_cache_dir, physics_override=physics_override)
+            df['_phys_outer'] = physical[:, 0] * self.scaler.scale_[1] + self.scaler.min_[1]
+            df['_phys_avg'] = physical[:, 1] * self.scaler.scale_[3] + self.scaler.min_[3]
         df[self.BASE_COLS] = self.scaler.transform(df[self.BASE_COLS])
 
         # Delta features (GT) computed AFTER scaling. The training rollout
@@ -154,7 +210,8 @@ class ThermalDataset(Dataset):
             # k values (legal: the full curve is a given boundary condition).
             # Built AFTER scaling, so the lead columns share Input_T's scale;
             # the tail holds the last value.
-            feat_cols = ["Time (s)", "Input Temperature (C)"]
+            feat_cols = (["Input Temperature (C)"] if NO_TIME else
+                         ["Time (s)", "Input Temperature (C)"])
             for _i in range(1, INPUT_LOOKAHEAD + 1):
                 lead = f"InputT_lead{_i}"
                 df[lead] = df["Input Temperature (C)"].shift(-_i).ffill()
@@ -175,6 +232,8 @@ class ThermalDataset(Dataset):
                 "T_outer (C)", "T_inner (C)", "T_avg (C)", "Input Temperature (C)",
             ]
 
+        if PHYS_MODE in ('input', 'input_residual'):
+            feat_cols.extend(['_phys_outer', '_phys_avg'])
         if CASE_FLAG_INPUT:
             # Round 7 (2026-09-06), extended to abs_sliding in round 8: one
             # column from the input-temperature profile alone, appended LAST
@@ -204,6 +263,8 @@ class ThermalDataset(Dataset):
         self.full_t_inner = []
         self.full_t_avg = []
         self.full_input_temp = []
+        self.inp_last = []
+        self.physics_targets = []
 
         # The model's target depends on whether this is a forward variant
         # (predict the 3 media temperatures) or an inverse variant (predict
@@ -227,7 +288,11 @@ class ThermalDataset(Dataset):
             full_obs = group[["T_outer (C)", "T_inner (C)", "T_avg (C)",
                               "Input Temperature (C)"]].values
             W = window_size
-            if full_obs.shape[0] >= W:
+            if variant == 'forward_direct' and INIT_ENCODER == 'window':
+                # G7(b): only the deployment-available initial observation;
+                # future measured media temperatures are never encoder inputs.
+                window_obs_arr = np.tile(full_obs[:1], (W, 1))
+            elif full_obs.shape[0] >= W:
                 window_obs_arr = full_obs[:W]
             else:
                 pad = np.tile(full_obs[-1:], (W - full_obs.shape[0], 1))
@@ -243,6 +308,11 @@ class ThermalDataset(Dataset):
             self.full_t_inner.append(group["T_inner (C)"].values)
             self.full_t_avg.append(group["T_avg (C)"].values)
             self.full_input_temp.append(group["Input Temperature (C)"].values)
+            # H9: the true scaled Input_T(N). X holds rows 0..N-1, so without
+            # this the lead-1 anchor had to tail-hold Input_T(N-1) at step N.
+            self.inp_last.append(group["Input Temperature (C)"].values[-1])
+            if PHYS_MODE:
+                self.physics_targets.append(group[['_phys_outer', '_phys_avg']].values[1:])
 
         self.X = torch.tensor(np.array(self.X), dtype=torch.float32)
         self.Y = torch.tensor(np.array(self.Y), dtype=torch.float32)
@@ -255,19 +325,216 @@ class ThermalDataset(Dataset):
         self.full_t_inner = np.array(self.full_t_inner)
         self.full_t_avg = np.array(self.full_t_avg)
         self.full_input_temp = np.array(self.full_input_temp)
+        self.inp_last = torch.tensor(np.array(self.inp_last), dtype=torch.float32)
+        # H2: per-file loss mask over the 3 output channels (T_inner, T_outer,
+        # T_avg). Channel 2 is T_avg for the forward variants; the inverse
+        # variants have no T_avg output and are never masked.
+        mask_row = [1.0, 1.0, 0.0 if (self.tavg_masked and not is_inverse(variant)) else 1.0]
+        self.loss_mask = torch.tensor([mask_row] * len(self.X), dtype=torch.float32)
+        self.physics_targets = (torch.tensor(np.array(self.physics_targets), dtype=torch.float32)
+                                if PHYS_MODE else None)
 
     def __len__(self):
         return len(self.X)
 
     def __getitem__(self, i):
-        return (
+        item = (
             self.X[i], self.Y[i], self.time_values[i],
             self.init_conditions[i], self.window_obs[i],
             self.full_time[i],
             self.full_t_outer[i], self.full_t_inner[i],
             self.full_t_avg[i], self.full_input_temp[i],
+            self.inp_last[i], self.loss_mask[i],
         )
+        return item + (self.physics_targets[i],) if PHYS_MODE else item
 
+
+
+# ============================================================
+# 5b. Split json helpers (Round 10 / H1, 2026-10-11)
+# ============================================================
+def load_split_spec(path=None):
+    """Read and validate a split json (default: the one config resolves).
+    Legacy keys: val_split, val_per_type, split_seed, train_subdir, types,
+    val, train. Round 10 keys (all optional): drop, tavg_mask, tag,
+    split_name. Refuses a json whose lists overlap or whose drop list names
+    a validation (or training) file -- a dropped file must be in neither."""
+    path = path or split_file_path()
+    spec = json.load(open(path, encoding="utf-8"))
+    for k in ("val", "train"):
+        if not isinstance(spec.get(k), list):
+            raise RuntimeError("split file {}: key {!r} missing or not a list".format(path, k))
+    val, train = set(spec["val"]), set(spec["train"])
+    drop = set(spec.get("drop") or [])
+    mask = set(spec.get("tavg_mask") or [])
+    if val & train:
+        raise RuntimeError("split file {}: {} files in both val and train, e.g. {}".format(
+            path, len(val & train), sorted(val & train)[:3]))
+    if drop & val:
+        raise RuntimeError("split file {}: drop list names {} validation file(s): {} -- refusing".format(
+            path, len(drop & val), sorted(drop & val)[:3]))
+    if drop & train:
+        raise RuntimeError("split file {}: drop list names {} training file(s): {} -- refusing".format(
+            path, len(drop & train), sorted(drop & train)[:3]))
+    if mask - (val | train):
+        raise RuntimeError("split file {}: tavg_mask names {} file(s) in neither list, e.g. {}".format(
+            path, len(mask - (val | train)), sorted(mask - (val | train))[:3]))
+    return spec
+
+
+def get_tavg_mask_sets(split=None):
+    """(train_masked_keys, val_masked_keys) under the TAVG_MASK knob -- the
+    single routing point for every per-file T_avg decision (loss mask, H3
+    validation scoring, A4 / H5 / H6 statistics). Keys are split-json keys
+    (relative to train_dir, posix); compare dataset ids via split_key().
+
+    split: None (the json config resolves), a basename in splits/, a path,
+    or an already-loaded spec dict.
+      ""            -> (set(), set())
+      "split"       -> (mask & train, mask & val)
+      "random:<s>"  -> (|mask & train| files sampled from the json's training
+                        list with random.Random(s), mask & val)
+      "valonly"     -> (set(), mask & val)
+    The draw uses the json's full training list (not the LOTO-filtered one),
+    so one seed is one draw whatever TRAIN_EXCLUDE_TYPE says."""
+    if not TAVG_MASK:
+        return set(), set()
+    if isinstance(split, dict):
+        spec = split
+    else:
+        path = split or split_file_path()
+        if not os.path.isfile(path) and os.path.basename(path) == path:
+            path = os.path.join(BASE_DIR, "splits", path)
+        spec = load_split_spec(path)
+    train, val = set(spec["train"]), set(spec["val"])
+    mask = set(spec.get("tavg_mask") or [])
+    if not mask:
+        raise RuntimeError("TAVG_MASK=%r but the split json carries no tavg_mask list" % TAVG_MASK)
+    val_m = mask & val
+    if TAVG_MASK == "split":
+        train_m = mask & train
+    elif TAVG_MASK == "valonly":
+        train_m = set()
+    else:                                   # random:<seed>
+        n = len(mask & train)
+        rng = random.Random(TAVG_MASK_SEED)
+        train_m = set(rng.sample(sorted(train), n))
+    return train_m, val_m
+
+
+# ============================================================
+# 5c. Algebraic T_avg relabel (Round 10 / A4, 2026-10-11)
+# ============================================================
+RELABEL_LABELS = ("inner-weighted", "borderline")
+TAVG_COLS = ("T_avg (C)", "T_ave (C)")
+
+
+def load_relabel_table(path=None):
+    """key -> inner share s (0..1) for every file the label table marks
+    inner-weighted or borderline. Key = basename(folder) + "/" + file, i.e.
+    the split-json key relative to train_dir. Rows of the test folder
+    (TEST_SUBDIR) are dropped: test files are never relabelled."""
+    path = path or RELABEL_CSV_PATH
+    if not path:
+        raise RuntimeError("load_relabel_table: no RELABEL_CSV")
+    tab = pd.read_csv(path)
+    need = {"folder", "file", "inner_share_pct", "label"}
+    if not need <= set(tab.columns):
+        raise RuntimeError("relabel table %s lacks columns %s" % (path, sorted(need - set(tab.columns))))
+    out = {}
+    for _, r in tab.iterrows():
+        folder = str(r["folder"]).replace("\\", "/").strip("/")
+        parts = folder.split("/")
+        if TEST_SUBDIR in parts:
+            continue
+        if str(r["label"]).strip() not in RELABEL_LABELS:
+            continue
+        s = float(r["inner_share_pct"]) / 100.0
+        if not (0.0 <= s < 0.9):
+            raise RuntimeError("relabel table %s: inner share %.3f out of range for %s/%s" % (
+                path, s, folder, r["file"]))
+        key = parts[-1] + "/" + str(r["file"])
+        if key in out:
+            raise RuntimeError("relabel table %s: duplicate key %s" % (path, key))
+        out[key] = s
+    return out
+
+
+def relabel_tavg(dfs, table):
+    """In place on (df, case_id) pairs: T_avg -> (T_avg - s*T_inner)/(1 - s)
+    for the files in `table` (keys matched through split_key). Returns the
+    sorted list of relabelled keys. Idempotence is NOT guaranteed -- call once."""
+    done = []
+    for df, cid in dfs:
+        k = split_key(cid)
+        if k not in table:
+            continue
+        s = table[k]
+        col = next((c for c in TAVG_COLS if c in df.columns), None)
+        if col is None:
+            raise RuntimeError("relabel: %s has no T_avg column" % cid)
+        ta = df[col].to_numpy(dtype=np.float64)
+        ti = df["T_inner (C)"].to_numpy(dtype=np.float64)
+        df[col] = (ta - s * ti) / (1.0 - s)
+        done.append(k)
+    return sorted(done)
+
+
+def get_relabel_sets(split=None):
+    """(train_keys, val_keys) the RELABEL_CSV table would relabel under the
+    split json in use -- the routing point for provenance (run_config) and
+    later statistics. Empty sets when RELABEL_CSV is off; under a non-json
+    split the whole table counts as training."""
+    if not RELABEL_CSV_PATH:
+        return set(), set()
+    table = set(load_relabel_table())
+    if VAL_SPLIT != "stratified":
+        return table, set()
+    if isinstance(split, dict):
+        spec = split
+    else:
+        path = split or split_file_path()
+        if not os.path.isfile(path) and os.path.basename(path) == path:
+            path = os.path.join(BASE_DIR, "splits", path)
+        spec = load_split_spec(path)
+    return table & set(spec["train"]), table & set(spec["val"])
+
+
+def scaler_from_sidecar(d):
+    """Round 10 / H4: rebuild the fitted MinMaxScaler from a constants sidecar
+    (the whole dict, or its "scaler" block) without touching the training
+    CSVs. The arrays round-trip through JSON exactly (repr of float64), so
+    transform / inverse_transform are bit-identical to the fitted scaler's."""
+    s = d["scaler"] if "scaler" in d else d
+    cols = list(s["columns"])
+    if cols != list(ThermalDataset.BASE_COLS):
+        raise RuntimeError("sidecar scaler columns %r != %r" % (cols, ThermalDataset.BASE_COLS))
+    sc = MinMaxScaler(feature_range=tuple(s.get("feature_range", (0, 1))))
+    sc.n_features_in_ = len(cols)
+    sc.feature_names_in_ = np.array(cols, dtype=object)
+    sc.n_samples_seen_ = int(s.get("n_samples_seen_", 0))
+    sc.data_min_ = np.asarray(s["data_min_"], dtype=np.float64)
+    sc.data_max_ = np.asarray(s["data_max_"], dtype=np.float64)
+    rng = s.get("data_range_")
+    sc.data_range_ = (np.asarray(rng, dtype=np.float64) if rng is not None
+                      else sc.data_max_ - sc.data_min_)
+    sc.scale_ = np.asarray(s["scale_"], dtype=np.float64)
+    sc.min_ = np.asarray(s["min_"], dtype=np.float64)
+    return sc
+
+
+def is_tavg_masked(case_id, masked_keys):
+    """True if a dataset case_id (relative to the data root) is in a key set
+    returned by get_tavg_mask_sets."""
+    return split_key(case_id) in masked_keys
+
+
+def split_key(case_id):
+    """case_id (relative to the data root, posix) -> split-json key (relative
+    to train_dir): strips the leading TRAIN_SUBDIR. Test-set ids are returned
+    unchanged (they never match a split key)."""
+    pre = TRAIN_SUBDIR + "/"
+    return case_id[len(pre):] if case_id.startswith(pre) else case_id
 
 
 # ============================================================
@@ -275,6 +542,10 @@ class ThermalDataset(Dataset):
 # ============================================================
 def _resolve_new_data_root(script_dir):
     """Return the first NEW_DATA_ROOT_CANDIDATES path that exists, or None."""
+    if DATA_ROOT:
+        if not os.path.isdir(DATA_ROOT):
+            raise RuntimeError("DATA_ROOT does not exist: %s" % DATA_ROOT)
+        return os.path.abspath(DATA_ROOT)
     for rel in NEW_DATA_ROOT_CANDIDATES:
         p = os.path.normpath(os.path.join(script_dir, rel))
         if os.path.isdir(p):
@@ -299,7 +570,12 @@ def _resolve_legacy_data_root(script_dir):
     return None
 
 
-def load_all_data():
+def load_all_data(include_test=None):
+    if include_test is None:
+        include_test = not SEAL_TEST
+    if include_test:
+        from paper_report import assert_test_access
+        assert_test_access()
     script_dir = BASE_DIR
 
     new_root = _resolve_new_data_root(script_dir)
@@ -343,8 +619,8 @@ def load_all_data():
 
     raw_train_paths = sorted(glob.glob(os.path.join(train_dir, "**", "*.csv"),
                                        recursive=True))
-    raw_test_paths = sorted(glob.glob(os.path.join(test_dir, "**", "*.csv"),
-                                      recursive=True))
+    raw_test_paths = (sorted(glob.glob(os.path.join(test_dir, "**", "*.csv"),
+                                      recursive=True)) if include_test else [])
     print(f"  CSVs in train_dir : {len(raw_train_paths)}")
     print(f"  CSVs in test_dir  : {len(raw_test_paths)}")
     if not raw_train_paths:
@@ -417,9 +693,27 @@ def load_all_data():
         # once with SPLIT_SEED and frozen in splits/<name>.json; test_dir is
         # taken whole. Paths in the file are relative to train_dir, posix.
         split_dir = os.path.join(BASE_DIR, "splits")
-        split_name = "stratified_v{}_s{}.json".format(VAL_PER_TYPE, SPLIT_SEED)
-        split_path = os.path.join(split_dir, split_name)
+        split_name = split_file_name()          # legacy formula, or SPLIT_NAME (H1)
+        split_path = split_file_path()
         rel = lambda p: os.path.relpath(p, train_dir).replace(os.sep, "/")
+        # Round 10 / H1: a committed json may carry a `drop` list. It is
+        # applied FIRST -- before the LOTO filter, by_type, the train-list
+        # consistency check and EXCLUDE_BOTH_PHASE -- so a dropped file is
+        # invisible to every later stage (and never reaches the test set).
+        # Legacy jsons without `drop` behave exactly as before.
+        spec, dropped = None, []
+        if os.path.isfile(split_path):
+            spec = load_split_spec(split_path)
+            drop_rel = set(spec.get("drop") or [])
+            if drop_rel:
+                not_on_disk = sorted(drop_rel - {rel(p) for p in raw_train_paths})
+                if not_on_disk:
+                    print("  NOTE: {} drop-list entries are not in train_dir anyway, e.g. {}".format(
+                        len(not_on_disk), not_on_disk[:2]))
+                dropped = sorted(p for p in raw_train_paths if rel(p) in drop_rel)
+                raw_train_paths = [p for p in raw_train_paths if rel(p) not in drop_rel]
+        elif SPLIT_NAME:
+            raise RuntimeError("SPLIT_NAME={!r}: {} does not exist".format(SPLIT_NAME, split_path))
         # Leave-one-type-out: drop the held-out type from train + val before
         # anything else; it joins the test set below. The split file's lists
         # are filtered by the same prefix so the consistency check still
@@ -438,8 +732,7 @@ def load_all_data():
         by_type = {}
         for p in raw_train_paths:
             by_type.setdefault(rel(p).split("/")[0], []).append(p)
-        if os.path.isfile(split_path):
-            spec = json.load(open(split_path, encoding="utf-8"))
+        if spec is not None:
             if excl_prefix:
                 spec = dict(spec, val=[v for v in spec["val"] if not v.startswith(excl_prefix)],
                             train=[t for t in spec["train"] if not t.startswith(excl_prefix)])
@@ -477,12 +770,17 @@ def load_all_data():
         val_paths = sorted(p for p in raw_train_paths if rel(p) in val_rel)
         actual_train_paths = sorted(p for p in raw_train_paths if rel(p) not in val_rel)
         test_paths = list(raw_test_paths) + excluded        # LOTO: held-out type scored too
-        assert len(val_paths) == len(val_rel) == VAL_PER_TYPE * len(by_type)
+        assert len(val_paths) == len(val_rel)
+        if not spec.get('heldout_family'):
+            assert len(val_rel) == VAL_PER_TYPE * len(by_type)
         assert not (set(val_paths) & set(actual_train_paths))
         assert not (set(test_paths) & (set(val_paths) | set(actual_train_paths)))
 
-        print("\nSTRATIFIED split ({} per case type, seed {}; {} {}):".format(
-            VAL_PER_TYPE, SPLIT_SEED, split_name, src))
+        print("\nSTRATIFIED split ({} per case type, seed {}; {} {}; tag {}):".format(
+            VAL_PER_TYPE, SPLIT_SEED, split_name, src, SPLIT_TAG))
+        if dropped:
+            print("  DROP LIST: {} runs removed from the training pool before the split: {}".format(
+                len(dropped), ", ".join(rel(p) for p in dropped)))
         if excluded:
             print("  LEAVE-ONE-TYPE-OUT: {!r} ({} runs) removed from train and val, appended to test".format(
                 rel(excluded[0]).split("/")[0], len(excluded)))
@@ -520,7 +818,7 @@ def load_all_data():
     print("Loading validation data...")
     val_dfs = [(pd.read_csv(f), _case_id(f)) for f in val_paths]
     print("Loading test data...")
-    test_dfs = [(pd.read_csv(f), _case_id(f)) for f in test_paths]
+    test_dfs = ([(pd.read_csv(f), _case_id(f)) for f in test_paths] if include_test else [])
 
     if EXCLUDE_BOTH_PHASE:
         # Round 7 sanity protocol (Arnold, 2026-09-05): remove every run the
@@ -537,9 +835,21 @@ def load_all_data():
         test_dfs = [(df, fid) for df, fid in test_dfs if not _fires(df)]
         print("EXCLUDE_BOTH_PHASE: train {}->{}  val {}->{}  test {}->{}".format(
             _n0[0], len(train_dfs), _n0[1], len(val_dfs), _n0[2], len(test_dfs)))
-        if not train_dfs or not test_dfs:
+        if not train_dfs or (include_test and not test_dfs):
             raise RuntimeError("EXCLUDE_BOTH_PHASE removed every case -- "
                                "check the detector / data root")
+
+    if RELABEL_CSV_PATH:
+        # Round 10 / A4: algebraic relabel of the inner-weighted / borderline
+        # files, BEFORE the scaler fit and before any mask logic (the mask
+        # sets are resolved by key later, independently of the values).
+        # Training and validation only -- test_dfs are never touched.
+        _table = load_relabel_table()
+        _rl_tr = relabel_tavg(train_dfs, _table)
+        _rl_va = relabel_tavg(val_dfs, _table)
+        print("RELABEL_CSV={}: T_avg -> (T_avg - s*T_inner)/(1 - s) on {} training and {} validation "
+              "files ({} listed; test files untouched)".format(
+                  os.path.basename(RELABEL_CSV_PATH), len(_rl_tr), len(_rl_va), len(_table)))
 
     # Sanity: case_ids must be globally unique across train/val/test
     all_ids = [fid for _, fid in train_dfs] + [fid for _, fid in val_dfs] \
@@ -550,8 +860,20 @@ def load_all_data():
         raise RuntimeError(f"Duplicate case_ids after split: {dups[:5]}...")
 
     print("Fitting scaler on training data...")
+    fit_records = list(train_dfs)
+    frozen_split = None
+    if VAL_SPLIT == 'stratified' and spec.get('frozen_train'):
+        frozen_keys = sorted(spec['frozen_train'])
+        if len(frozen_keys) != len(set(frozen_keys)) or set(frozen_keys) - (set(spec['train']) | set(spec['val'])):
+            raise RuntimeError('invalid frozen_train universe')
+        fit_records = [(pd.read_csv(os.path.join(train_dir, key.replace('/', os.sep))),
+                        _case_id(os.path.join(train_dir, key.replace('/', os.sep)))) for key in frozen_keys]
+        if RELABEL_CSV_PATH:
+            relabel_tavg(fit_records, load_relabel_table())
+        frozen_split = spec.get('frozen_constants_split')
+        print('F1 constants freeze: %d original training files; held-out labels used ONLY for scaler/anchor constants as registered' % len(fit_records))
     cleaned = []
-    for df, _ in train_dfs:
+    for df, _ in fit_records:
         d = df.copy()
         d.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
         if "Input Temperature (C)" not in d.columns:
@@ -562,6 +884,20 @@ def load_all_data():
         cleaned.append(d[ThermalDataset.BASE_COLS])
     scaler = MinMaxScaler()
     scaler.fit(pd.concat(cleaned)[ThermalDataset.BASE_COLS])
+    if CONSTANTS_FROM:
+        with open(CONSTANTS_FROM, encoding='utf-8') as f:
+            scaler = scaler_from_sidecar(json.load(f))
+    scaler._round10_fit_records = fit_records
+    scaler._round10_frozen_split = frozen_split
+    if SYNTHETIC_REST_FILES:
+        n = len(train_dfs[0][0])
+        times = train_dfs[0][0]['Time (s)'].to_numpy(float)
+        for i, temperature in enumerate(np.linspace(50, 600, SYNTHETIC_REST_FILES)):
+            frame = pd.DataFrame({'Time (s)': times.copy()})
+            for col in ThermalDataset.BASE_COLS[1:]:
+                frame[col] = float(temperature)
+            train_dfs.append((frame, 'synthetic_rest/%03d_T0_%g.csv' % (i, temperature)))
+        print('G7(d): appended %d train-only constant initial-temperature files (%d rows); scaler/constants fit precedes augmentation' % (SYNTHETIC_REST_FILES, n))
 
     return train_dfs, val_dfs, test_dfs, scaler
 

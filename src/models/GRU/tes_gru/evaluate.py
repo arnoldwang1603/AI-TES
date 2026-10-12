@@ -37,12 +37,32 @@ def _mape(y_true, y_pred, eps=1e-6):
     return float(np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100.0)
 
 
-def test_model(variant, model, test_datasets, output_dir, set_name):
+def test_model(variant, model, test_datasets, output_dir, set_name,
+               suffix="", npz_path=None, plots_dir=None):
+    """Score `test_datasets` file by file; write summary_errors<suffix>.csv
+    and the per-case plots under output_dir, return (summary_df, speed_stats).
+
+    Round 10 / H3 additions (legacy call shape and numbers unchanged):
+      suffix     "" (test) | "_val" (validation): names the csv
+                 (summary_errors<suffix>.csv) and the plots folder
+                 (plots<suffix>/), so a validation scoring never overwrites
+                 the test artefacts of the same directory.
+      npz_path   where the raw predictions go; None = the legacy
+                 predictions.npz under variant_dir (gated on SAVE_PREDICTIONS).
+      plots_dir  overrides the plots folder (eval_checkpoint sends them to a
+                 scratch directory).
+    A dataset flagged tavg_masked (H2) is NOT scored on T_avg: its T_avg
+    metrics are NaN, the AVERAGE row's T_avg columns skip it (pandas mean),
+    and its ToTa jump counts use T_outer alone.
+    New columns: Err_step1_<ch> (C), MaxErr_1_5_<ch> (C) (G7 start-up
+    metrics), JumpSteps_gt2C_ToTa, JumpSteps_gt1C_ToTa (T_outer + T_avg,
+    first transition t0 -> t1 included). JumpSteps_gt2C is the old metric,
+    untouched."""
     model.eval()
     os.makedirs(output_dir, exist_ok=True)
     # Per-case plots live in a `plots/` subfolder so the variant directory
     # itself stays uncluttered (~70 PNGs per variant).
-    case_plots_dir = os.path.join(output_dir, "plots")
+    case_plots_dir = plots_dir or os.path.join(output_dir, "plots" + suffix)
     os.makedirs(case_plots_dir, exist_ok=True)
     summary = []
     # Per-case inference time (ms). Excludes data loading / inverse_transform /
@@ -67,7 +87,8 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                           .replace(":", "_"))
         print(f"  [{variant}] {idx + 1}/{len(test_datasets)}: {case_id}")
 
-        x, _, _, init_cond, win_obs, ft, ft_out, ft_in, ft_avg, ft_inp = ds[0]
+        (x, _, _, init_cond, win_obs, ft, ft_out, ft_in, ft_avg, ft_inp,
+         inp_last, _loss_mask) = ds[0][:12]
         x = x.to(DEVICE)
         init_cond_b = init_cond.unsqueeze(0).to(DEVICE)
         win_obs_b = win_obs.unsqueeze(0).to(DEVICE)
@@ -85,37 +106,12 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         seq_len = x.shape[0]
 
         if variant == 'forward_direct':
-            # Exogenous-only seq2seq: inputs [Time, Input_T] are the given
-            # boundary condition; one forward pass, no AR (mirrors
-            # run_rollout_train's forward_direct branch, anchor included).
+            from .rollout import run_rollout_train
             with torch.no_grad():
-                out, _ = model(x.unsqueeze(0), hidden)
-            anc = getattr(model, 'tinner_anchor', None) \
-                if TINNER_MODE == "anchor" else None
-            if anc is not None:
-                ka, kb, kc = anc
-                inp_t = x[:, 1]
-                if ANCHOR_LEAD:
-                    inp_t = torch.cat([inp_t[1:], inp_t[-1:]])
-                out[0, :, 0] = ka * inp_t.to(out.device) + kb + kc * out[0, :, 0]
-            # Round 8: T_outer anchored on Input_T (mirror of the train path;
-            # must precede apply_other_anchor, whose position formula
-            # consumes T_outer).
-            oanc = getattr(model, 'touter_anchor', None) \
-                if TOUTER_MODE != "abs" else None
-            if oanc is not None:
-                ka_o, kb_o, kc_o = oanc
-                inp_o = touter_reference(x[:, 1].unsqueeze(0), e0=init_cond_b[:, 0],
-                                         model=model)[0]
-                if ANCHOR_LEAD:
-                    inp_o = torch.cat([inp_o[1:], inp_o[-1:]])
-                out[0, :, 1] = ka_o * inp_o.to(out.device) + kb_o + kc_o * out[0, :, 1]
-            # T_outer / T_avg anchors (mirror of the train path). init_cond
-            # layout is [T_outer, T_inner, T_avg, Input_T] at t=0, scaled.
-            out = apply_other_anchor(
-                model, out, init_cond_b[:, :1].to(out.device),
-                inp_t=x[:, 1].unsqueeze(0).to(out.device),
-                time_s=x[:, 0].unsqueeze(0).to(out.device))
+                out = run_rollout_train(model, variant, x.unsqueeze(0), None,
+                                        init_cond_b, win_obs_b,
+                                        inp_last=inp_last.reshape(1).to(DEVICE),
+                                        phys_targets=(ds.physics_targets.to(DEVICE) if PHYS_MODE else None))
             pred_seq = out[0].cpu().numpy()
         elif is_inverse(variant):
             # Inverse rollout (single-case mirror of _rollout_inverse).
@@ -248,8 +244,12 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                     # Reconstruct T_inner from the z-scored residual head,
                     # anchored on GT Input_T(t) -- mirrors _rollout_sliding.
                     ka, kb, kc = anchor
-                    t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
-                    pred[0] = ka * float(x[t_a, IDX_INP].item()) + kb + kc * pred[0]
+                    if ANCHOR_LEAD and t + 1 >= seq_len:
+                        ref_in = float(inp_last)            # true Input_T(N) (H9)
+                    else:
+                        t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+                        ref_in = float(x[t_a, IDX_INP].item())
+                    pred[0] = ka * ref_in + kb + kc * pred[0]
                 if oanchor is not None:
                     # Round 8: T_outer anchored on Input_T -- mirrors
                     # _rollout_sliding; precedes the position formula.
@@ -381,6 +381,19 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         inv_pred = ds.scaler.inverse_transform(dummy_pred)
         inv_actual = ds.scaler.inverse_transform(dummy_actual)
 
+        # The t=0 row (the GIVEN initial condition, identical for actual and
+        # pred): prepended for the plots (Arnold 2026-07-23) and, since Round
+        # 10 / H3, for the ToTa jump counts so the t0 -> t1 transition is
+        # seen. inv_actual / inv_pred and every other metric are untouched.
+        row0 = ds.scaler.inverse_transform(np.column_stack([
+            ft[:1], ft_out[:1], ft_in[:1], ft_avg[:1], ft_inp[:1],
+        ]).astype(np.float64))
+
+        # H3: a file whose T_avg label is masked (H2, validation side) is not
+        # scored on T_avg -- the label is a different convention there.
+        masked = bool(getattr(ds, 'tavg_masked', False)) and not is_inverse(variant)
+        scored_channels = [c for c in channel_names if not (masked and c == 'T_avg')]
+
         # ---- Metrics (in deg C; per channel; NaN for non-predicted) ----
         win = max(10, n // 10)
         metric_row = {
@@ -392,7 +405,7 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         }
         for ch_name in ALL_CHANNELS:
             col = SCALER_COL[ch_name]
-            if ch_name in channel_names:
+            if ch_name in scored_channels:
                 g = inv_actual[:, col]
                 p = inv_pred[:, col]
                 diff = np.abs(g - p)
@@ -406,19 +419,28 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
                     np.mean(np.abs(g[-win:] - p[-win:])))
                 metric_row[f'MAPE_{ch_name} (%)'] = _mape(g, p)
                 metric_row[f'R2_{ch_name}']       = _r2(g, p)
+                # H3 / G7: the first predicted step (t=1) and the worst of
+                # the first five -- the start-up transient the Round 10
+                # encoder arms are judged on.
+                metric_row[f'Err_step1_{ch_name} (C)'] = float(diff[0])
+                metric_row[f'MaxErr_1_5_{ch_name} (C)'] = float(np.max(diff[:5]))
+                metric_row['Spike_gt1C_' + ch_name] = float(np.max(diff[:5]) > 1.0)
             else:
-                # Channel not predicted by this variant -> NaN
+                # Channel not predicted by this variant (or T_avg on a
+                # masked file) -> NaN
                 for k in (f'MAE_{ch_name} (C)', f'RMSE_{ch_name} (C)',
                           f'MaxErr_{ch_name} (C)',
                           f'EarlyMAE_{ch_name} (C)', f'LateMAE_{ch_name} (C)',
-                          f'MAPE_{ch_name} (%)', f'R2_{ch_name}'):
+                          f'MAPE_{ch_name} (%)', f'R2_{ch_name}',
+                          f'Err_step1_{ch_name} (C)', f'MaxErr_1_5_{ch_name} (C)'):
                     metric_row[k] = float('nan')
+                metric_row['Spike_gt1C_' + ch_name] = float('nan')
 
-        # Overall MAPE / R^2 (concatenate ONLY predicted channels)
+        # Overall MAPE / R^2 (concatenate ONLY predicted -- and scored -- channels)
         concat_g = np.concatenate(
-            [inv_actual[:, SCALER_COL[c]] for c in channel_names])
+            [inv_actual[:, SCALER_COL[c]] for c in scored_channels])
         concat_p = np.concatenate(
-            [inv_pred[:, SCALER_COL[c]] for c in channel_names])
+            [inv_pred[:, SCALER_COL[c]] for c in scored_channels])
         metric_row['MAPE_Overall (%)'] = _mape(concat_g, concat_p)
         metric_row['R2_Overall']       = _r2(concat_g, concat_p)
 
@@ -439,6 +461,23 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         metric_row['MaxJump (C)'] = float(_jumps.max())
         metric_row['JumpSteps_gt2C'] = int((_jumps > 2.0).sum())
 
+        # Round 10 / H3: the same statistic on T_outer and T_avg only (the
+        # channels the pre-registered vetoes read), with the t0 -> t1
+        # transition included by prepending the given initial row, at the
+        # 2 C and the 1 C threshold. A masked file contributes T_outer alone.
+        _j2 = _j1 = 0
+        for _c in ('T_outer', 'T_avg'):
+            if _c not in scored_channels:
+                continue
+            _col = SCALER_COL[_c]
+            _p = np.concatenate([row0[:, _col], inv_pred[:, _col]])
+            _g = np.concatenate([row0[:, _col], inv_actual[:, _col]])
+            _jj = np.maximum(np.abs(np.diff(_p)) - np.abs(np.diff(_g)), 0.0)
+            _j2 += int((_jj > 2.0).sum())
+            _j1 += int((_jj > 1.0).sum())
+        metric_row['JumpSteps_gt2C_ToTa'] = _j2
+        metric_row['JumpSteps_gt1C_ToTa'] = _j1
+
         # Stash raw arrays for replotting (saved to predictions.npz at end).
         raw_predictions.append({
             'case_id': case_id,
@@ -448,6 +487,8 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         })
 
         summary.append(metric_row)
+        if os.environ.get("ROUND10_NO_PLOTS", "0") == "1":
+            continue
 
         # ---- Plot ----
         # Plot only the channels this variant predicts (actual vs pred).
@@ -459,12 +500,8 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
         plt.figure(figsize=(14, 6))
         # Prepend the t=0 row (Arnold 2026-07-23): predictions cover t=1..n,
         # so plotting from t=1 hid the shared starting point and made a
-        # one-step-lagged prediction look like it started somewhere else.
-        # t=0 is the GIVEN initial condition, identical for actual and pred.
-        # Plot-only -- inv_actual / inv_pred (and every metric) are untouched.
-        row0 = ds.scaler.inverse_transform(np.column_stack([
-            ft[:1], ft_out[:1], ft_in[:1], ft_avg[:1], ft_inp[:1],
-        ]).astype(np.float64))
+        # one-step-lagged prediction look like it started somewhere else
+        # (row0 is computed above, next to the metrics, since H3).
         plot_actual = np.vstack([row0, inv_actual])
         plot_pred = np.vstack([row0, inv_pred])
         time_plot = plot_actual[:, 0]
@@ -522,8 +559,9 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
     summary_df = pd.concat([summary_df, pd.DataFrame([avg_row])], ignore_index=True)
 
     # Filename simplified to `summary_errors.csv` since the directory is
-    # already variant-scoped under runs/<RUN_NAME>/variants/<variant>/.
-    csv_path = os.path.join(output_dir, "summary_errors.csv")
+    # already variant-scoped under runs/<RUN_NAME>/variants/<variant>/
+    # (summary_errors_val.csv for a validation scoring, H3).
+    csv_path = os.path.join(output_dir, "summary_errors%s.csv" % suffix)
     summary_df.to_csv(csv_path, index=False, float_format='%.4f')
 
     # Inference-speed aggregates (excludes the AVERAGE row).
@@ -578,7 +616,15 @@ def test_model(variant, model, test_datasets, output_dir, set_name):
     }
 
     # Persist raw predictions so plots can be regenerated without re-running inference
-    if SAVE_PREDICTIONS:
+    if npz_path is not None:
+        # H3: an explicit destination (predictions_val.npz, or eval_checkpoint's
+        # --out-dir); never the run's test-set predictions.npz.
+        try:
+            save_predictions_npz(variant, raw_predictions, path=npz_path)
+            print(f"[{variant}] predictions saved -> {npz_path}")
+        except Exception as e:
+            print(f"[{variant}] WARNING: predictions save failed ({npz_path}): {e}")
+    elif SAVE_PREDICTIONS:
         try:
             save_predictions_npz(variant, raw_predictions)
             print(f"[{variant}] predictions saved -> "

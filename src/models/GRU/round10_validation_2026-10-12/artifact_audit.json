@@ -1,0 +1,26 @@
+{
+  "purpose": "real ep2 functional checks; no research validation",
+  "c16_arms": 28,
+  "c16_channel_points": 84,
+  "c16_head_rows": 1596,
+  "budget_rows": 114,
+  "budget_max_identity_error_C2": 0.0,
+  "g1_probe_rows": 7,
+  "e3_score_rows": 30,
+  "e3_k_truth_scales": [
+    0.8,
+    1.2
+  ],
+  "e3_prefix_minutes": [
+    0,
+    10,
+    30,
+    60
+  ],
+  "f1_families": 10,
+  "f1_case9_channels": [
+    "T_outer"
+  ],
+  "visual_inspection": "all 6 PNGs checked; complete legends after layout fixes",
+  "test_csv_attempts": 0
+}

@@ -1,0 +1,58 @@
+set,file,channel,label,strict_line_average,physics_yardstick_MAE_C,physics_yardstick_RMSE_C,label_upper_bound_RMSE_C,floor_interpretation
+val,Case 1 (linear charging)/Case 16.csv,T_inner,inner-weighted,False,0.002500000000000588,0.0028889779188574884,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 1 (linear charging)/Case 16.csv,T_outer,inner-weighted,False,0.42961754862287554,0.5729217974411126,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 1 (linear charging)/Case new 5.csv,T_inner,line average,True,0.7082222222222282,0.7567161901010988,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 1 (linear charging)/Case new 5.csv,T_outer,line average,True,0.2735453910004464,0.36694384517977785,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 1 (linear charging)/Case new 5.csv,T_avg,line average,True,0.3967819104198441,0.47153673731295737,0.136,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 10 (Discharging + Constant)/Case 1.csv,T_inner,line average,True,0.9298194444444413,0.9816688413063552,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 10 (Discharging + Constant)/Case 1.csv,T_outer,line average,True,1.3119147127341682,1.6934767203121812,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 10 (Discharging + Constant)/Case 1.csv,T_avg,line average,True,0.6449623961225046,0.8512603667989439,0.462,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 10 (Discharging + Constant)/Case 17.csv,T_inner,line average,True,0.02621527777777995,0.027810120060471028,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 10 (Discharging + Constant)/Case 17.csv,T_outer,line average,True,1.020509550523522,1.3189817771566155,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 10 (Discharging + Constant)/Case 17.csv,T_avg,line average,True,0.712673295774165,0.9029172998342886,0.758,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 2 (Nonlinear Charging)/Case 22.csv,T_inner,line average,True,0.7691240844444445,0.792306561144497,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 2 (Nonlinear Charging)/Case 22.csv,T_outer,line average,True,0.4577801798526212,0.5239727927113825,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 2 (Nonlinear Charging)/Case 22.csv,T_avg,line average,True,0.3767577756927059,0.3971136355683881,0.062,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 2 (Nonlinear Charging)/Case 3.csv,T_inner,line average,True,0.5367430555555548,0.6247702350298191,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 2 (Nonlinear Charging)/Case 3.csv,T_outer,line average,True,0.27499132429406675,0.3424506312763822,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 2 (Nonlinear Charging)/Case 3.csv,T_avg,line average,True,0.17437263869271827,0.21153778334140247,0.099,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 3 (Charging with noise)/Case 15.csv,T_inner,line average,True,0.4717084973099936,0.5093955529655412,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 3 (Charging with noise)/Case 15.csv,T_outer,line average,True,0.26494738924434924,0.301388288895831,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 3 (Charging with noise)/Case 15.csv,T_avg,line average,True,0.16167569482359012,0.17773670308688072,0.065,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 3 (Charging with noise)/Case 17.csv,T_inner,line average,True,0.5696949171055178,0.615721669093535,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 3 (Charging with noise)/Case 17.csv,T_outer,line average,True,0.21286825658198327,0.2647443549907289,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 3 (Charging with noise)/Case 17.csv,T_avg,line average,True,0.10794861096656594,0.12539979921769845,0.114,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 4 (Linear Charging+Discharging)/Case 15.csv,T_inner,line average,True,0.07781018518518737,0.08558377961584426,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 4 (Linear Charging+Discharging)/Case 15.csv,T_outer,line average,True,0.0036340023628422024,0.004520338208659017,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 4 (Linear Charging+Discharging)/Case 15.csv,T_avg,line average,True,0.08287505394111518,0.09201283221059599,0.018,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 4 (Linear Charging+Discharging)/Case 19.csv,T_inner,line average,True,0.10019444444444606,0.10927729763211556,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 4 (Linear Charging+Discharging)/Case 19.csv,T_outer,line average,True,0.00580620391147845,0.007204388924445741,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 4 (Linear Charging+Discharging)/Case 19.csv,T_avg,line average,True,0.0928690664769681,0.10297067081647546,0.027,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 5 (Linear charging + constant)/Case 21.csv,T_inner,line average,True,0.9420416666666648,0.9967732198709235,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 5 (Linear charging + constant)/Case 21.csv,T_outer,line average,True,0.7159491388640545,0.9250516152871168,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 5 (Linear charging + constant)/Case 21.csv,T_avg,line average,True,0.7330168438707245,0.8289054044495652,0.459,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 5 (Linear charging + constant)/Case 23.csv,T_inner,line average,True,0.4111388888888882,0.43607458268817545,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 5 (Linear charging + constant)/Case 23.csv,T_outer,line average,True,0.3835576077411656,0.5243622965883441,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 5 (Linear charging + constant)/Case 23.csv,T_avg,line average,True,0.38289979800893487,0.4577195368013907,0.305,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 6 (Non-linear charging+Discharging)/Case 10.csv,T_inner,line average,True,1.676404140451462,2.0629152222681144,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 6 (Non-linear charging+Discharging)/Case 10.csv,T_outer,line average,True,0.7251587896319616,1.0413569637327844,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 6 (Non-linear charging+Discharging)/Case 10.csv,T_avg,line average,True,0.7780910316449207,0.9586708705286057,1.142,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 6 (Non-linear charging+Discharging)/Case 11.csv,T_inner,line average,True,0.22048361111110995,0.2358838237787252,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 6 (Non-linear charging+Discharging)/Case 11.csv,T_outer,line average,True,0.0997882710019557,0.11785013408672582,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 6 (Non-linear charging+Discharging)/Case 11.csv,T_avg,line average,True,0.06787589142841341,0.08113811803308241,0.01,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 7 (Linear charging+discharging with noise)/Case 14.csv,T_inner,line average,True,2.1453483582067467,2.333701278112797,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 7 (Linear charging+discharging with noise)/Case 14.csv,T_outer,line average,True,1.823649939046282,2.0845965502856063,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 7 (Linear charging+discharging with noise)/Case 14.csv,T_avg,line average,True,1.4562210556185724,1.5174098832474914,1.748,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 7 (Linear charging+discharging with noise)/Case 3.csv,T_inner,line average,True,0.6986839978075021,0.8063908780372796,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 7 (Linear charging+discharging with noise)/Case 3.csv,T_outer,line average,True,0.2245401665154875,0.28574144400198626,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 7 (Linear charging+discharging with noise)/Case 3.csv,T_avg,line average,True,0.2988716445819547,0.3397598290945003,0.379,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 8 (linear discharging)/Discharge 16 - Darien.csv,T_inner,line average,True,0.5498194444444366,0.5939146712303585,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 8 (linear discharging)/Discharge 16 - Darien.csv,T_outer,line average,True,0.3677855699548298,0.5434640386048452,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 8 (linear discharging)/Discharge 16 - Darien.csv,T_avg,line average,True,0.17934040573851576,0.1996600622482808,0.148,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 8 (linear discharging)/Discharge 18 - Darien.csv,T_inner,line average,True,0.9236944444444314,0.9993144319220589,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 8 (linear discharging)/Discharge 18 - Darien.csv,T_outer,line average,True,0.624113922399691,0.9362168095544263,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 8 (linear discharging)/Discharge 18 - Darien.csv,T_avg,line average,True,0.3087490368392546,0.35890422498907665,0.259,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 9 (non-linear discharging)/Case New 1 (Tejas).csv,T_inner,inner-weighted,False,0.0024232253086412647,0.0028895899256223697,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 9 (non-linear discharging)/Case New 1 (Tejas).csv,T_outer,inner-weighted,False,1.1014646664770162,1.4456234989297618,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 9 (non-linear discharging)/Case New 4 (Tejas).csv,T_inner,inner-weighted,False,0.002358796296296243,0.00285955998946061,,1-D model discrepancy; no independent FE repeat noise measured
+val,Case 9 (non-linear discharging)/Case New 4 (Tejas).csv,T_outer,inner-weighted,False,0.5423267874465884,0.7106064073600531,,1-D model discrepancy; no independent FE repeat noise measured

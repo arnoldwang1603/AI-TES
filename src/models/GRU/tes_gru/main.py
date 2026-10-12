@@ -24,6 +24,40 @@ from .rollout import *
 from .runio import *
 from .train import *
 from .evaluate import *
+from .round10_metrics import aggregate_scores
+
+# Round 10 / H3: the prefix of every scored-set metric key in meta.json and
+# the comparison tables -- Test_ for the legacy flow, Val_ under SEAL_TEST.
+SCORE_PFX = "Val" if SEAL_TEST else "Test"
+
+
+def scored_channel_mean(values):
+    """Descriptive overall MAE over available channels; missing stays NaN."""
+    values = np.asarray(values, dtype=float)
+    finite = np.isfinite(values)
+    return float(values[finite].mean()) if finite.any() else float('nan')
+
+
+def finite_plot_max(*groups):
+    """Plot limits must ignore absent metrics without inventing zero scores."""
+    values = [float(value) for group in groups for value in group
+              if value is not None and np.isfinite(float(value))]
+    return max(values + [1e-6])
+
+
+def check_cached_meta_seal(cached_meta, variant):
+    """Round 10 / H3: a finished variant (done.flag) is reused only if it was
+    scored the way this run scores. A sealed meta (validation-scored, no
+    Test_* key) must not be resumed by a SEAL_TEST=0 run, which would report
+    it as test-scored, and a test-scored meta must not pass as sealed.
+    Raises RuntimeError on a mismatch."""
+    was_sealed = bool((cached_meta or {}).get('sealed', False))
+    if was_sealed != bool(SEAL_TEST):
+        raise RuntimeError(
+            "[%s] done.flag found but meta.json is %s and this run has SEAL_TEST=%d "
+            "-- refusing to reuse it (delete %s to retrain, or match SEAL_TEST)" % (
+                variant, "sealed (validation-scored)" if was_sealed else "test-scored",
+                int(bool(SEAL_TEST)), os.path.join(variant_dir(variant), 'done.flag')))
 
 
 def main():
@@ -76,6 +110,9 @@ def main():
         print(f"  Window size (abs_window only): {WINDOW_SIZE}")
         print(f"  Sliding pad mode: {SLIDING_PAD_MODE}")
         print(f"  T_inner mode: {TINNER_MODE}  (anchor_lead={ANCHOR_LEAD})")
+        print("  split: %s (tag %s)   T_avg mask: %s   TF32: %s" % (          # Round 10 provenance
+            config.split_file_name() if config.VAL_SPLIT == "stratified" else config.VAL_SPLIT,
+            config.SPLIT_TAG, config.TAVG_MASK or "-", config.TF32))
         print(f"  Loss weights (Ti,To,Ta): {LOSS_WEIGHTS}   "
               f"physics bound w={PHYSICS_BOUND_WEIGHT}")
         print(f"  T_outer/T_avg mode: {OTHER_CH_MODE}")
@@ -104,6 +141,7 @@ def main():
                 cached_meta = load_variant_meta(variant)
                 cached_hist = load_train_history(variant)
                 if cached_meta is not None and cached_hist is not None:
+                    check_cached_meta_seal(cached_meta, variant)      # H3
                     cached = dict(cached_meta)
                     # meta.json round-trips NaN -> JSON null -> None (see
                     # _to_jsonable, which converts non-finite floats to None
@@ -124,7 +162,7 @@ def main():
                     cached['lr_history'] = cached_hist['lr_hist']
                     all_results.append(cached)
                     print(f"[{variant}] DONE flag found -> skipping. Loaded "
-                          f"cached MAE={cached.get('Test_MAE_Overall', float('nan')):.4f}C "
+                          f"cached MAE={cached.get(SCORE_PFX + '_MAE_Overall', float('nan')):.4f}C "
                           f"from meta.json")
                     print(f"  (delete {os.path.join(variant_dir(variant), 'done.flag')} "
                           f"to retrain)")
@@ -151,22 +189,39 @@ def main():
             torch.save(model.state_dict(), final_path)
 
             test_start = time.time()
-            if test_sets and len(test_sets) > 0:
+            if SEAL_TEST:
+                # Round 10 / H3: sealed run. The test set is never scored;
+                # the validation files go through the same test_model path
+                # (masked files unscored on T_avg, H2), into
+                # summary_errors_val.csv / predictions_val.npz, and every
+                # metric key below carries the Val_ prefix instead of Test_.
+                _tr_m, _va_m = get_tavg_mask_sets()
+                score_sets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn,
+                                             tavg_masked=is_tavg_masked(fn, _va_m))
+                              for df, fn in val_dfs]
+                score_label, score_suffix = "validation (sealed)", "_val"
+            else:
+                score_sets, score_label, score_suffix = test_sets, "test", ""
+            if score_sets and len(score_sets) > 0:
                 summary_df, speed_stats = test_model(
-                    variant, model, test_sets,
+                    variant, model, score_sets,
                     output_dir=variant_dir(variant),
-                    set_name=f"variant_{variant}",
+                    set_name=f"variant_{variant}" + score_suffix,
+                    suffix=score_suffix,
+                    npz_path=(os.path.join(variant_dir(variant), "predictions_val.npz")
+                              if (SEAL_TEST and SAVE_PREDICTIONS) else None),
                 )
                 avg = summary_df[summary_df['Case'] == 'AVERAGE'].iloc[0]
+                agg = aggregate_scores(summary_df)          # H3 pure aggregate
                 test_time = time.time() - test_start
                 total_time = train_time + test_time
 
                 channel_names = VARIANT_OUTPUT_CHANNELS[variant]
                 # Overall MAE = mean of MAE on the channels this variant predicts
                 # (3 channels in all variants, but which 3 depends on variant).
-                overall_mae = float(np.mean([
+                overall_mae = scored_channel_mean([
                     avg[f'MAE_{ch} (C)'] for ch in channel_names
-                ]))
+                ])
 
                 early_inner = avg.get('EarlyMAE_T_inner (C)', float('nan'))
                 late_inner = avg.get('LateMAE_T_inner (C)', float('nan'))
@@ -186,17 +241,29 @@ def main():
                     'Best_Epoch_Frac': (best_epoch / total_epoch
                                         if total_epoch > 0 else float('nan')),
                     'Validation_MAE': val_mae,
+                    # H3: which set the <SCORE_PFX>_ metrics below were
+                    # scored on. sealed=True means the test set was never read.
+                    'sealed': bool(SEAL_TEST),
+                    'Scored_Set': score_label,
+                    'Scored_N_files': agg['n_files'],
+                    'Scored_N_files_T_avg': agg['n_files_T_avg'],
                     # Headline overall
-                    'Test_MAE_Overall': overall_mae,
-                    'Test_MAPE_Overall': avg['MAPE_Overall (%)'],
-                    'Test_R2_Overall': avg['R2_Overall'],
+                    SCORE_PFX + '_MAE_Overall': overall_mae,
+                    SCORE_PFX + '_MAPE_Overall': avg['MAPE_Overall (%)'],
+                    SCORE_PFX + '_R2_Overall': avg['R2_Overall'],
+                    # H3 aggregate: the (T_outer + T_avg)/2 score, the blow-up
+                    # veto and the two jump totals the pre-registration reads.
+                    SCORE_PFX + '_MAE_ToTa': agg['MAE_ToTa'],
+                    SCORE_PFX + '_BlowUp': agg['blowup'],
+                    SCORE_PFX + '_JumpSteps_gt2C_ToTa': agg['JumpSteps_gt2C_ToTa'],
+                    SCORE_PFX + '_JumpSteps_gt1C_ToTa': agg['JumpSteps_gt1C_ToTa'],
                     # Inference speed
                     'Infer_ms_per_case': speed_stats['avg_ms_per_case'],
                     'Infer_us_per_step': speed_stats['avg_us_per_step'],
                     'Infer_cases_per_sec': speed_stats['cases_per_sec'],
                     # Wallclock
                     'Train_Time_s': train_time,
-                    'Test_Time_s': test_time,
+                    SCORE_PFX + '_Time_s': test_time,
                     'Total_Time_s': total_time,
                     'train_history': train_hist,
                     'val_history': val_hist,
@@ -216,17 +283,18 @@ def main():
                         ('MAE', ' (C)'), ('RMSE', ' (C)'), ('MaxErr', ' (C)'),
                         ('EarlyMAE', ' (C)'), ('LateMAE', ' (C)'),
                         ('MAPE', ' (%)'), ('R2', ''),
+                        ('Err_step1', ' (C)'), ('MaxErr_1_5', ' (C)'),     # H3 / G7
                     ]:
                         src_key = f'{metric}_{ch}{suffix}'
-                        dst_key = f'Test_{metric}_{ch}'
+                        dst_key = f'{SCORE_PFX}_{metric}_{ch}'
                         result_dict[dst_key] = avg.get(src_key, float('nan'))
                 # Late/Early ratio on T_inner (drift indicator). NaN for variants
                 # that don't predict T_inner.
                 if (isinstance(early_inner, float) and
                         early_inner == early_inner and early_inner > 0):
-                    result_dict['Test_LateOverEarly_T_inner'] = float(late_inner) / float(early_inner)
+                    result_dict[SCORE_PFX + '_LateOverEarly_T_inner'] = float(late_inner) / float(early_inner)
                 else:
-                    result_dict['Test_LateOverEarly_T_inner'] = float('nan')
+                    result_dict[SCORE_PFX + '_LateOverEarly_T_inner'] = float('nan')
 
                 all_results.append(result_dict)
 
@@ -244,7 +312,7 @@ def main():
                 print(f"  meta -> {os.path.join(variant_dir(variant), 'meta.json')}")
                 print(f"  done.flag written; resume_state.pt removed.")
             else:
-                print(f"[{variant}] WARNING: no test data")
+                print(f"[{variant}] WARNING: no {score_label} data to score")
 
         # ============================================================
         # 12. Cross-variant comparison
@@ -259,7 +327,7 @@ def main():
                  if k not in ('train_history', 'val_history', 'lr_history')}
                 for r in all_results
             ])
-            comparison_df = comparison_df.sort_values('Test_MAE_Overall', ascending=True)
+            comparison_df = comparison_df.sort_values(SCORE_PFX + '_MAE_Overall', ascending=True)
             comparison_df['Rank'] = range(1, len(comparison_df) + 1)
 
             cols = [
@@ -268,30 +336,30 @@ def main():
                 'Total_Params', 'GRU_Params', 'FC_Params', 'Encoder_Params',
                 'Best_Epoch', 'Total_Epoch', 'Best_Epoch_Frac',
                 # Headline metrics
-                'Validation_MAE', 'Test_MAE_Overall',
-                'Test_MAPE_Overall', 'Test_R2_Overall',
+                'Validation_MAE', SCORE_PFX + '_MAE_Overall',
+                SCORE_PFX + '_MAPE_Overall', SCORE_PFX + '_R2_Overall',
                 # Per-channel metrics for all 4 possible channels. Forward
                 # variants populate T_inner/T_outer/T_avg (Input_T is NaN).
                 # Inverse variants populate T_inner/T_outer/Input_T (T_avg is NaN).
-                'Test_MAE_T_inner', 'Test_MAE_T_outer',
-                'Test_MAE_T_avg', 'Test_MAE_Input_T',
-                'Test_RMSE_T_inner', 'Test_RMSE_T_outer',
-                'Test_RMSE_T_avg', 'Test_RMSE_Input_T',
-                'Test_MaxErr_T_inner', 'Test_MaxErr_T_outer',
-                'Test_MaxErr_T_avg', 'Test_MaxErr_Input_T',
-                'Test_EarlyMAE_T_inner', 'Test_EarlyMAE_T_outer',
-                'Test_EarlyMAE_T_avg', 'Test_EarlyMAE_Input_T',
-                'Test_LateMAE_T_inner', 'Test_LateMAE_T_outer',
-                'Test_LateMAE_T_avg', 'Test_LateMAE_Input_T',
-                'Test_LateOverEarly_T_inner',
-                'Test_MAPE_T_inner', 'Test_MAPE_T_outer',
-                'Test_MAPE_T_avg', 'Test_MAPE_Input_T',
-                'Test_R2_T_inner', 'Test_R2_T_outer',
-                'Test_R2_T_avg', 'Test_R2_Input_T',
+                SCORE_PFX + '_MAE_T_inner', SCORE_PFX + '_MAE_T_outer',
+                SCORE_PFX + '_MAE_T_avg', SCORE_PFX + '_MAE_Input_T',
+                SCORE_PFX + '_RMSE_T_inner', SCORE_PFX + '_RMSE_T_outer',
+                SCORE_PFX + '_RMSE_T_avg', SCORE_PFX + '_RMSE_Input_T',
+                SCORE_PFX + '_MaxErr_T_inner', SCORE_PFX + '_MaxErr_T_outer',
+                SCORE_PFX + '_MaxErr_T_avg', SCORE_PFX + '_MaxErr_Input_T',
+                SCORE_PFX + '_EarlyMAE_T_inner', SCORE_PFX + '_EarlyMAE_T_outer',
+                SCORE_PFX + '_EarlyMAE_T_avg', SCORE_PFX + '_EarlyMAE_Input_T',
+                SCORE_PFX + '_LateMAE_T_inner', SCORE_PFX + '_LateMAE_T_outer',
+                SCORE_PFX + '_LateMAE_T_avg', SCORE_PFX + '_LateMAE_Input_T',
+                SCORE_PFX + '_LateOverEarly_T_inner',
+                SCORE_PFX + '_MAPE_T_inner', SCORE_PFX + '_MAPE_T_outer',
+                SCORE_PFX + '_MAPE_T_avg', SCORE_PFX + '_MAPE_Input_T',
+                SCORE_PFX + '_R2_T_inner', SCORE_PFX + '_R2_T_outer',
+                SCORE_PFX + '_R2_T_avg', SCORE_PFX + '_R2_Input_T',
                 # Inference speed
                 'Infer_ms_per_case', 'Infer_us_per_step', 'Infer_cases_per_sec',
                 # Wallclock
-                'Train_Time_s', 'Test_Time_s', 'Total_Time_s',
+                'Train_Time_s', SCORE_PFX + '_Time_s', 'Total_Time_s',
             ]
             comparison_df = comparison_df[[c for c in cols if c in comparison_df.columns]]
 
@@ -345,20 +413,20 @@ def main():
                       f"{int(r['Input_Size']):<4}{r['Encoder']:<8}"
                       f"{int(r['Total_Params']):>8,}  "
                       f"{int(r['Best_Epoch']):>3}/{int(r['Total_Epoch']):<3}   "
-                      f"{_safe(r['Test_MAE_Overall']):<9}"
-                      f"{_safe(r['Test_MAPE_Overall'], '.3f'):<9}"
-                      f"{_safe(r['Test_R2_Overall']):<8}"
-                      f"{_safe(r['Test_EarlyMAE_T_inner']):<10}"
-                      f"{_safe(r['Test_LateMAE_T_inner']):<10}"
+                      f"{_safe(r[SCORE_PFX + '_MAE_Overall']):<9}"
+                      f"{_safe(r[SCORE_PFX + '_MAPE_Overall'], '.3f'):<9}"
+                      f"{_safe(r[SCORE_PFX + '_R2_Overall']):<8}"
+                      f"{_safe(r[SCORE_PFX + '_EarlyMAE_T_inner']):<10}"
+                      f"{_safe(r[SCORE_PFX + '_LateMAE_T_inner']):<10}"
                       f"{_safe(r['Infer_ms_per_case'], '.1f'):<10}"
                       f"{format_duration(r['Total_Time_s']):<10}")
             print("-" * 140)
 
             best = comparison_df.iloc[0]
             print(f"\nBEST VARIANT: {best['Variant']}  "
-                  f"(MAE={best['Test_MAE_Overall']:.4f}C  "
-                  f"MAPE={best['Test_MAPE_Overall']:.3f}%  "
-                  f"R^2={best['Test_R2_Overall']:.4f}  "
+                  f"(MAE={best[SCORE_PFX + '_MAE_Overall']:.4f}C  "
+                  f"MAPE={best[SCORE_PFX + '_MAPE_Overall']:.3f}%  "
+                  f"R^2={best[SCORE_PFX + '_R2_Overall']:.4f}  "
                   f"params={int(best['Total_Params']):,})")
             print(f"\nComparison CSV saved -> {comparison_path}")
 
@@ -432,18 +500,17 @@ def main():
             # Keep variants in their definition order for readability.
             ordered = [r for v in VARIANTS for r in all_results if r['Variant'] == v]
             labels = [r['Variant'] for r in ordered]
-            mae_overall = [r['Test_MAE_Overall'] for r in ordered]
-            # Replace NaN / None with 0 for plotting (bar disappears for a
-            # not-predicted channel). None can reach here from a cached
-            # meta.json (JSON null); NaN from a freshly-trained variant.
+            mae_overall = [r[SCORE_PFX + '_MAE_Overall'] for r in ordered]
+            # Missing bars remain NaN. Zero would falsely imply perfect
+            # performance for an unscored channel (e.g. the entire F1 fold9).
             def _nz(v):
                 if v is None:
-                    return 0.0
-                return 0.0 if (isinstance(v, float) and v != v) else v
-            mae_inner = [_nz(r['Test_MAE_T_inner']) for r in ordered]
-            mae_outer = [_nz(r['Test_MAE_T_outer']) for r in ordered]
-            mae_avg = [_nz(r['Test_MAE_T_avg']) for r in ordered]
-            mae_input = [_nz(r['Test_MAE_Input_T']) for r in ordered]
+                    return float('nan')
+                return float(v) if np.isfinite(float(v)) else float('nan')
+            mae_inner = [_nz(r[SCORE_PFX + '_MAE_T_inner']) for r in ordered]
+            mae_outer = [_nz(r[SCORE_PFX + '_MAE_T_outer']) for r in ordered]
+            mae_avg = [_nz(r[SCORE_PFX + '_MAE_T_avg']) for r in ordered]
+            mae_input = [_nz(r[SCORE_PFX + '_MAE_Input_T']) for r in ordered]
             time_vals = [r['Total_Time_s'] for r in ordered]
 
             xs = np.arange(len(labels))
@@ -463,18 +530,16 @@ def main():
             ax.set_xticks(xs)
             ax.set_xticklabels(labels, fontsize=9, rotation=20, ha='right')
             ax.set_xlabel('Variant', fontsize=12)
-            ax.set_ylabel('Test MAE (C)', fontsize=12)
-            ax.set_title('GRU Input-Feature Ablation -- Test MAE per Variant\n'
-                         f'(latest params: lr={LATEST_PARAMS["lr"]}, '
-                         f'h={LATEST_PARAMS["hidden_size"]}, '
-                         f'L={LATEST_PARAMS["num_layers"]}, '
-                         f'd={LATEST_PARAMS["dropout"]})',
+            ax.set_ylabel(SCORE_PFX + ' MAE (C)', fontsize=12)
+            ax.set_title('GRU Input-Feature Ablation -- {} MAE per Variant\n'
+                         '(latest params: lr={}, h={}, L={}, d={})'.format(
+                             SCORE_PFX, LATEST_PARAMS["lr"], LATEST_PARAMS["hidden_size"],
+                             LATEST_PARAMS["num_layers"], LATEST_PARAMS["dropout"]),
                          fontsize=13, fontweight='bold')
             ax.legend(fontsize=10)
             ax.grid(True, alpha=0.3, axis='y')
 
-            max_v = max(mae_overall + mae_inner + mae_outer + mae_avg + mae_input
-                         + [1e-6])
+            max_v = finite_plot_max(mae_overall, mae_inner, mae_outer, mae_avg, mae_input)
             if max_v <= 5:
                 ax.yaxis.set_major_locator(MultipleLocator(0.5))
                 ax.yaxis.set_minor_locator(MultipleLocator(0.1))
@@ -491,6 +556,9 @@ def main():
             # Overall MAE labels + params + time
             params_list = [r['Total_Params'] for r in ordered]
             for i, (mo, tt, pp) in enumerate(zip(mae_overall, time_vals, params_list)):
+                if not np.isfinite(mo):
+                    ax.text(xs[i] - 2 * width, max_v * 0.02, 'NA', ha='center', va='bottom', fontsize=7)
+                    continue
                 ax.text(xs[i] - 2 * width, mo + max_v * 0.02,
                         f'{mo:.2f}\n{pp / 1000:.0f}k\n({format_duration(tt)})',
                         ha='center', va='bottom', fontsize=7, fontweight='bold')
@@ -516,10 +584,10 @@ def main():
             )[:n_var]
 
             infer_ms = [r['Infer_ms_per_case'] for r in ordered]
-            mape_overall = [r['Test_MAPE_Overall'] for r in ordered]
-            r2_overall = [r['Test_R2_Overall'] for r in ordered]
-            early_inner = [r['Test_EarlyMAE_T_inner'] for r in ordered]
-            late_inner = [r['Test_LateMAE_T_inner'] for r in ordered]
+            mape_overall = [r[SCORE_PFX + '_MAPE_Overall'] for r in ordered]
+            r2_overall = [r[SCORE_PFX + '_R2_Overall'] for r in ordered]
+            early_inner = [r[SCORE_PFX + '_EarlyMAE_T_inner'] for r in ordered]
+            late_inner = [r[SCORE_PFX + '_LateMAE_T_inner'] for r in ordered]
             best_ep = [int(r['Best_Epoch']) for r in ordered]
             total_ep = [int(r['Total_Epoch']) for r in ordered]
             best_frac = [
@@ -543,14 +611,16 @@ def main():
 
             # Panel B: Test MAE vs Total Params (scatter, "more params = better?")
             for i, rr in enumerate(ordered):
-                axB.scatter(rr['Total_Params'], rr['Test_MAE_Overall'],
+                if not np.isfinite(rr[SCORE_PFX + '_MAE_Overall']):
+                    continue
+                axB.scatter(rr['Total_Params'], rr[SCORE_PFX + '_MAE_Overall'],
                             s=140, edgecolors='black', linewidths=1.2,
                             color=panel_palette[i])
                 axB.annotate(rr['Variant'],
-                             (rr['Total_Params'], rr['Test_MAE_Overall']),
+                             (rr['Total_Params'], rr[SCORE_PFX + '_MAE_Overall']),
                              textcoords='offset points', xytext=(8, 4), fontsize=10)
             axB.set_xlabel('Trainable parameters', fontsize=11)
-            axB.set_ylabel('Test MAE Overall (C)', fontsize=11)
+            axB.set_ylabel(SCORE_PFX + ' MAE Overall (C)', fontsize=11)
             axB.set_title('B. Accuracy vs capacity\n'
                           '(does the winner just have more params?)',
                           fontsize=12, fontweight='bold')
@@ -562,7 +632,9 @@ def main():
                              edgecolor='black')
             for i, (ms, cps) in enumerate(zip(infer_ms,
                                               [r['Infer_cases_per_sec'] for r in ordered])):
-                axC.text(xs[i], ms + max(infer_ms) * 0.02,
+                if not np.isfinite(ms):
+                    continue
+                axC.text(xs[i], ms + finite_plot_max(infer_ms) * 0.02,
                          f'{ms:.1f} ms\n({cps:.1f} cases/s)',
                          ha='center', va='bottom', fontsize=8, fontweight='bold')
             axC.set_xticks(xs)
@@ -580,8 +652,10 @@ def main():
             axD.bar(xs + wd / 2, late_inner, wd, label='Late MAE (last 10%)',
                     color='#E74C3C', edgecolor='black')
             for i, (e, l) in enumerate(zip(early_inner, late_inner)):
+                if not np.isfinite(e) or not np.isfinite(l):
+                    continue
                 ratio = (l / e) if e > 0 else float('nan')
-                axD.text(xs[i], max(e, l) + max(max(early_inner), max(late_inner)) * 0.03,
+                axD.text(xs[i], max(e, l) + finite_plot_max(early_inner, late_inner) * 0.03,
                          f'late/early\n={ratio:.2f}x',
                          ha='center', va='bottom', fontsize=8, fontweight='bold')
             axD.set_xticks(xs)

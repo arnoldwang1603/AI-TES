@@ -1,0 +1,72 @@
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+PASS  (d) no RELABEL_CSV: run name carries no 'rl' tag, config.RELABEL_CSV_PATH is None  
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS  (table) label table in splits/: its inner-weighted / borderline keys in train+val == the vs3 tavg_mask (118)  listed 119 (118 in train+val, 1 dropped), train 115 val 3
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+RELABEL_CSV=tavg_convention_by_file.csv: T_avg -> (T_avg - s*T_inner)/(1 - s) on 115 training and 3 validation files (119 listed; test files untouched)
+Fitting scaler on training data...
+PASS  (a) relabelled Case 1/new 18 within 1.0 C RMS of the physics line average (cache T_avg_line_phys)  RMS 0.254 C after relabel (8.443 C before, s=0.1000)
+      (info) Case 9/New 18: RMS vs physics line 0.922 C after relabel (13.375 C before)
+PASS  (b) a line-average training file (Case 1 (linear charging)/Case new 4.csv) is bit-identical after the hook  
+PASS  (b) exactly 118 train+val files changed (115 train + 3 val), walls untouched  changed 118
+PASS  (b) sealed test CSVs excluded from both baseline and relabel loading  
+PASS  (b) relabel happens before the scaler fit (source order; fitted T_avg range == relabelled training data)  T_avg range 1.00..610.00 (unrelabelled 1.00..610.00)
+PASS  (b) the other scaler columns are untouched; mask routing stays keyed by file  
+PASS  (c) splits/hot_discharge_side_reference_vs3.csv: the three series exist, 1441 rows each, equal to the hook's T_line  rows {'Case 1 (linear charging)/Case 16.csv': 1441, 'Case 9 (non-linear discharging)/Case New 1 (Tejas).csv': 1441, 'Case 9 (non-linear discharging)/Case New 4 (Tejas).csv': 1441}, max |csv - hook| 5.0e-07 C
+PASS  (d) RELABEL_CSV set: run name carries 'rl'  hor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs3_rl
+PASS  (d) run_config.json: relabel_csv, relabel_sha256 (matches the file), relabel_n_train 115 / n_val 3  
+PASS  (d) eval_checkpoint KEYS / env_from_config pass RELABEL_CSV through; absent key -> not set  
+PASS  (d) export_results family carries rl (and vs3)  sealed_vs3_rl_baseline
+PASS  (d) legacy run_config (no relabel key) -> no rl in family  
+
+check_a4: 14/14 PASS

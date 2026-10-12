@@ -1,0 +1,73 @@
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+PASS  (a) vs3 sizes train 284 / val 20, sealed test CSVs excluded  284/20/0
+PASS  (a) vs3 train/val lists equal the json  
+PASS  (a) no dropped key in train / val  []
+PASS  (a) every train / val / drop key exists on disk  []
+PASS  (a) Case 10/Case 8 and Case 1/Case new 20 absent  
+PASS  (a) Case 1/Case new 18 (1 second step) in train  
+PASS  (a) Case 1/Case 16, Case 9/New 1, Case 9/New 4 in val  
+PASS  (a) RUN_NAME_BASE / SPLIT_TAG = vs3  r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs3
+PASS  (e) run_config data block has split_name / split_tag / split_sha256  round10_vs3_s42.json vs3 c52cf3bfc1f3
+PASS  (e) eval_checkpoint.env_from_config passes SPLIT_NAME  
+PASS  (e) export_results.family uses the vs3 tag  vs3_baseline
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; stratified_v2_s42.json read; tag vs2):
+  Case 1 (linear charging)                         train  38  val 2
+  Case 10 (Discharging + Constant)                 train  23  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  23  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 291, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+PASS  (b) legacy default: train 291 / val 20, sealed test CSVs excluded  291/20/0
+PASS  (b) legacy default lists identical to stratified_v2_s42.json  
+PASS  (b) legacy split_file_name() resolves to the legacy json  
+PASS  (d) legacy RUN_NAME_BASE carries vs2  r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs2
+PASS  (d) subprocess: SPLIT_NAME=vs3 json -> _vs3 tag  RNB=r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs3
+PASS  (d) subprocess: legacy -> _vs2 tag  RNB=r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_vs2
+PASS  (c) a json whose drop list names a validation file is refused  exit 1; ["RuntimeError: split file C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\outputs\\round10_package_2026-10-12\\GRU\\splits\\_tmp_check_h1_bad.json: drop list names 1 validation file(s): ['Case 1 (linear charging)/Case 16.csv'] -- refusing"]
+
+check_h1: 18 items, 0 FAIL

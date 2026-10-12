@@ -1,0 +1,382 @@
+folder,file,case_label,n_rows,wall_check_rmse_C,inner_share_pct,tavg_rmse_line_C,tavg_rmse_volume_C,tavg_rmse_best_mix_C,label,note
+Latest Database (Use this for training)/Case 1 (linear charging),Case 1.csv,Case 1,1441,0.194,9.95,1.267,2.941,0.068,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 2.csv,Case 2,1441,0.429,10.05,2.591,5.968,0.129,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 3.csv,Case 3,1441,0.41,9.28,3.634,8.74,0.134,inner-weighted,T_avg sits 9.3 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 4.csv,Case 4,1441,0.86,10.08,5.329,12.189,0.191,inner-weighted,T_avg sits 10.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 5.csv,Case 5,1441,0.656,9.28,6.21,14.847,0.169,inner-weighted,T_avg sits 9.3 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 6.csv,Case 6,1441,1.188,10.0,8.115,18.543,0.218,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 7.csv,Case 7,1441,0.272,9.25,2.428,5.861,0.098,inner-weighted,T_avg sits 9.3 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 8.csv,Case 8,1441,0.264,9.23,2.465,5.954,0.095,inner-weighted,T_avg sits 9.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 9.csv,Case 9,1441,0.409,9.98,2.708,6.252,0.11,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 10.csv,Case 10,1441,0.359,9.86,2.715,6.31,0.087,inner-weighted,T_avg sits 9.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 11.csv,Case 11,1441,0.156,9.0,2.509,6.146,0.058,inner-weighted,T_avg sits 9.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 12.csv,Case 12,1441,0.295,9.7,2.781,6.511,0.078,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 13.csv,Case 13,1441,0.605,9.98,4.074,9.384,0.134,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 14.csv,Case 14,1441,0.521,9.72,4.822,11.24,0.113,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 15.csv,Case 15,1441,0.503,9.76,4.378,10.195,0.101,inner-weighted,T_avg sits 9.8 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 16.csv,Case 16,1441,0.573,9.73,5.297,12.325,0.13,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 17.csv,Case 17,1441,1.025,10.02,6.759,15.46,0.195,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 18.csv,Case 18,1441,0.661,9.9,4.916,11.354,0.131,inner-weighted,T_avg sits 9.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 19.csv,Case 19,1441,0.483,9.73,4.388,10.235,0.104,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case 20.csv,Case 20,1441,0.525,9.73,4.812,11.215,0.111,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 1.csv,Case new 1,1441,13.73,50.95,15.761,19.77,1.427,cannot judge (walls do not follow the 1-D model),model outer wall misses the file's T_outer by 13.7 C RMSE (limit 5 C); the inside of this file does not behave like the 1-D model
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 2.csv,Case new 2,1441,7.734,51.94,8.648,10.819,0.804,cannot judge (walls do not follow the 1-D model),model outer wall misses the file's T_outer by 7.7 C RMSE (limit 5 C); the inside of this file does not behave like the 1-D model
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 3.csv,Case new 3,1441,13.699,50.48,15.915,19.993,1.449,cannot judge (walls do not follow the 1-D model),model outer wall misses the file's T_outer by 13.7 C RMSE (limit 5 C); the inside of this file does not behave like the 1-D model
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 4.csv,Case new 4,1441,0.312,1.15,0.454,5.566,0.039,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 5.csv,Case new 5,1441,0.673,1.52,0.889,8.346,0.136,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 6.csv,Case new 6,1441,0.403,9.97,2.72,6.282,0.104,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 7.csv,Case new 7,1441,0.706,9.88,5.496,12.693,0.132,inner-weighted,T_avg sits 9.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 8.csv,Case new 8,1441,0.206,9.65,2.131,5.017,0.044,inner-weighted,T_avg sits 9.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 9.csv,Case new 9,1441,0.647,9.98,4.435,10.21,0.133,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 10.csv,Case new 10,1441,0.445,10.09,2.709,6.22,0.119,inner-weighted,T_avg sits 10.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 11.csv,Case new 11,1441,0.768,9.83,6.486,14.984,0.147,inner-weighted,T_avg sits 9.8 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 12.csv,Case new 12,1441,0.654,9.72,6.16,14.316,0.124,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 13.csv,Case new 13,1441,0.666,9.75,6.135,14.237,0.136,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 14.csv,Case new 14,1441,0.667,9.74,6.174,14.33,0.135,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 15.csv,Case new 15,1441,0.861,10.04,5.672,12.989,0.17,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 16.csv,Case new 16,1441,0.767,9.86,6.18,14.262,0.14,inner-weighted,T_avg sits 9.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 17.csv,Case new 17,1441,0.41,9.75,3.745,8.736,0.098,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 18 (1 second step).csv,Case new 18 (1 second step),1441,1.211,10.0,8.459,19.317,0.229,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 19 (1 second step).csv,Case new 19 (1 second step),1441,0.688,9.86,5.488,12.685,0.136,inner-weighted,T_avg sits 9.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 1 (linear charging),Case new 20.csv,Case new 20,1441,0.736,0.99,0.865,11.706,0.198,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 1.csv,Case 1,1441,0.286,0.3,0.411,16.306,0.172,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 2.csv,Case 2,1441,0.26,0.48,0.341,7.989,0.191,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 3.csv,Case 3,1441,0.158,0.19,0.154,8.279,0.099,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 4.csv,Case 4,1441,0.222,-0.06,0.056,8.518,0.04,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 5.csv,Case 5,1441,0.301,0.4,0.43,12.063,0.222,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 6.csv,Case 6,1441,0.236,0.27,0.359,16.116,0.139,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 7.csv,Case 7,1441,0.118,0.45,0.166,3.932,0.102,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 8.csv,Case 8,1441,0.292,0.4,0.338,8.795,0.212,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 9.csv,Case 9,1441,0.179,0.16,0.151,9.11,0.105,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 10.csv,Case 10,1441,0.185,0.21,0.246,13.503,0.119,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 11.csv,Case 11,1441,0.106,0.57,0.119,1.967,0.088,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 12.csv,Case 12,1441,0.114,0.68,0.134,2.078,0.089,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 13.csv,Case 13,1441,0.061,0.39,0.083,2.117,0.057,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 14.csv,Case 14,1441,0.059,0.33,0.074,2.171,0.053,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 15.csv,Case 15,1441,0.057,0.33,0.074,2.234,0.052,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 16.csv,Case 16,1441,0.055,0.33,0.075,2.297,0.05,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 17.csv,Case 17,1441,0.201,-0.52,0.096,2.197,0.033,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 18.csv,Case 18,1441,0.225,-0.62,0.115,2.18,0.039,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 19.csv,Case 19,1441,0.97,0.69,1.073,19.451,0.413,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 20.csv,Case 20,1441,0.327,0.39,0.463,14.517,0.192,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 21.csv,Case 21,1441,0.883,0.86,0.954,13.769,0.438,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case 22.csv,Case 22,1441,0.193,0.08,0.094,11.188,0.062,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 1 (Tejas).csv,Case new 1 (Tejas),1441,0.513,9.18,4.834,11.742,0.155,inner-weighted,T_avg sits 9.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 1.csv,Case new 1,1441,0.235,1.46,0.295,2.916,0.062,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 2 (Tejas).csv,Case new 2 (Tejas),1441,0.478,9.09,5.381,13.125,0.173,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 2.csv,Case new 2,1441,0.785,1.86,0.785,6.005,0.263,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 3 (Tejas).csv,Case new 3 (Tejas),1441,0.841,9.6,4.726,11.193,0.279,inner-weighted,T_avg sits 9.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 3.csv,Case new 3,1441,0.978,1.63,0.994,8.662,0.278,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 4 (Tejas).csv,Case new 4 (Tejas),1441,0.8,9.45,5.421,12.942,0.242,inner-weighted,T_avg sits 9.5 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 4.csv,Case new 4,1441,0.585,1.56,0.653,5.949,0.172,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 5 (Tejas).csv,Case new 5 (Tejas),1441,0.656,9.0,9.718,23.652,0.116,inner-weighted,T_avg sits 9.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 2 (Nonlinear Charging),Case new 5.csv,Case new 5,1441,1.087,1.75,1.149,9.31,0.351,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 1.csv,Case 1,1441,0.131,0.39,0.384,12.436,0.121,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 2.csv,Case 2,1441,0.159,0.16,0.126,9.527,0.054,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 3.csv,Case 3,1441,0.201,0.47,0.449,11.933,0.154,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 4.csv,Case 4,1441,0.197,-0.09,0.063,6.037,0.049,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 5.csv,Case 5,1441,0.141,0.09,0.062,7.126,0.04,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 6.csv,Case 6,1441,0.167,0.08,0.06,7.13,0.043,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 7.csv,Case 7,1441,0.156,0.18,0.129,7.793,0.071,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 8.csv,Case 8,1441,0.124,0.27,0.242,10.695,0.092,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 9.csv,Case 9,1441,0.26,-0.55,0.134,2.965,0.032,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 10.csv,Case 10,1441,0.138,0.2,0.131,7.131,0.076,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 11.csv,Case 11,1441,0.133,0.46,0.232,6.017,0.105,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 12.csv,Case 12,1441,0.124,0.19,0.107,6.229,0.06,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 13.csv,Case 13,1441,0.169,0.2,0.175,10.629,0.073,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 14.csv,Case 14,1441,0.123,0.13,0.07,5.148,0.048,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 15.csv,Case 15,1441,0.13,0.18,0.115,6.746,0.065,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 16.csv,Case 16,1441,0.137,0.18,0.1,5.554,0.065,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 17.csv,Case 17,1441,0.188,0.39,0.253,7.616,0.114,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 18.csv,Case 18,1441,0.218,0.02,0.043,6.675,0.041,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 19.csv,Case 19,1441,0.135,0.47,0.267,6.982,0.112,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case 20.csv,Case 20,1441,0.073,0.32,0.161,6.022,0.07,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new 6.csv,Case new 6,1441,0.521,9.88,4.039,9.343,0.11,inner-weighted,T_avg sits 9.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new 7.csv,Case new 7,1441,0.742,9.98,5.197,11.939,0.152,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new 8.csv,Case new 8,1441,0.455,9.71,4.331,10.103,0.098,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new 9.csv,Case new 9,1441,0.411,9.59,4.32,10.14,0.063,inner-weighted,T_avg sits 9.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new 10.csv,Case new 10,1441,0.989,9.95,7.25,16.618,0.179,inner-weighted,T_avg sits 10.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new 11.csv,Case new 11,1441,0.511,9.72,4.879,11.353,0.113,inner-weighted,T_avg sits 9.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new 13.csv,Case new 13,1441,0.615,9.65,6.162,14.379,0.102,inner-weighted,T_avg sits 9.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new_1.csv,Case new_1,1441,0.911,2.36,1.434,9.21,0.192,borderline,"small inner share (2.4 %), between the line-average scatter (below 2 %) and the clear inner-weighted files (about 4-10 %); the file's T_outer is on average 0.7 C above the model's, and letting T_avg follow that difference the inner share becomes 1.4 %, inside the line-average range, so most likely a line average; check by eye with --plot"
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new_2.csv,Case new_2,1441,0.525,1.61,0.648,5.79,0.119,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new_3.csv,Case new_3,1441,0.412,1.43,0.565,5.562,0.114,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new_4.csv,Case new_4,1441,0.365,1.38,0.534,5.461,0.094,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 3 (Charging with noise),Case new_5.csv,Case new_5,1441,0.315,1.28,0.472,5.184,0.065,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 1.csv,Case 1,1441,0.009,1.65,0.344,3.072,0.04,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 2.csv,Case 2,1441,0.302,1.66,0.397,3.094,0.197,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 3.csv,Case 3,1441,0.3,1.69,0.408,3.146,0.195,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 4.csv,Case 4,1441,0.213,1.71,0.393,3.184,0.137,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 5.csv,Case 5,1441,0.205,1.72,0.396,3.212,0.131,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 6.csv,Case 6,1441,0.202,1.73,0.402,3.241,0.129,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 7.csv,Case 7,1441,0.199,1.74,0.408,3.268,0.127,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 8.csv,Case 8,1441,0.008,1.68,0.38,3.274,0.055,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 9.csv,Case 9,1441,0.007,1.68,0.379,3.272,0.055,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 10.csv,Case 10,1441,0.107,1.94,0.212,1.585,0.063,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 11.csv,Case 11,1441,0.057,1.84,0.161,1.284,0.034,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 12.csv,Case 12,1441,0.013,1.74,0.076,0.643,0.009,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 14.csv,Case 14,1441,0.118,1.9,0.259,1.957,0.074,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 15.csv,Case 15,1441,0.029,1.79,0.12,0.983,0.018,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 16.csv,Case 16,1441,0.057,1.81,0.204,1.653,0.031,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 17.csv,Case 17,1441,0.006,1.68,0.265,2.291,0.039,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 18.csv,Case 18,1441,0.004,1.68,0.151,1.309,0.022,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 19.csv,Case 19,1441,0.046,1.82,0.143,1.154,0.027,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case 20.csv,Case 20,1441,0.101,1.89,0.228,1.741,0.062,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 1.csv,Case new 1,1441,0.068,9.02,2.03,4.943,0.036,inner-weighted,T_avg sits 9.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 2.csv,Case new 2,1441,0.007,8.99,2.025,4.937,0.019,inner-weighted,T_avg sits 9.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 3.csv,Case new 3,1441,0.007,8.99,2.025,4.937,0.019,inner-weighted,T_avg sits 9.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 4.csv,Case new 4,1441,0.004,8.98,0.809,1.975,0.009,inner-weighted,T_avg sits 9.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 5.csv,Case new 5,1441,1.0,0.73,0.867,8.985,0.722,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 6.csv,Case new 6,1441,0.214,9.29,1.672,3.99,0.14,inner-weighted,T_avg sits 9.3 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 7.csv,Case new 7,1441,0.587,9.15,3.087,7.401,0.376,inner-weighted,T_avg sits 9.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 8.csv,Case new 8,1441,0.803,9.06,4.263,10.265,0.536,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 9.csv,Case new 9,1441,0.722,9.09,2.738,6.613,0.455,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 10.csv,Case new 10,1441,0.209,0.16,0.147,2.841,0.143,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 11.csv,Case new 11,1441,0.342,9.43,1.833,4.359,0.212,inner-weighted,T_avg sits 9.4 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case new 12.csv,Case new 12,1441,0.308,9.02,1.989,4.853,0.191,inner-weighted,T_avg sits 9.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case New 13 (Tejas).csv,Case New 13 (Tejas),1441,0.009,8.56,0.37,0.935,0.007,inner-weighted,T_avg sits 8.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case New 14 (Tejas).csv,Case New 14 (Tejas),1441,0.568,8.57,9.594,24.025,0.346,inner-weighted,T_avg sits 8.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case New 15 (Tejas).csv,Case New 15 (Tejas),1441,0.197,8.58,3.867,9.686,0.138,inner-weighted,T_avg sits 8.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case New 16 (Tejas).csv,Case New 16 (Tejas),1441,0.853,8.59,8.6,21.4,0.552,inner-weighted,T_avg sits 8.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Case New 17 (Tejas).csv,Case New 17 (Tejas),1441,0.313,8.58,8.78,21.989,0.223,inner-weighted,T_avg sits 8.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 4 (Linear Charging+Discharging),Casw 13.csv,Casw 13,1441,0.052,1.83,0.163,1.305,0.031,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 1.csv,Case 1,1441,2.122,4.9,7.403,26.947,0.347,inner-weighted,T_avg sits 4.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 2.csv,Case 2,1441,1.441,5.2,3.74,13.127,0.421,inner-weighted,T_avg sits 5.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 3.csv,Case 3,1441,1.106,4.89,3.763,13.811,0.28,inner-weighted,T_avg sits 4.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 4.csv,Case 4,1441,0.776,4.51,3.632,14.267,0.116,inner-weighted,T_avg sits 4.5 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 5.csv,Case 5,1441,0.726,5.13,1.789,6.368,0.262,inner-weighted,T_avg sits 5.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 6.csv,Case 6,1441,0.516,4.79,1.797,6.751,0.144,inner-weighted,T_avg sits 4.8 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 7.csv,Case 7,1441,0.494,4.73,1.878,7.109,0.13,inner-weighted,T_avg sits 4.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 8.csv,Case 8,1441,0.029,4.02,1.646,7.088,0.079,inner-weighted,T_avg sits 4.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 9.csv,Case 9,1441,2.497,4.88,8.135,29.643,0.559,inner-weighted,T_avg sits 4.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 10.csv,Case 10,1441,1.737,5.23,4.157,14.466,0.56,inner-weighted,T_avg sits 5.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 11.csv,Case 11,1441,1.325,4.91,4.161,15.178,0.363,inner-weighted,T_avg sits 4.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 12.csv,Case 12,1441,0.908,4.51,3.981,15.623,0.195,inner-weighted,T_avg sits 4.5 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 13.csv,Case 13,1441,1.841,4.98,6.645,23.841,0.221,inner-weighted,T_avg sits 5.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 14.csv,Case 14,1441,1.163,5.21,3.318,11.627,0.287,inner-weighted,T_avg sits 5.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 15.csv,Case 15,1441,0.863,4.88,3.332,12.216,0.186,inner-weighted,T_avg sits 4.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 16.csv,Case 16,1441,0.654,4.56,3.258,12.649,0.045,inner-weighted,T_avg sits 4.6 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 17.csv,Case 17,1441,0.522,5.11,1.576,5.648,0.132,inner-weighted,T_avg sits 5.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 18.csv,Case 18,1441,0.379,4.79,1.598,5.992,0.066,inner-weighted,T_avg sits 4.8 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 19.csv,Case 19,1441,0.357,4.73,1.669,6.298,0.06,inner-weighted,T_avg sits 4.7 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 20.csv,Case 20,1441,0.032,4.05,1.476,6.295,0.056,inner-weighted,T_avg sits 4.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 21.csv,Case 21,1441,1.409,1.74,1.426,11.525,0.459,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 22.csv,Case 22,1441,0.72,1.38,0.809,8.18,0.234,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 23.csv,Case 23,1441,0.744,1.98,0.723,5.064,0.305,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 24.csv,Case 24,1441,0.686,1.23,0.765,8.693,0.188,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 5 (Linear charging + constant),Case 25.csv,Case 25,1441,0.797,1.18,0.92,10.994,0.192,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 1.csv,Case 1,1441,1.81,1.32,2.148,19.307,1.16,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 2.csv,Case 2,1441,1.141,1.24,1.531,15.548,0.705,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 3.csv,Case 3,1441,0.687,0.81,0.741,10.439,0.416,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 4.csv,Case 4,1441,1.561,1.01,1.5,14.506,1.07,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 5.csv,Case 5,1441,1.212,0.95,1.082,9.513,0.871,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 6.csv,Case 6,1441,0.879,0.91,0.887,9.719,0.618,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 7.csv,Case 7,1441,0.894,0.8,0.974,12.565,0.644,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 8.csv,Case 8,1441,0.316,0.79,0.527,8.307,0.24,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 9.csv,Case 9,1441,1.501,0.86,1.518,17.181,1.068,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 10.csv,Case 10,1441,1.602,0.83,1.691,20.303,1.142,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 11.csv,Case 11,1441,0.007,0.65,0.105,2.222,0.01,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 12.csv,Case 12,1441,0.204,0.99,0.224,2.297,0.157,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 13.csv,Case 13,1441,0.221,1.06,0.241,2.355,0.167,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 14.csv,Case 14,1441,0.176,1.0,0.214,2.384,0.134,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 15.csv,Case 15,1441,0.167,0.98,0.211,2.415,0.128,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 16.csv,Case 16,1441,0.165,0.99,0.212,2.446,0.126,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 17.csv,Case 17,1441,0.164,1.0,0.215,2.487,0.124,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 18.csv,Case 18,1441,0.01,0.67,0.119,2.441,0.01,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 19.csv,Case 19,1441,0.006,0.65,0.116,2.437,0.013,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case 20.csv,Case 20,1441,0.007,0.65,0.105,2.222,0.01,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case new 1.csv,Case new 1,1441,0.482,1.07,0.421,3.661,0.321,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case new 2.csv,Case new 2,1441,0.549,1.12,0.532,4.666,0.388,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case new 3.csv,Case new 3,1441,0.445,1.01,0.478,5.136,0.306,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case new 4.csv,Case new 4,1441,0.897,1.05,0.905,8.553,0.645,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Case new 5.csv,Case new 5,1441,0.412,0.89,0.441,5.62,0.257,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case 6 New- Erick.csv,Final Case 6 New- Erick,1441,0.013,0.66,0.209,4.389,0.022,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case New 7- Erick.csv,Final Case New 7- Erick,1441,1.892,1.21,2.029,19.697,1.113,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case New 8- Erick.csv,Final Case New 8- Erick,1441,2.114,1.18,2.447,25.874,1.088,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case new 9- Erick.csv,Final Case new 9- Erick,1441,0.015,0.64,0.483,10.388,0.05,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case New 10- Erick.csv,Final Case New 10- Erick,1441,0.014,0.66,0.316,6.515,0.038,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case New 11- Erick.csv,Final Case New 11- Erick,1441,0.007,0.66,0.181,3.653,0.027,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case New 12- Erick.csv,Final Case New 12- Erick,1441,0.583,1.06,0.567,5.758,0.369,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case New 13- Erick.csv,Final Case New 13- Erick,1441,0.006,0.65,0.134,2.84,0.014,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case New 14- Erick.csv,Final Case New 14- Erick,1441,0.019,0.66,0.462,9.518,0.057,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 6 (Non-linear charging+Discharging),Final Case New 15- Erick.csv,Final Case New 15- Erick,1441,0.526,0.92,0.639,8.877,0.26,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 1.csv,Case 1,1441,0.435,1.11,0.428,4.182,0.282,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 2.csv,Case 2,1441,0.989,1.15,0.93,8.508,0.629,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 3.csv,Case 3,1441,0.624,0.99,0.719,8.598,0.379,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 4.csv,Case 4,1441,1.267,1.08,1.526,17.091,0.756,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 5.csv,Case 5,1441,0.507,0.99,0.566,7.014,0.279,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 6.csv,Case 6,1441,0.552,1.08,0.579,6.295,0.324,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 7.csv,Case 7,1441,0.457,1.03,0.547,6.545,0.264,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 8.csv,Case 8,1441,0.006,0.61,0.118,2.607,0.017,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 9.csv,Case 9,1441,1.282,1.15,1.279,12.527,0.774,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 10.csv,Case 10,1441,1.511,1.15,1.638,16.949,0.863,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 11.csv,Case 11,1441,1.036,0.55,0.775,5.752,0.74,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 12.csv,Case 12,1441,1.693,0.71,1.357,11.717,1.213,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 13.csv,Case 13,1441,1.218,0.72,1.081,11.887,0.878,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 14.csv,Case 14,1441,2.626,0.74,2.164,23.43,1.748,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 15.csv,Case 15,1441,0.792,0.51,0.632,5.85,0.592,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 16.csv,Case 16,1441,0.859,0.67,0.751,9.124,0.604,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 17.csv,Case 17,1441,1.289,0.78,1.046,9.005,0.914,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 18.csv,Case 18,1441,0.973,0.71,0.85,8.968,0.709,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 19.csv,Case 19,1441,0.014,0.63,0.278,5.962,0.043,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case 20.csv,Case 20,1441,2.361,0.79,1.921,17.792,1.623,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 1.csv,Case new 1,1441,1.61,0.78,1.325,11.858,1.144,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 2.csv,Case new 2,1441,1.033,0.87,0.925,8.871,0.742,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 3.csv,Case new 3,1441,0.881,0.8,0.785,8.352,0.621,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 4.csv,Case new 4,1441,0.854,0.74,0.723,6.685,0.629,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 5.csv,Case new 5,1441,0.721,0.74,0.554,4.433,0.502,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 6.csv,Case new 6,1441,1.209,9.09,5.1,12.261,0.814,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 7.csv,Case new 7,1441,1.085,9.11,6.713,16.095,0.73,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 8.csv,Case new 8,1441,1.094,9.09,6.654,15.966,0.717,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 9.csv,Case new 9,1441,0.854,9.01,7.279,17.657,0.506,inner-weighted,T_avg sits 9.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 10.csv,Case new 10,1441,1.147,9.05,5.185,12.537,0.724,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 11.csv,Case new 11,1441,1.56,9.15,7.813,18.699,1.012,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 12.csv,Case new 12,1441,1.36,9.09,7.243,17.415,0.855,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 13.csv,Case new 13,1441,1.14,9.1,6.539,15.71,0.745,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 14.csv,Case new 14,1441,1.21,9.1,8.477,20.329,0.768,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 7 (Linear charging+discharging with noise),Case new 15.csv,Case new 15,1441,1.385,9.09,8.788,21.076,0.875,inner-weighted,T_avg sits 9.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 1.csv,Discharge 1,1441,1.129,0.12,0.343,11.766,0.326,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 2.csv,Discharge 2,1441,0.857,0.5,0.694,15.752,0.405,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 3.csv,Discharge 3,1441,0.868,0.52,0.613,13.553,0.348,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 4.csv,Discharge 4,1441,0.935,0.12,0.281,9.692,0.268,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 5.csv,Discharge 5,1441,0.746,0.11,0.224,7.577,0.216,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 6.csv,Discharge 6,1441,0.751,0.32,0.309,8.956,0.225,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 7.csv,Discharge 7,1441,0.954,0.4,0.57,14.338,0.392,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 8.csv,Discharge 8,1441,0.82,0.44,0.547,13.163,0.355,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 9- Erick wCpK.csv,Discharge 9- Erick wCpK,1441,0.65,-0.24,0.232,7.288,0.188,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 10- Erick wCpK.csv,Discharge 10- Erick wCpK,1441,0.786,0.67,0.882,16.745,0.386,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 11- Erick wCpK.csv,Discharge 11- Erick wCpK,1441,0.007,0.64,0.333,7.065,0.009,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 12- Erick wCpK.csv,Discharge 12- Erick wCpK,1441,0.005,0.64,0.233,4.986,0.009,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 13- Erick wKCp.csv,Discharge 13- Erick wKCp,1441,0.007,0.64,0.333,7.065,0.009,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 14- Erick WKCp.csv,Discharge 14- Erick WKCp,1441,0.654,0.31,0.262,7.617,0.196,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 15- Erick WKCp.csv,Discharge 15- Erick WKCp,1441,1.141,-0.08,0.405,15.647,0.395,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 16 - Darien.csv,Discharge 16 - Darien,1441,0.328,0.66,0.349,6.699,0.148,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 17 - Darien.csv,Discharge 17 - Darien,1441,0.225,0.47,0.135,3.334,0.072,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 18 - Darien.csv,Discharge 18 - Darien,1441,0.564,0.64,0.574,11.158,0.259,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 19 - Darien.csv,Discharge 19 - Darien,1441,0.905,0.33,0.376,10.955,0.268,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 20 - Darien.csv,Discharge 20 - Darien,1441,0.702,0.55,0.539,11.539,0.288,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 21 - Darien.csv,Discharge 21 - Darien,1441,0.631,0.37,0.288,8.074,0.186,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 22 - Darien.csv,Discharge 22 - Darien,1441,0.336,0.34,0.147,4.022,0.107,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 23 - Aaron.csv,Discharge 23 - Aaron,1441,0.528,0.57,0.427,9.038,0.212,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 24 - Aaron.csv,Discharge 24 - Aaron,1441,0.477,8.22,3.665,9.579,0.126,inner-weighted,T_avg sits 8.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 8 (linear discharging),Discharge 25 - Aaron.csv,Discharge 25 - Aaron,1441,0.8,8.21,5.983,15.726,0.204,inner-weighted,T_avg sits 8.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 1 (Tejas).csv,Case New 1 (Tejas),1441,1.445,7.79,7.87,21.505,0.586,inner-weighted,T_avg sits 7.8 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 2 (Tejas).csv,Case New 2 (Tejas),1441,0.411,8.06,5.033,13.182,0.146,inner-weighted,T_avg sits 8.1 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 3 (Tejas).csv,Case New 3 (Tejas),1441,0.811,7.35,2.926,8.228,0.249,inner-weighted,T_avg sits 7.3 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 4 (Tejas).csv,Case New 4 (Tejas),1441,0.71,8.19,9.306,24.458,0.359,inner-weighted,T_avg sits 8.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 5 (Tejas).csv,Case New 5 (Tejas),1441,0.969,7.29,3.225,9.114,0.318,inner-weighted,T_avg sits 7.3 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 6 (Tejas).csv,Case New 6 (Tejas),1441,1.437,8.04,11.739,31.431,0.659,inner-weighted,T_avg sits 8.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 7 (Tejas).csv,Case New 7 (Tejas),1441,1.029,8.02,9.179,24.592,0.472,inner-weighted,T_avg sits 8.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 8 (Tejas).csv,Case New 8 (Tejas),1441,1.606,7.9,10.386,28.18,0.693,inner-weighted,T_avg sits 7.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 9 (Tejas).csv,Case New 9 (Tejas),1441,0.565,8.21,9.316,24.338,0.292,inner-weighted,T_avg sits 8.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 10 (Tejas).csv,Case New 10 (Tejas),1441,0.734,7.95,6.491,17.35,0.285,inner-weighted,T_avg sits 7.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 11 (Tejas).csv,Case New 11 (Tejas),1441,2.189,7.91,13.278,36.032,0.951,inner-weighted,T_avg sits 7.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 12 (Tejas).csv,Case New 12 (Tejas),1441,1.601,7.3,5.082,14.415,0.545,inner-weighted,T_avg sits 7.3 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 13 (Tejas).csv,Case New 13 (Tejas),1441,1.877,7.94,13.004,35.254,0.814,inner-weighted,T_avg sits 7.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 14 (Tejas).csv,Case New 14 (Tejas),1441,1.395,7.79,8.081,22.107,0.532,inner-weighted,T_avg sits 7.8 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 15 (Tejas).csv,Case New 15 (Tejas),1441,0.44,8.15,6.156,16.141,0.22,inner-weighted,T_avg sits 8.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 16 (Tejas).csv,Case New 16 (Tejas),1441,0.826,7.16,2.353,6.7,0.314,inner-weighted,T_avg sits 7.2 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 17 (Tejas).csv,Case New 17 (Tejas),1441,1.464,7.75,7.953,21.827,0.535,inner-weighted,T_avg sits 7.8 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 18 (Tejas).csv,Case New 18 (Tejas),1441,1.908,7.97,13.375,36.086,0.849,inner-weighted,T_avg sits 8.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 19 (Tejas).csv,Case New 19 (Tejas),1441,1.396,7.31,4.609,13.061,0.463,inner-weighted,T_avg sits 7.3 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 20 (Tejas).csv,Case New 20 (Tejas),1441,1.529,7.98,12.246,33.095,0.67,inner-weighted,T_avg sits 8.0 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 21 (Tejas).csv,Case New 21 (Tejas),1441,2.053,7.82,10.693,29.297,0.838,inner-weighted,T_avg sits 7.8 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 22 (Tejas).csv,Case New 22 (Tejas),1441,2.372,7.41,7.634,21.499,0.905,inner-weighted,T_avg sits 7.4 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 23 (Tejas).csv,Case New 23 (Tejas),1441,1.714,7.42,5.92,16.685,0.592,inner-weighted,T_avg sits 7.4 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 24 (Tejas).csv,Case New 24 (Tejas),1441,1.391,7.93,10.375,28.123,0.581,inner-weighted,T_avg sits 7.9 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 9 (non-linear discharging),Case New 25 (Tejas).csv,Case New 25 (Tejas),1441,1.992,7.45,6.774,19.033,0.737,inner-weighted,T_avg sits 7.5 % of the way from the line average toward T_inner
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 1.csv,Case 1,1441,1.184,0.07,0.465,10.663,0.462,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 2.csv,Case 2,1441,1.764,0.04,0.674,15.718,0.672,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 3.csv,Case 3,1441,1.259,0.2,0.551,10.159,0.531,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 4.csv,Case 4,1441,1.489,0.01,0.586,12.796,0.586,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 5.csv,Case 5,1441,1.186,0.04,0.467,10.342,0.466,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 6.csv,Case 6,1441,0.993,0.15,0.448,7.419,0.441,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 7.csv,Case 7,1441,0.997,0.34,0.493,9.67,0.431,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 8.csv,Case 8,1441,1.089,-15.0,12.154,6.035,6.381,anomalous T_avg,"T_avg leans toward the outer wall (inner share -15.0 %) and ends -0.2 C from T_outer, which no average over the concrete can do while T_inner differs from T_outer; this looks like a faulty T_avg column, not a different averaging rule; best line/inner mix is still off by 6.4 C RMSE, a volume average by 6.0 C"
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 9.csv,Case 9,1441,1.347,-0.52,0.921,11.546,0.798,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 10.csv,Case 10,1441,0.869,-0.12,0.592,10.815,0.584,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 11.csv,Case 11,1441,1.288,-0.51,0.855,11.148,0.737,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 12.csv,Case 12,1441,0.362,0.14,0.341,7.973,0.331,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 13.csv,Case 13,1441,1.018,-0.51,0.697,8.858,0.606,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 14.csv,Case 14,1441,0.853,-0.63,0.587,6.383,0.497,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 15.csv,Case 15,1441,0.763,-0.25,0.477,7.696,0.454,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 16 .csv,Case 16 ,1441,0.94,-0.46,0.609,7.992,0.542,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 17.csv,Case 17,1441,1.303,-0.57,0.888,10.67,0.758,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 18.csv,Case 18,1441,0.75,-0.15,0.523,9.177,0.513,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 19.csv,Case 19,1441,1.063,-0.71,0.76,7.348,0.644,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 20.csv,Case 20,1441,1.334,-0.64,0.937,10.225,0.793,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 21.csv,Case 21,1441,1.217,-0.45,0.771,10.404,0.685,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 22.csv,Case 22,1441,0.645,-0.41,0.422,5.477,0.385,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 23.csv,Case 23,1441,1.299,0.31,0.573,12.261,0.502,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 24.csv,Case 24,1441,0.538,-0.56,0.371,4.266,0.322,line average,T_avg matches the equal-weight line average
+Latest Database (Use this for training)/Case 10 (Discharging + Constant),Case 25.csv,Case 25,1441,1.855,-0.28,1.302,20.472,1.231,line average,T_avg matches the equal-weight line average
+Test_70_cases,(67) Discharge 2- Erick.csv,67,1441,0.009,0.64,0.387,8.006,0.022,line average,T_avg matches the equal-weight line average
+Test_70_cases,(68) Discharge 3- Erick.csv,68,1441,0.196,0.28,0.187,8.092,0.067,line average,T_avg matches the equal-weight line average
+Test_70_cases,(69) Discharge 4- Erick.csv,69,1441,0.87,-0.24,0.326,9.434,0.274,line average,T_avg matches the equal-weight line average
+Test_70_cases,(70) Discharge 1- Erick.csv,70,1441,0.041,0.6,0.593,13.674,0.073,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (1).csv,1,1441,0.357,1.44,0.485,4.816,0.079,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (2).csv,2,1441,0.445,1.39,0.631,6.42,0.104,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (3).csv,3,1441,0.174,1.6,0.225,2.029,0.047,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (4).csv,4,1441,0.054,0.75,0.19,3.517,0.011,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (5).csv,5,1441,0.147,0.42,0.439,13.449,0.055,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (6).csv,6,1441,0.588,0.73,0.717,12.344,0.272,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (7).csv,7,1441,0.186,0.53,0.407,9.97,0.064,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (8).csv,8,1441,0.575,1.39,0.83,8.373,0.054,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (9).csv,9,1441,0.442,1.41,0.705,6.991,0.034,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (10).csv,10,1441,0.906,1.71,0.951,7.952,0.254,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (11).csv,11,1441,1.264,1.71,1.359,11.301,0.368,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (12).csv,12,1441,1.127,1.88,1.198,9.325,0.269,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (13).csv,13,1441,0.682,0.77,0.785,12.466,0.314,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (14).csv,14,1441,1.884,2.19,1.864,12.595,0.473,borderline,"small inner share (2.2 %), between the line-average scatter (below 2 %) and the clear inner-weighted files (about 4-10 %); the file's T_outer is on average 1.7 C above the model's, and letting T_avg follow that difference the inner share becomes 0.9 %, inside the line-average range, so most likely a line average; check by eye with --plot"
+Test_70_cases,Case (15).csv,15,1441,0.595,0.73,0.642,10.927,0.284,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (16).csv,16,1441,1.234,1.88,1.158,8.704,0.406,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (17).csv,17,1441,1.324,1.42,1.384,13.783,0.327,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (18).csv,18,1441,1.003,1.76,1.117,9.292,0.18,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (19).csv,19,1441,0.246,1.45,0.32,3.211,0.047,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (20).csv,20,1441,1.92,1.68,2.057,17.661,0.382,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (21).csv,21,1441,1.082,1.74,1.145,9.472,0.298,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (22).csv,22,1441,1.643,1.74,1.866,15.627,0.228,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (23).csv,23,1441,0.605,1.81,0.614,4.71,0.24,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (24).csv,24,1441,2.87,1.76,2.8,22.371,0.836,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (25).csv,25,1441,0.777,1.67,0.807,6.801,0.268,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (26).csv,26,1441,0.903,2.49,0.839,4.968,0.296,borderline,"small inner share (2.5 %), between the line-average scatter (below 2 %) and the clear inner-weighted files (about 4-10 %); the file's T_outer is on average 0.8 C above the model's, and letting T_avg follow that difference the inner share becomes 0.8 %, inside the line-average range, so most likely a line average; check by eye with --plot"
+Test_70_cases,Case (27).csv,27,1441,0.329,1.94,0.38,2.924,0.071,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (28).csv,28,1441,1.161,1.91,1.21,9.24,0.29,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (29).csv,29,1441,2.344,2.13,2.361,16.385,0.483,borderline,"small inner share (2.1 %), between the line-average scatter (below 2 %) and the clear inner-weighted files (about 4-10 %); the file's T_outer is on average 2.2 C above the model's, and letting T_avg follow that difference the inner share becomes 1.4 %, inside the line-average range, so most likely a line average; check by eye with --plot"
+Test_70_cases,Case (30).csv,30,1441,1.1,1.68,1.18,10.148,0.255,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (31).csv,31,1441,1.056,1.57,1.168,10.624,0.276,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (32).csv,32,1441,1.392,0.76,1.132,10.311,0.98,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (33).csv,33,1441,1.094,0.89,1.074,12.107,0.733,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (34).csv,34,1441,0.953,1.0,0.946,9.524,0.657,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (35).csv,35,1441,1.176,1.11,1.221,12.425,0.737,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (36).csv,36,1441,1.186,0.77,1.045,10.151,0.876,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (37).csv,37,1441,1.253,0.95,1.078,8.929,0.893,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (38).csv,38,1441,1.072,1.21,1.176,11.619,0.627,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (39).csv,39,1441,1.32,1.35,1.301,10.509,0.848,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (40).csv,40,1441,1.018,0.97,0.983,9.513,0.721,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (41).csv,41,1441,1.026,-1.19,0.703,6.901,0.135,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (42).csv,42,1441,1.589,-0.99,1.025,11.327,0.49,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (43).csv,43,1441,1.774,-1.72,1.081,6.114,0.61,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (44).csv,44,1441,1.69,-1.77,1.069,6.35,0.465,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (45).csv,45,1441,1.318,-1.87,0.828,4.511,0.398,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (57) Type 9- Erick.csv,57,1441,1.108,1.39,1.252,12.864,0.247,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case (66) Discharge 1- Erick.csv,66,1441,0.005,0.65,0.222,4.685,0.006,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(46) Type 5- Erick.csv,46,1441,1.255,1.64,1.373,11.442,0.506,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(47) Type 5- Erick.csv,47,1441,1.177,1.9,1.254,9.528,0.356,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(48) Type 5- Erick.csv,48,1441,0.804,1.5,0.895,8.322,0.281,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(49) Type 5- Erick.csv,49,1441,0.91,1.29,1.145,12.644,0.154,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(50) Type 6- Erick.csv,50,1441,0.685,1.12,0.793,9.724,0.242,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(51) Type 6- Erick.csv,51,1441,0.429,0.72,0.509,8.103,0.286,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(52) Type 6- Erick.csv,52,1441,0.518,0.71,0.542,7.81,0.364,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(53) Type 6- Erick.csv,53,1441,0.52,0.84,0.875,14.274,0.19,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(54) Type 9- Erick.csv,54,1441,0.76,1.09,1.093,14.369,0.092,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(55) Type 9- Erick.csv,55,1441,1.866,1.97,1.946,14.306,0.533,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(56) Type 9- Erick.csv,56,1441,1.553,1.74,1.512,11.706,0.657,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(58)Type 7 Daniel.csv,58,1441,0.247,1.77,0.263,1.891,0.142,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(59)Type 7 Daniel.csv,59,1441,0.299,1.5,0.377,3.382,0.156,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(60)Type 7 Daniel.csv,60,1441,0.426,1.59,0.496,4.127,0.226,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(61)Type 7 Daniel.csv,61,1441,0.006,0.99,0.201,2.838,0.025,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(62)Type 8 Daniel.csv,62,1441,0.216,1.49,0.285,2.541,0.125,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(63)Type 8 Daniel.csv,63,1441,0.156,1.38,0.262,2.623,0.086,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(64)Type 8 Daniel.csv,64,1441,0.155,1.36,0.273,2.787,0.081,line average,T_avg matches the equal-weight line average
+Test_70_cases,Case(65)Type 8 Daniel.csv,65,1441,0.006,0.97,0.189,2.735,0.022,line average,T_avg matches the equal-weight line average

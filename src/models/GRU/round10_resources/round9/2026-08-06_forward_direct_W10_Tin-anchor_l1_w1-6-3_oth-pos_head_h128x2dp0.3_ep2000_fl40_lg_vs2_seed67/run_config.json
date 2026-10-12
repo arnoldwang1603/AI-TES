@@ -1,0 +1,79 @@
+{
+  "run_name": "2026-08-06_forward_direct_W10_Tin-anchor_l1_w1-6-3_oth-pos_head_h128x2dp0.3_ep2000_fl40_lg_vs2_seed67",
+  "started_or_resumed_at": "2026-09-24 17:44:17",
+  "seed": 67,
+  "window_size": 10,
+  "sliding_pad_mode": "variable",
+  "tinner_mode": "anchor",
+  "touter_mode": "abs",
+  "touter_tau": 1200,
+  "touter_scale": 1.0,
+  "touter_ema_form": "euler",
+  "anchor_lead": 1,
+  "loss_weights": [
+    1.0,
+    6.0,
+    3.0
+  ],
+  "physics_bound_weight": 0.0,
+  "other_ch_mode": "pos_head",
+  "input_lookahead": 0,
+  "anchor_scale": 1.0,
+  "pos_gap_floor": 40.0,
+  "pos_case_gate": false,
+  "pos_floor_soft": false,
+  "pos_temp_gate": 0.0,
+  "pos_temp_soft": 0.0,
+  "pos_abs_head": true,
+  "pos_learned_gate": true,
+  "pos_gate_bias": 2.0,
+  "pos_learned_pool": false,
+  "pos_anchored_fallback": false,
+  "pos_fit_clean": false,
+  "case_flag_input": "",
+  "exclude_both_phase": false,
+  "output_size": 5,
+  "model_split": "shared",
+  "pos_time_prior": "0",
+  "variants": [
+    "forward_direct"
+  ],
+  "input_dims": {
+    "delta": 5,
+    "abs+delta": 9,
+    "abs": 5,
+    "abs_window": 5,
+    "abs_sliding": 5,
+    "inverse_delta": 2,
+    "inverse_abs+delta": 3,
+    "inverse_abs": 2,
+    "inverse_abs_sliding": 2,
+    "forward_direct": 2
+  },
+  "latest_params": {
+    "hidden_size": 128,
+    "num_layers": 2,
+    "dropout": 0.3,
+    "lr": 0.0025,
+    "max_epochs": 2000,
+    "batch_size": 16,
+    "early_stop_patience": 150,
+    "sched_patience": 50,
+    "sched_factor": 0.5
+  },
+  "data": {
+    "train_subdir": "Latest Database (Use this for training)",
+    "test_subdir": "Test_70_cases",
+    "manual_split_enabled": false,
+    "val_split": "stratified",
+    "val_per_type": 2,
+    "outer_test_frac": 0.2,
+    "inner_val_frac": 0.05,
+    "split_seed": 42
+  },
+  "persistence": {
+    "resume_enabled": true,
+    "save_predictions": true,
+    "checkpoint_every_n_epochs": 1
+  }
+}

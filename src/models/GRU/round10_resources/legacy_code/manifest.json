@@ -1,0 +1,20 @@
+{
+  "schema": "round10.legacy-baseline/1",
+  "source_root": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\src\\models\\GRU",
+  "source_status": "Original AI-TES P0 code, including the H9 fix, before later hooks",
+  "files": {
+    "tes_gru/__init__.py": "5fbcbd677c1577ffe3d7fcaae0414a2dc113fb50e3cad68679533e4625af8032",
+    "tes_gru/config.py": "159e2e97f80b7bfbde477a02879d49e6470c526d736dcfb9e2292be251d1acd1",
+    "tes_gru/data.py": "130c3210e7c94d12e4f44daf47c86ef051c72ffdacda36e9a49b30a007f88a7c",
+    "tes_gru/evaluate.py": "7728e255752a51524be1cfc3846637e97ff39241ef49df71cc53c3a6a7cebe15",
+    "tes_gru/main.py": "552fad89a9dc2aeece9a4acbb649cf5c38d6968a3cd2747a7f6195fa81df0965",
+    "tes_gru/models.py": "2103d38a1636b7da1f1d7f067c5c915b55aeb310557059dee51376c7532ac431",
+    "tes_gru/rollout.py": "dea9b10ede8369d095dccd32b156086cef566ad15e4782d976ca579014d87951",
+    "tes_gru/round10_metrics.py": "3f7fcdb1d17ca30de2c526939a46dc8cac30c63a9d7a54910fa8e0bb273fd02a",
+    "tes_gru/runio.py": "d7eded5f93704b49a448e7195b46b03a091193d64e73fdfe32a3a32e25ab3b9c",
+    "tes_gru/train.py": "9a5b73459a702332515746ab42c22b5bd4fdfd87208b30a7de5207b7290f2cfd",
+    "tes_gru/utils.py": "1e86ff25602f817c3029860e9e5ad1f538abd2fc0678fb1d7ee4364be34164af",
+    "splits/stratified_v2_s42.json": "54b08273161ee961688d8bf21f969140cb5bb00af4f950120d024d6cbceb27d5",
+    "splits/round10_vs3_s42.json": "c52cf3bfc1f313be524394621e4e94bbcf9f591da8345d3de17444b5c52956ac"
+  }
+}

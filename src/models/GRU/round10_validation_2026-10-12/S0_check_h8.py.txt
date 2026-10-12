@@ -1,0 +1,24 @@
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS inverse KC changes only weight0
+PASS run name/snapshot/env/export plumbing
+PASS unfitted KC rejected
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS inverse KC changes only weight0
+PASS run name/snapshot/env/export plumbing
+PASS unfitted KC rejected
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS inverse KC changes only weight0
+PASS run name/snapshot/env/export plumbing
+PASS unfitted KC rejected
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS inverse KC changes only weight0
+PASS run name/snapshot/env/export plumbing
+PASS unfitted KC rejected

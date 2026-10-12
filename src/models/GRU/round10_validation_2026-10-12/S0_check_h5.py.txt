@@ -1,0 +1,2020 @@
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_tgxb3m7d\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 11.3 ms/case  |  88.66 cases/s  |  7.83 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_tgxb3m7d\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_dvbmuxjg\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.5 ms/case  |  1835.20 cases/s  |  0.38 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_dvbmuxjg\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_pohd3r_g\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.5 ms/case  |  2144.08 cases/s  |  0.32 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_pohd3r_g\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_xh3h8pvm\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 4.6 ms/case  |  215.33 cases/s  |  3.23 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_xh3h8pvm\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ngie47dx\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 4.1 ms/case  |  246.12 cases/s  |  2.82 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ngie47dx\predictions.npz
+PASS 5-file identity ratio_inputR1kelvin train 1.21e-05 C eval 2.93e-05 C
+PASS snapshot/env/export rtR1k 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_4fafrgm2\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1258.34 cases/s  |  0.55 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_4fafrgm2\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5__kndtwxg\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 14.8 ms/case  |  67.46 cases/s  |  10.29 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5__kndtwxg\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_wt89h7tt\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1207.44 cases/s  |  0.58 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_wt89h7tt\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ns8vsmw0\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 7.8 ms/case  |  127.84 cases/s  |  5.43 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ns8vsmw0\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_vlsxzi3c\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1494.32 cases/s  |  0.46 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_vlsxzi3c\predictions.npz
+PASS 5-file identity ratio_inputR2kelvin train 1.21e-05 C eval 2.93e-05 C
+PASS snapshot/env/export rtR2k 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_t6451jdq\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.5 ms/case  |  1867.76 cases/s  |  0.37 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_t6451jdq\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_8r7hjx3s\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 7.4 ms/case  |  134.77 cases/s  |  5.15 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_8r7hjx3s\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_iidkuidi\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.5 ms/case  |  1885.37 cases/s  |  0.37 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_iidkuidi\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_5uuipeft\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.6 ms/case  |  1652.62 cases/s  |  0.42 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_5uuipeft\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_uhv46zhe\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1494.99 cases/s  |  0.46 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_uhv46zhe\predictions.npz
+PASS 5-file identity ratio_inputR3kelvin train 1.21e-05 C eval 3.91e-05 C
+PASS snapshot/env/export rtR3k 
+PASS T_avg ratio fit excludes masked files 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_0x4efsk3\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.6 ms/case  |  1543.92 cases/s  |  0.45 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_0x4efsk3\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_y1e7fazj\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 11.4 ms/case  |  87.52 cases/s  |  7.93 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_y1e7fazj\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ac_cfjxd\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 7.7 ms/case  |  129.86 cases/s  |  5.35 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ac_cfjxd\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_96j3ycsr\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.5 ms/case  |  1895.73 cases/s  |  0.37 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_96j3ycsr\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_dwoylua9\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 4.1 ms/case  |  245.04 cases/s  |  2.83 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_dwoylua9\predictions.npz
+PASS 5-file identity ratio_inputR2celsius20 train 2.29e-05 C eval 3.54e-05 C
+PASS snapshot/env/export rtR2c 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_wcm4w9ij\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 4.5 ms/case  |  223.05 cases/s  |  3.11 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_wcm4w9ij\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_eyi64jzy\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 3.9 ms/case  |  253.37 cases/s  |  2.74 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_eyi64jzy\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_219k24zn\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.4 ms/case  |  2283.63 cases/s  |  0.30 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_219k24zn\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_zosyiobj\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.4 ms/case  |  2739.73 cases/s  |  0.25 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_zosyiobj\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_cu0ow2gj\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 4.1 ms/case  |  246.25 cases/s  |  2.82 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_cu0ow2gj\predictions.npz
+PASS 5-file identity anchor_initialR3kelvin train 1.42e-05 C eval 2.93e-05 C
+PASS snapshot/env/export init 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_mjixmfd3\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.1 ms/case  |  893.89 cases/s  |  0.78 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_mjixmfd3\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_xla4lyyh\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1512.17 cases/s  |  0.46 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_xla4lyyh\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_rkp2vnq_\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1445.09 cases/s  |  0.48 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_rkp2vnq_\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_nz60adpu\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1445.50 cases/s  |  0.48 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_nz60adpu\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_dt87c9zp\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1313.03 cases/s  |  0.53 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_dt87c9zp\predictions.npz
+PASS 5-file identity ratio_inputR1kelvin train 1.21e-05 C eval 2.93e-05 C
+PASS snapshot/env/export rtR1k 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5__sz9h7mg\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.9 ms/case  |  1121.96 cases/s  |  0.62 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5__sz9h7mg\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_qwo0lfcg\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1192.61 cases/s  |  0.58 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_qwo0lfcg\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_jbh9i88n\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  1020.93 cases/s  |  0.68 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_jbh9i88n\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_of41sre3\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  1045.81 cases/s  |  0.66 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_of41sre3\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_lpruxxig\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.2 ms/case  |  815.39 cases/s  |  0.85 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_lpruxxig\predictions.npz
+PASS 5-file identity ratio_inputR2kelvin train 1.21e-05 C eval 2.93e-05 C
+PASS snapshot/env/export rtR2k 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_f4q7fg75\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1307.36 cases/s  |  0.53 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_f4q7fg75\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_6a6ls8k9\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.9 ms/case  |  1078.52 cases/s  |  0.64 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_6a6ls8k9\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_s0vq_fwf\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.9 ms/case  |  1139.21 cases/s  |  0.61 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_s0vq_fwf\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_6dzp6m6m\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.1 ms/case  |  929.11 cases/s  |  0.75 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_6dzp6m6m\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_oe2maypr\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  966.56 cases/s  |  0.72 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_oe2maypr\predictions.npz
+PASS 5-file identity ratio_inputR3kelvin train 1.21e-05 C eval 3.91e-05 C
+PASS snapshot/env/export rtR3k 
+PASS T_avg ratio fit excludes masked files 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_0yuqsd4w\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.9 ms/case  |  1142.73 cases/s  |  0.61 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_0yuqsd4w\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_e2p2g0yp\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  1040.37 cases/s  |  0.67 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_e2p2g0yp\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_9mnfml1s\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  993.15 cases/s  |  0.70 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_9mnfml1s\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_l3rbog_5\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.2 ms/case  |  821.29 cases/s  |  0.85 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_l3rbog_5\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_n_gd5lki\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1201.49 cases/s  |  0.58 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_n_gd5lki\predictions.npz
+PASS 5-file identity ratio_inputR2celsius20 train 2.29e-05 C eval 3.54e-05 C
+PASS snapshot/env/export rtR2c 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_bb9c_vdn\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1277.79 cases/s  |  0.54 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_bb9c_vdn\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_8ib089wd\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.1 ms/case  |  897.42 cases/s  |  0.77 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_8ib089wd\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ygjg_9qk\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1437.81 cases/s  |  0.48 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ygjg_9qk\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_i1scov25\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1369.86 cases/s  |  0.51 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_i1scov25\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_7wg_39ck\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1489.65 cases/s  |  0.47 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_7wg_39ck\predictions.npz
+PASS 5-file identity anchor_initialR3kelvin train 1.42e-05 C eval 2.93e-05 C
+PASS snapshot/env/export init 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_c0ny392p\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1266.62 cases/s  |  0.55 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_c0ny392p\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_0u3dhih1\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1380.83 cases/s  |  0.50 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_0u3dhih1\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_r_cjep26\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1235.33 cases/s  |  0.56 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_r_cjep26\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_2796yr9_\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1230.16 cases/s  |  0.56 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_2796yr9_\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_6s_911z7\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1420.86 cases/s  |  0.49 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_6s_911z7\predictions.npz
+PASS 5-file identity ratio_inputR1kelvin train 1.21e-05 C eval 2.93e-05 C
+PASS snapshot/env/export rtR1k 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_sgj_kq2e\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1180.36 cases/s  |  0.59 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_sgj_kq2e\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_2iqvz0s8\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.9 ms/case  |  1100.96 cases/s  |  0.63 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_2iqvz0s8\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ih39vxgo\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1329.96 cases/s  |  0.52 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ih39vxgo\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_u7l_c7hd\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.4 ms/case  |  2434.87 cases/s  |  0.29 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_u7l_c7hd\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_igfzyjim\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.9 ms/case  |  1115.32 cases/s  |  0.62 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_igfzyjim\predictions.npz
+PASS 5-file identity ratio_inputR2kelvin train 1.21e-05 C eval 2.93e-05 C
+PASS snapshot/env/export rtR2k 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_blxusgfa\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  1049.32 cases/s  |  0.66 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_blxusgfa\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_06tmtqif\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1332.98 cases/s  |  0.52 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_06tmtqif\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_c9t32ufo\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1233.20 cases/s  |  0.56 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_c9t32ufo\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_h3_q1lza\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.8 ms/case  |  551.30 cases/s  |  1.26 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_h3_q1lza\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_dm2ignss\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.4 ms/case  |  2364.63 cases/s  |  0.29 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_dm2ignss\predictions.npz
+PASS 5-file identity ratio_inputR3kelvin train 1.21e-05 C eval 3.91e-05 C
+PASS snapshot/env/export rtR3k 
+PASS T_avg ratio fit excludes masked files 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_rtahbw4a\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.2 ms/case  |  806.13 cases/s  |  0.86 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_rtahbw4a\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_gl_t38n6\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1351.72 cases/s  |  0.51 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_gl_t38n6\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ampkrbqs\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1297.19 cases/s  |  0.54 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ampkrbqs\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_7g9gy77f\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1246.11 cases/s  |  0.56 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_7g9gy77f\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_xp0lbyjh\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.1 ms/case  |  878.89 cases/s  |  0.79 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_xp0lbyjh\predictions.npz
+PASS 5-file identity ratio_inputR2celsius20 train 2.29e-05 C eval 3.54e-05 C
+PASS snapshot/env/export rtR2c 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ig7w0mvm\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1524.39 cases/s  |  0.46 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ig7w0mvm\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_680x3tik\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1300.56 cases/s  |  0.53 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_680x3tik\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_g0ip39_h\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1368.36 cases/s  |  0.51 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_g0ip39_h\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_t3kxi49_\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1501.95 cases/s  |  0.46 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_t3kxi49_\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ulmivtw0\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1254.39 cases/s  |  0.55 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ulmivtw0\predictions.npz
+PASS 5-file identity anchor_initialR3kelvin train 1.42e-05 C eval 2.93e-05 C
+PASS snapshot/env/export init 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_jio25txt\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1247.04 cases/s  |  0.56 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_jio25txt\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_1vevra1u\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1468.64 cases/s  |  0.47 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_1vevra1u\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_u7x44plc\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1357.59 cases/s  |  0.51 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_u7x44plc\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_9exog_ik\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.6 ms/case  |  1778.41 cases/s  |  0.39 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_9exog_ik\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_u8yuxlxr\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1298.53 cases/s  |  0.53 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_u8yuxlxr\predictions.npz
+PASS 5-file identity ratio_inputR1kelvin train 1.21e-05 C eval 2.93e-05 C
+PASS snapshot/env/export rtR1k 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_32ijujs7\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  975.99 cases/s  |  0.71 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_32ijujs7\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ysn2wzz3\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.4 ms/case  |  2459.42 cases/s  |  0.28 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ysn2wzz3\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_1u3unyhd\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1247.04 cases/s  |  0.56 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_1u3unyhd\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_p0pdke1i\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1292.82 cases/s  |  0.54 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_p0pdke1i\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_k7ttc3ej\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1275.18 cases/s  |  0.54 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_k7ttc3ej\predictions.npz
+PASS 5-file identity ratio_inputR2kelvin train 1.21e-05 C eval 2.93e-05 C
+PASS snapshot/env/export rtR2k 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_w2yj4i4n\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1339.41 cases/s  |  0.52 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_w2yj4i4n\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_pv0ty37q\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1333.87 cases/s  |  0.52 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_pv0ty37q\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ikkimpvh\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  975.80 cases/s  |  0.71 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_ikkimpvh\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_i9g5x3o6\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1325.21 cases/s  |  0.52 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_i9g5x3o6\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_n15rkmdd\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1251.09 cases/s  |  0.56 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_n15rkmdd\predictions.npz
+PASS 5-file identity ratio_inputR3kelvin train 1.21e-05 C eval 3.91e-05 C
+PASS snapshot/env/export rtR3k 
+PASS T_avg ratio fit excludes masked files 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_8b3j2gnl\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.6 ms/case  |  625.59 cases/s  |  1.11 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_8b3j2gnl\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_4fy22xz2\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.8 ms/case  |  1248.75 cases/s  |  0.56 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_4fy22xz2\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_vb0va4ef\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  1034.23 cases/s  |  0.67 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_vb0va4ef\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5___azzq8c\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.9 ms/case  |  1122.08 cases/s  |  0.62 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5___azzq8c\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_5r79fack\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 1.0 ms/case  |  1024.17 cases/s  |  0.68 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_5r79fack\predictions.npz
+PASS 5-file identity ratio_inputR2celsius20 train 2.29e-05 C eval 3.54e-05 C
+PASS snapshot/env/export rtR2c 
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+Data source: NEW (2026-04-26 upload)
+  train_dir = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Latest Database (Use this for training)
+  test_dir  = C:\Users\FEvMo\Documents\GitHub\AI-TES\data\Test_70_cases
+  CSVs in train_dir : 311
+  CSVs in test_dir  : 0
+
+STRATIFIED split (2 per case type, seed 42; round10_vs3_s42.json read; tag vs3):
+  DROP LIST: 7 runs removed from the training pool before the split: Case 1 (linear charging)/Case new 1.csv, Case 1 (linear charging)/Case new 19 (1 second step).csv, Case 1 (linear charging)/Case new 2.csv, Case 1 (linear charging)/Case new 20.csv, Case 1 (linear charging)/Case new 3.csv, Case 10 (Discharging + Constant)/Case 8.csv, Case 8 (linear discharging)/Discharge 13- Erick wKCp.csv
+  Case 1 (linear charging)                         train  33  val 2
+  Case 10 (Discharging + Constant)                 train  22  val 2
+  Case 2 (Nonlinear Charging)                      train  30  val 2
+  Case 3 (Charging with noise)                     train  30  val 2
+  Case 4 (Linear Charging+Discharging)             train  35  val 2
+  Case 5 (Linear charging + constant)              train  23  val 2
+  Case 6 (Non-linear charging+Discharging)         train  33  val 2
+  Case 7 (Linear charging+discharging with noise)  train  33  val 2
+  Case 8 (linear discharging)                      train  22  val 2
+  Case 9 (non-linear discharging)                  train  23  val 2
+  train: 284, val: 20, test: 0
+
+Loading training data...
+Loading validation data...
+Loading test data...
+Fitting scaler on training data...
+[forward_direct] loss weights (T_inner,T_outer,T_avg) = [1.0, 6.0, 3.0]
+[forward_direct] T_inner anchor on Input_T: delta mean=-0.149 C std=0.639 C  ->  KA=1.00000 KB=-0.00025 KC=0.001049
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_2xlw36ln\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1470.37 cases/s  |  0.47 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_2xlw36ln\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 1 (linear charging)/Case new 5.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_tc_un93b\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1467.78 cases/s  |  0.47 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_tc_un93b\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 1.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_q72x1chx\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1478.63 cases/s  |  0.47 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_q72x1chx\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 10 (Discharging + Constant)/Case 17.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_1sc80wr4\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1456.66 cases/s  |  0.48 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_1sc80wr4\predictions.npz
+
+============================================================
+[forward_direct] Testing on identity: 1 cases
+============================================================
+  [forward_direct] 1/1: Latest Database (Use this for training)/Case 2 (Nonlinear Charging)/Case 22.csv
+
+[forward_direct] summary -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_m3b_0imo\summary_errors.csv
+[forward_direct] avg MAE   T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg RMSE  T_inner=0.0000  T_outer=0.0000  T_avg=0.0000
+[forward_direct] avg MAPE  T_inner=0.000%  T_outer=0.000%  T_avg=0.000%  Overall=0.000%
+[forward_direct] avg R^2   T_inner=1.0000  T_outer=1.0000  T_avg=1.0000  Overall=1.0000
+[forward_direct] avg Early/Late MAE  T_inner 0.0000 / 0.0000
+[forward_direct] inference: 0.7 ms/case  |  1505.12 cases/s  |  0.46 us/step
+[forward_direct] predictions saved -> C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\scratch\h5_m3b_0imo\predictions.npz
+PASS 5-file identity anchor_initialR3kelvin train 1.42e-05 C eval 2.93e-05 C
+PASS snapshot/env/export init 

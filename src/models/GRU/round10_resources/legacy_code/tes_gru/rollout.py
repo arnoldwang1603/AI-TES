@@ -1,0 +1,687 @@
+"""Variant-aware autoregressive rollout helpers (train-time)."""
+import torch
+
+from .config import *
+
+
+# ============================================================
+# 7. Variant rollout helpers
+# ============================================================
+def variant_to_encoder(variant):
+    # abs_sliding still uses the point InitStateEncoder (h0 built from
+    # the single t=0 observation, which is production-available).
+    # The "sliding window" in abs_sliding is in the per-step INPUT, not
+    # in the h0 computation. Inverse variants likewise use the point
+    # encoder (init_cond is 4-d, h0 from t=0 absolute state).
+    return 'window' if variant == 'abs_window' else 'point'
+
+
+def _rewrite_step_input(variant, x_t,
+                        cur_outer, cur_inner, cur_avg,
+                        prev_outer, prev_inner, prev_avg):
+    """
+    Variant-aware input rewrite at one AR step (5-input refactor, 2026-05-20).
+
+    Conventions across variants (column indices in x_t):
+      delta     (5-d): [Time, dT_outer, dT_inner, dT_avg, dInput_T]
+                       idx 1, 2, 3 overwritten with AR-derived deltas.
+                       idx 4 (dInput_T) stays GT exogenous.
+      abs+delta (9-d): [Time, T_outer, T_inner, T_avg, Input_T,
+                       dT_outer, dT_inner, dT_avg, dInput_T]
+                       idx 1, 2, 3 = AR-fed abs T_outer / T_inner / T_avg.
+                       idx 5, 6, 7 = AR-derived deltas.
+                       idx 4 Input_T and idx 8 dInput_T stay GT exogenous.
+      abs       (5-d): [Time, T_outer, T_inner, T_avg, Input_T]
+      abs_window(5-d): same as abs (the window enters via h0, not the input)
+                       idx 1, 2, 3 = AR-fed abs values.
+
+    cur_X / prev_X are the AR-tracked absolute T_outer / T_inner / T_avg
+    at the current and previous step. Deltas = cur - prev, computed from
+    the AR chain only (never future GT).
+    """
+    x_new = x_t.clone()
+    dT_outer = (cur_outer - prev_outer)
+    dT_inner = (cur_inner - prev_inner)
+    dT_avg = (cur_avg - prev_avg)
+
+    if variant == 'delta':
+        x_new[:, 1] = dT_outer
+        x_new[:, 2] = dT_inner
+        x_new[:, 3] = dT_avg
+        # idx 4 dInput_T stays GT
+    elif variant == 'abs+delta':
+        x_new[:, 1] = cur_outer
+        x_new[:, 2] = cur_inner
+        x_new[:, 3] = cur_avg
+        # idx 4 Input_T stays GT
+        x_new[:, 5] = dT_outer
+        x_new[:, 6] = dT_inner
+        x_new[:, 7] = dT_avg
+        # idx 8 dInput_T stays GT
+    else:  # abs / abs_window
+        x_new[:, 1] = cur_outer
+        x_new[:, 2] = cur_inner
+        x_new[:, 3] = cur_avg
+    return x_new
+
+
+def _input_case_gate(inp_t):
+    """Per-sample flag: does this run contain both a charging and a
+    discharging phase? Read off the INPUT TEMPERATURE profile alone (a given boundary
+    condition, so legal at inference): the input temperature must peak in the interior
+    and both rise into and fall back out of that peak by >25% of its span.
+    Measured on the 70-case test set: 20/20 of the excursion cases caught,
+    1 false alarm (case 58), 69/70 correct. inp_t: (B, T)."""
+    B, T = inp_t.shape
+    idx = torch.arange(T, device=inp_t.device).unsqueeze(0)
+    k = inp_t.argmax(dim=1, keepdim=True)
+    peak = inp_t.gather(1, k).squeeze(1)
+    big = torch.full_like(inp_t, float("inf"))
+    after = torch.where(idx >= k, inp_t, big).min(dim=1).values
+    before = torch.where(idx <= k, inp_t, big).min(dim=1).values
+    span = inp_t.max(dim=1).values - inp_t.min(dim=1).values
+    kk = k.squeeze(1).float()
+    return ((peak - after > 0.25 * span) & (peak - before > 0.25 * span)
+            & (kk > 0.02 * T) & (kk < 0.98 * T))
+
+
+def touter_reference(inp_seq, e0=None, model=None):
+    """(B, T) exogenous input temperature (Input_T's MinMax scale) -> (B, T)
+    reference for the round-8 T_outer anchor, in the SAME scale. "anchor_input":
+    the input itself. "anchor_ema": its exponential moving average with time
+    constant TOUTER_TAU steps, seeded at e0 = T_outer(0), the given initial
+    condition (falls back to x[0]).
+
+    e0 arrives in T_outer's scaled space (init_conds / the window's column 1)
+    and is converted into Input_T's scaled space before seeding, using the
+    scaler constants train.py stores in model.touter_ref_affine. The two
+    columns' scalers coincided on the base data ([1, 610] both), which is
+    why the unconverted seed went unnoticed in round 8 (audit 2026-09-16);
+    on any other data the raw-degree fit in train.py and this rollout would
+    disagree. Causal and affine-equivariant; no gradient flows through it."""
+    if TOUTER_MODE != "anchor_ema":
+        return inp_seq
+    r = touter_ema_r()                  # 1 - 1/tau (euler) or exp(-1/tau) (exact), config.py
+    a = 1.0 - r
+    if e0 is None:
+        seed = inp_seq[:, 0]
+    else:
+        seed = e0.detach().to(inp_seq.device)
+        aff = getattr(model, 'touter_ref_affine', None) if model is not None else None
+        if aff is None:
+            raise RuntimeError("touter_reference: e0 given but model.touter_ref_affine "
+                               "is missing -- the T_outer anchor was not fitted")
+        (s_o, m_o), (s_i, m_i) = aff
+        seed = ((seed - m_o) / s_o) * s_i + m_i          # T_outer scale -> Input_T scale
+    # Closed form of the recurrence e_t = r e_{t-1} + a x_t (a = 1 - r), i.e.
+    # e_t = r^t (e_0 + a * sum_{k=1..t} r^-k x_k), evaluated in float64 so
+    # the r^-k weights (e^1.2 at tau=1200 over 1440 steps; up to ~1e6 for a
+    # tau of 100) cost no precision. Replaces a 1440-step Python loop of GPU
+    # ops per batch (2026-09-19; equal to the loop to 1e-6 in scaled units,
+    # checked in run_round9's preflight). The derivation of r is in config.py.
+    T = inp_seq.shape[1]
+    k = torch.arange(T, device=inp_seq.device, dtype=torch.float64)
+    x = inp_seq.detach().to(torch.float64)
+    x = torch.cat([torch.zeros_like(x[:, :1]), x[:, 1:]], dim=1)   # x_0 unused: e_0 = seed
+    inner = seed.to(torch.float64).unsqueeze(1) + a * torch.cumsum(x * (r ** -k), dim=1)
+    e = (r ** k) * inner
+    return e.to(inp_seq.dtype)
+
+
+def pos_time_curve(model, time_s):
+    """The position time prior at the given scaled elapsed times (any
+    shape): the per-step median table fitted in train.py, indexed by step
+    number recovered from the scaled Time input, clamped to the table."""
+    curve = model.pos_time_prior
+    s_t, m_t, dt = model.pos_time_affine
+    k = torch.round((time_s.detach().to(torch.float64) - m_t) / s_t / dt)
+    k = k.clamp(0, curve.numel() - 1).to(torch.long)
+    return curve.to(time_s.device)[k]
+
+
+def apply_other_anchor(model, pred, t_outer0_s, inp_t=None, case_gate=None,
+                       time_s=None):
+    """Reconstruct T_outer / T_avg from their fixed-reference anchors.
+
+    pred: (..., 3) raw head outputs in scaled space, channels
+          (T_inner, T_outer, T_avg). T_inner must already be final (its own
+          anchor applied) because T_avg's reference uses it.
+    t_outer0_s: T_outer at t=0 in scaled space, broadcastable to pred[..., 1].
+    time_s: the scaled elapsed time of each predicted step (input column 0),
+          same shape as pred[..., 2]; required when the model carries a
+          position time prior (POS_TIME_PRIOR), ignored otherwise.
+
+    Returns a new tensor; no-op (returns pred) when the anchor is disabled.
+    """
+    if OTHER_CH_MODE == 'pos_head':
+        ph = getattr(model, 'pos_head', None)
+        if ph is None:
+            return pred
+        p_mu, p_sd, (s_i, m_i), (s_o, m_o), (s_a, m_a) = ph
+        tp = getattr(model, 'pos_time_prior', None)
+        if tp is not None and time_s is None:
+            raise RuntimeError("apply_other_anchor: the model has a position time "
+                               "prior but the caller passed no time_s")
+        t_in, t_out = pred[..., 0], pred[..., 1]
+        # References detached: the T_avg objective must not reshape the
+        # T_inner / T_outer heads (same rule as the anchor path).
+        ti_raw = ((t_in.detach() - m_i) / s_i)
+        to_raw = ((t_out.detach() - m_o) / s_o)
+        gap = ti_raw - to_raw
+        sign = torch.where(gap < 0, -torch.ones_like(gap), torch.ones_like(gap))
+        den = gap
+        if POS_GAP_FLOOR:
+            # Bound pos where the surfaces converge and pos = excess/gap blows
+            # up. Reconstruction stays exact -- train.py fits mu/sd through
+            # this same denominator. The soft form has the same asymptote
+            # without the derivative kink at the threshold.
+            if POS_FLOOR_SOFT:
+                den = sign * torch.sqrt(gap * gap + POS_GAP_FLOOR ** 2)
+            else:
+                den = sign * torch.clamp(gap.abs(), min=POS_GAP_FLOOR)
+        pos = p_mu + p_sd * pred[..., 2]
+        if tp is not None:
+            # Round 9: the head's output is the residual from the fitted
+            # elapsed-time curve (heat-penetration shape), so the early
+            # climb of the position is carried by the curve, not learned.
+            pos = pos + pos_time_curve(model, time_s)
+        t_avg = (to_raw + pos * den) * s_a + m_a
+
+        # Fallback estimate. Its own channel when one exists: channel 2
+        # holds a z-scored position (~N(0,1)) while an absolute T_avg is a
+        # MinMax-scaled temperature (~0.5), so one channel cannot carry both.
+        if POS_ANCHORED_FALLBACK and pred.shape[-1] > 3 \
+                and getattr(model, 'pos_mid', None) is not None:
+            # Surface-anchored: deviation from the (detached) surface
+            # midpoint, so the fallback inherits the model's two most
+            # accurate outputs instead of re-learning a 100-400 C level.
+            mu_m, sd_m = model.pos_mid
+            t_abs = ((ti_raw + to_raw) * 0.5 + mu_m
+                     + sd_m * pred[..., 3]) * s_a + m_a
+        else:
+            t_abs = pred[..., 3] if pred.shape[-1] > 3 else pred[..., 2]
+
+        w = None
+        if POS_TEMP_GATE:
+            # Timestep level: hand T_avg to the absolute head while the two
+            # surfaces are close, which is exactly when T_avg escapes the
+            # interval between them. POS_TEMP_SOFT ramps the handover instead
+            # of switching abruptly, which also keeps the absolute head fed
+            # with gradient on both sides of the threshold.
+            a = gap.abs()
+            if POS_TEMP_SOFT > 0:
+                w = ((a - POS_TEMP_GATE) / POS_TEMP_SOFT).clamp(0.0, 1.0)
+            else:
+                w = (a >= POS_TEMP_GATE).to(t_avg.dtype)
+        if POS_LEARNED_GATE and pred.shape[-1] > 4:
+            # Same handover, but the model picks it. Biased so training starts
+            # out trusting the position formula instead of sitting at an
+            # uncommitted 0.5. Multiplied with any hand-designed gate, so both
+            # have to want the position formula for it to be used.
+            logit = pred[..., 4]
+            if POS_LEARNED_POOL:
+                # Per-case router: one decision per sequence, jump-free.
+                # (Per-step calls from the sliding path see T=1, where
+                # pooling degenerates to per-step -- AR arms do not use
+                # this knob in round 6.)
+                logit = logit.mean(dim=-1, keepdim=True)
+            lw = torch.sigmoid(logit + POS_GATE_BIAS)
+            w = lw if w is None else w * lw
+        if w is not None:
+            t_avg = w * t_avg + (1.0 - w) * t_abs
+
+        if POS_CASE_GATE and inp_t is not None:
+            # Case level: a run containing both a charging and a discharging
+            # phase breaks the between-the-surfaces premise outright, so hand
+            # the whole run over.
+            # case_gate: the per-run verdict precomputed once by a per-step
+            # caller (the AR paths call this 1440x per rollout); identical
+            # to recomputing it here.
+            g = (case_gate if case_gate is not None
+                 else _input_case_gate(inp_t)).unsqueeze(-1).expand_as(t_avg)
+            t_avg = torch.where(g, t_abs, t_avg)
+        return torch.stack([t_in, t_out, t_avg], dim=-1)
+
+    oa = (getattr(model, 'other_anchor', None)
+          if OTHER_CH_MODE.startswith('anchor') else None)
+    if oa is None:
+        return pred
+    (s_i, m_i), (s_o, m_o), (s_a, m_a) = oa['aff']
+    kb_o, kc_o = oa['out']
+    mu_a, kc_a = oa['avg']
+    w = oa['w']
+    # "anchor_avg" leaves T_outer absolute (its initial-value anchor was
+    # measured unstable); only T_avg gets the blend anchor.
+    t_out = (pred[..., 1] if OTHER_CH_MODE.startswith('anchor_avg')
+             else t_outer0_s + kb_o + kc_o * pred[..., 1])
+    t_in = pred[..., 0]
+    # blend in RAW space, then map back into T_avg's scaled space.
+    # The reference channels are DETACHED (unless OTHER_CH_MODE ends in
+    # "_grad"): without this, T_avg's loss backprops into the T_inner and
+    # T_outer heads and reshapes them to suit T_avg. Measured 2026-08-06:
+    # with gradients flowing, T_outer went bimodal across seeds (0.72/2.14
+    # for arm F, 0.73/2.59 for arm G) and the seed spread blew up from 0.035
+    # to ~1.0, with the bad runs early-stopping in a poor basin. Same trap
+    # already fixed once in the physics-bound hinge.
+    detach_ref = not OTHER_CH_MODE.endswith("_grad")
+    if detach_ref:
+        t_in_ref, t_out_ref = t_in.detach(), t_out.detach()
+    else:
+        t_in_ref, t_out_ref = t_in, t_out
+    raw_blend = w * (t_in_ref - m_i) / s_i + (1.0 - w) * (t_out_ref - m_o) / s_o
+    t_avg = s_a * (raw_blend + mu_a) + m_a + kc_a * pred[..., 2]
+    return torch.stack([t_in, t_out, t_avg], dim=-1)
+
+
+def _anchor_tail(inp_t, inp_last):
+    """Last column of the lead-1 anchor reference (B, 1): the true scaled
+    Input_T(N) when the dataset supplies it (H9 fix), else the legacy
+    tail-hold of Input_T(N-1)."""
+    if inp_last is None:
+        return inp_t[:, -1:]
+    return inp_last.to(inp_t.device, inp_t.dtype).reshape(-1, 1)
+
+
+def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
+                      tf_prob=0.0, inp_last=None):
+    """Forward pass during training/validation, variant-aware.
+
+    abs_sliding has its own logic in _rollout_sliding. The other 4 variants
+    share a unified per-step loop that maintains a two-step AR history for
+    T_outer / T_inner / T_avg, so dT slots can be derived from the AR chain
+    without any future GT.
+
+    tf_prob: probability of using the GROUND-TRUTH absolute state instead
+    of the model's previous-step prediction when stepping forward in the
+    AR chain. Linear-decay schedule is computed by the caller (typically
+    `teacher_forcing_prob(epoch)`). At test/inference time pass tf_prob=0.
+
+    targets: (B, N, 3) tensor of GT (T_inner, T_outer, T_avg) at steps 1..N.
+    Used only when tf_prob > 0.
+
+    inp_last: (B,) scaled Input_T(N) from the dataset (H9). With ANCHOR_LEAD=1
+    the T_inner anchor at the last step reads it instead of tail-holding
+    Input_T(N-1); None keeps the pre-Round-10 tail-hold.
+    """
+    batch_size = inputs.shape[0]
+    if model.encoder_kind == 'point':
+        hidden = model.init_hidden(batch_size, x0=init_conds)
+    else:
+        hidden = model.init_hidden(batch_size, x_window=win_obs)
+
+    if variant == 'forward_direct':
+        # Exogenous-only seq2seq: inputs are [Time, Input_T] (all GT given
+        # boundary conditions), one forward pass over the whole sequence.
+        # No AR feedback exists, so the TF gate is a no-op. h0 still comes
+        # from the InitStateEncoder (initial state is given).
+        out, _ = model(inputs, hidden)
+        anc = getattr(model, 'tinner_anchor', None) \
+            if TINNER_MODE == "anchor" else None
+        if anc is not None:
+            # Same T_inner reconstruction as the sliding path, vectorized over
+            # the whole sequence. Input_T is column 1 here (inputs are
+            # [Time, Input_T]); ANCHOR_LEAD=1 shifts the anchor to step t+1.
+            ka, kb, kc = anc
+            inp_t = inputs[:, :, 1]
+            if ANCHOR_LEAD:
+                inp_t = torch.cat([inp_t[:, 1:], _anchor_tail(inp_t, inp_last)], dim=1)
+            tin = ka * inp_t + kb + kc * out[..., 0]
+            out = torch.cat([tin.unsqueeze(-1), out[..., 1:]], dim=-1)
+        # Round 8 (Arnold): T_outer anchored on the live input temperature,
+        # the T_inner reconstruction applied verbatim to head 1. Done before
+        # the T_avg step so the position formula consumes the anchored value.
+        oanc = getattr(model, 'touter_anchor', None) \
+            if TOUTER_MODE != "abs" else None
+        if oanc is not None:
+            ka_o, kb_o, kc_o = oanc
+            inp_o = touter_reference(inputs[:, :, 1], e0=init_conds[:, 0], model=model)
+            if ANCHOR_LEAD:
+                inp_o = torch.cat([inp_o[:, 1:], inp_o[:, -1:]], dim=1)
+            tout = ka_o * inp_o + kb_o + kc_o * out[..., 1]
+            out = torch.cat([out[..., :1], tout.unsqueeze(-1), out[..., 2:]], dim=-1)
+        # T_outer / T_avg anchors. T_outer(0) is the GT initial condition,
+        # available in init_conds[:, 0] (scaled). Applied after the T_inner
+        # anchor because T_avg's reference consumes the final T_inner.
+        out = apply_other_anchor(model, out, init_conds[:, :1].to(out.device),
+                                 inp_t=inputs[:, :, 1], time_s=inputs[:, :, 0])
+        return out
+
+    if variant == 'abs_sliding':
+        return _rollout_sliding(model, inputs, targets, hidden, batch_size,
+                                tf_prob=tf_prob, inp_last=inp_last)
+
+    if is_inverse(variant):
+        # Inverse rollout: T_avg is GT exogenous (in inputs[:, :, 1] for
+        # the no-AR inverse variants), no AR feedback in the input.
+        # Single-shot forward for non-sliding flavors; per-step window
+        # build for inverse_abs_sliding. TF gate is a no-op (no AR chain).
+        return _rollout_inverse(model, variant, inputs, hidden, batch_size)
+
+    # --- Initialize the AR-history triple (T_outer, T_inner, T_avg) ---
+    if variant == 'delta':
+        cur_outer = init_conds[:, 0].clone()    # T_outer(0)
+        cur_inner = init_conds[:, 1].clone()    # T_inner(0)
+        cur_avg = init_conds[:, 2].clone()      # T_avg(0)
+    else:  # abs+delta / abs / abs_window
+        cur_outer = inputs[:, 0, 1].clone()
+        cur_inner = inputs[:, 0, 2].clone()
+        cur_avg = inputs[:, 0, 3].clone()
+    prev_outer = cur_outer.clone()
+    prev_inner = cur_inner.clone()
+    prev_avg = cur_avg.clone()
+
+    preds = []
+    cur_h = hidden
+    for t in range(inputs.size(1)):
+        # --- Teacher-forcing gate ---
+        # At t > 0, with probability tf_prob, override the AR-fed cur_X
+        # with the corresponding GT abs value at step t (= targets[t-1]).
+        # Per-batch-element Bernoulli decision.
+        if t > 0 and tf_prob > 0.0:
+            tf_mask = (torch.rand(batch_size, device=inputs.device) < tf_prob)
+            gt_inner = targets[:, t - 1, 0]
+            gt_outer = targets[:, t - 1, 1]
+            gt_avg = targets[:, t - 1, 2]
+            cur_outer = torch.where(tf_mask, gt_outer, cur_outer)
+            cur_inner = torch.where(tf_mask, gt_inner, cur_inner)
+            cur_avg = torch.where(tf_mask, gt_avg, cur_avg)
+
+        x_t = _rewrite_step_input(
+            variant,
+            inputs[:, t, :],
+            cur_outer.detach(), cur_inner.detach(), cur_avg.detach(),
+            prev_outer.detach(), prev_inner.detach(), prev_avg.detach(),
+        )
+        out, cur_h = model(x_t.unsqueeze(1), cur_h)
+        pred_t = out[:, 0, :]    # (B, 3) = (T_inner_pred, T_outer_pred, T_avg_pred)
+        preds.append(pred_t)
+
+        # Shift AR history forward: new "previous" is the old "current",
+        # new "current" is this step's prediction.
+        prev_outer = cur_outer
+        prev_inner = cur_inner
+        prev_avg = cur_avg
+        cur_outer = pred_t[:, 1]    # model output index 1 = T_outer
+        cur_inner = pred_t[:, 0]    # index 0 = T_inner
+        cur_avg = pred_t[:, 2]      # index 2 = T_avg
+    return torch.stack(preds, dim=1)
+
+
+def _rollout_sliding(model, inputs, targets, hidden, batch_size,
+                     tf_prob=0.0, W=None, inp_last=None):
+    """abs_sliding rollout (sequence-input, 2026-05-25 -- per Arnold).
+
+    Earlier (now removed) version flattened the past W steps into a
+    (5 + 3*W)-d FEATURE vector at each rollout step (seq_len = 1 for the
+    GRU; the lookback was a static feature stack). Per Arnold's spec on
+    2026-05-25, this is wrong: the model should see the past W steps as
+    an actual TEMPORAL sequence so the GRU's recurrence can model them.
+
+    New rollout shape:
+        per rollout step t, GRU input = (B, W, 5):
+            window[k] = [Time(t-W+1+k),
+                         T_outer_AR(t-W+1+k),
+                         T_inner_AR(t-W+1+k),
+                         T_avg_AR(t-W+1+k),
+                         Input_T(t-W+1+k)]
+        for k = 0 .. W-1. Steps before 0 are zero-padded.
+
+    Decisions (Arnold + user 2026-05-25):
+      * Hidden state CARRIES OVER between rollout steps (the GRU's final
+        hidden state after the W-step window becomes the starting hidden
+        state for the next rollout step's window). This means the GRU is
+        advanced W steps per rollout iteration; with stride=1 the windows
+        overlap by W-1.
+      * Stride = 1: one prediction per input step (output[..., -1, :]
+        of each W-step window is the prediction for step t+1).
+      * AR in window: the T_outer / T_inner / T_avg values at each step
+        in the window come from the model's previous predictions (or
+        GT-via-TF at the time those steps were produced), NOT from
+        ground truth. Time and Input_T at each step ARE GT (Time is
+        always exogenous, Input_T is exogenous in the forward problem).
+
+    Teacher-forcing schedule: with probability tf_prob (per batch element)
+    at step t > 0, the most-recent AR value (used as window[..., -1, :]
+    for THIS step's prediction AND saved into the history for future
+    windows) is replaced by GT. Earlier history entries are not
+    retroactively altered -- TF affects each step only at the moment it
+    is added to history, matching the per-step semantics used by the
+    forward `abs` variant.
+    """
+    if W is None:
+        W = WINDOW_SIZE
+    seq_len = inputs.size(1)
+    device = inputs.device
+
+    # Column layout of `inputs` depends on TINNER_MODE (see data.py):
+    #   arfed / anchor : [Time, T_outer, T_inner, T_avg, Input_T]   (5-d)
+    #   output_only    : [Time, T_outer, T_avg, Input_T]            (4-d, v22)
+    out_only = (TINNER_MODE == "output_only")
+    if out_only:
+        IDX_AVG, IDX_INP, FEAT_DIM = 2, 3, 4
+    else:
+        IDX_AVG, IDX_INP, FEAT_DIM = 3, 4, 5
+    # Round 8: the CASE_FLAG_INPUT column (data.py appends it last) rides
+    # along as the last feature of every window row. GT, never fed back.
+    HAS_FLAG = bool(CASE_FLAG_INPUT)
+    IDX_FLAG = FEAT_DIM
+    if HAS_FLAG:
+        FEAT_DIM += 1
+
+    # AR history per step k = 0 .. seq_len (one extra slot for the final
+    # prediction we never use). Initialised from the GT t=0 row.
+    # output_only keeps NO inner history: T_inner is predicted but its
+    # values are never consumed anywhere.
+    outer_hist = [inputs[:, 0, 1]]   # k=0: T_outer GT initial
+    inner_hist = None if out_only else [inputs[:, 0, 2]]
+    avg_hist = [inputs[:, 0, IDX_AVG]]
+
+    # "anchor": head channel 0 is a z-scored residual; reconstruct
+    # T_inner_s = KA * InputT_s(t) + KB + KC * z (constants from train_model;
+    # AttributeError here means train_model never attached them -- fail loud).
+    anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
+    oanchor = getattr(model, 'touter_anchor', None) \
+        if TOUTER_MODE != "abs" else None
+    # The T_outer reference depends only on the exogenous input: one pass.
+    ref_o = (touter_reference(inputs[:, :, IDX_INP], e0=inputs[:, 0, 1],   # T_outer(0) GT
+                              model=model)
+             if oanchor is not None else None)
+    step_anchor = getattr(model, 'step_anchor', None) \
+        if OTHER_CH_MODE == "persistence" else None
+
+    preds = []
+    cur_h = hidden
+    # The case gate's verdict depends only on the exogenous input profile:
+    # compute it once per rollout instead of once per step.
+    case_gate = (_input_case_gate(inputs[:, :, IDX_INP])
+                 if (OTHER_CH_MODE == 'pos_head' and POS_CASE_GATE) else None)
+
+    for t in range(seq_len):
+        # Teacher-forcing gate (t > 0). Replace the t-step AR values with
+        # GT for the masked batch elements. This is what gets written to
+        # history AND used in this iteration's window. (In output_only mode
+        # there is no inner history to force.)
+        if t > 0 and tf_prob > 0.0:
+            tf_mask = (torch.rand(batch_size, device=device) < tf_prob)
+            gt_inner = targets[:, t - 1, 0]
+            gt_outer = targets[:, t - 1, 1]
+            gt_avg = targets[:, t - 1, 2]
+            outer_hist[t] = torch.where(tf_mask, gt_outer, outer_hist[t]).detach()
+            avg_hist[t] = torch.where(tf_mask, gt_avg, avg_hist[t]).detach()
+            if inner_hist is not None:
+                inner_hist[t] = torch.where(tf_mask, gt_inner, inner_hist[t]).detach()
+
+        # Build the W-step window: steps [t-W+1, t-W+2, ..., t].
+        # Steps with k < 0 are zero-padded.
+        window_steps = []
+        for offset in range(-(W - 1), 1):   # offset = -(W-1) .. 0 inclusive
+            k = t + offset
+            if k < 0:
+                # Pre-rollout step (no real data). SLIDING_PAD_MODE decides:
+                #   "variable": skip -> variable-length window (t=0 -> a single
+                #     real step == `abs`; the clean h0 is used, no cold-pad drift)
+                #   "init": repeat the t=0 steady-state row (Yiming's fix; a zero
+                #     in scaled space is the coldest temp -> ~9 C t=0 undershoot)
+                #   "zero": legacy cold-system zero-pad (2026-05-25 baseline)
+                if SLIDING_PAD_MODE == "variable":
+                    continue
+                elif SLIDING_PAD_MODE == "zero":
+                    window_steps.append(
+                        torch.zeros(batch_size, FEAT_DIM, device=device))
+                else:  # "init"
+                    window_steps.append(inputs[:, 0, :FEAT_DIM])
+            else:
+                # AR slots at step k come from history (detached, so the
+                # window does NOT backprop through the AR chain -- mirrors
+                # forward `abs` semantics).
+                if out_only:
+                    step_feats = torch.stack([
+                        inputs[:, k, 0],          # Time(k)        GT
+                        outer_hist[k].detach(),   # T_outer(k)     AR
+                        avg_hist[k].detach(),     # T_avg(k)       AR
+                        inputs[:, k, IDX_INP],    # Input_T(k)     GT exogenous
+                    ], dim=1)
+                else:
+                    step_feats = torch.stack([
+                        inputs[:, k, 0],          # Time(k)        GT
+                        outer_hist[k].detach(),   # T_outer(k)     AR (or GT-via-TF)
+                        inner_hist[k].detach(),   # T_inner(k)     AR
+                        avg_hist[k].detach(),     # T_avg(k)       AR
+                        inputs[:, k, IDX_INP],    # Input_T(k)     GT exogenous
+                    ], dim=1)
+                if HAS_FLAG:
+                    step_feats = torch.cat(
+                        [step_feats, inputs[:, k, IDX_FLAG:IDX_FLAG + 1]], dim=1)
+                window_steps.append(step_feats)
+        window = torch.stack(window_steps, dim=1)   # (B, W, FEAT_DIM)
+
+        # GRU forward over the W-step window. Hidden state advances W
+        # steps and carries to the next rollout iteration.
+        out, cur_h = model(window, cur_h)
+        # Last step's output is the prediction for step t+1.
+        pred_t = out[:, -1, :]                       # (B, 3) = (T_inner, T_outer, T_avg)
+
+        if step_anchor is not None:
+            # T_outer(t+1) = T_outer_AR(t) + KB + KC*z ; same for T_avg.
+            (kb_o, kc_o), (kb_a, kc_a) = step_anchor
+            t_out_s = outer_hist[t].detach() + kb_o + kc_o * pred_t[:, 1]
+            t_avg_s = avg_hist[t].detach() + kb_a + kc_a * pred_t[:, 2]
+            pred_t = torch.stack(
+                [pred_t[:, 0], t_out_s, t_avg_s], dim=1)
+
+        if anchor is not None:
+            # Reconstruct T_inner in its scaled space from the z-scored
+            # residual head, anchored on the GT Input_T at step t. Gradients
+            # flow through KC * z; the anchor term is constant w.r.t. params.
+            ka, kb, kc = anchor
+            # ANCHOR_LEAD=1 uses Input_T(t+1) (exogenous, known in advance);
+            # falls back to Input_T(t) at the last step.
+            if ANCHOR_LEAD and t + 1 >= seq_len and inp_last is not None:
+                ref_in = inp_last.to(inputs.device, inputs.dtype)   # true Input_T(N) (H9)
+            else:
+                t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+                ref_in = inputs[:, t_a, IDX_INP]
+            tin_s = ka * ref_in + kb + kc * pred_t[:, 0]
+            pred_t = torch.cat([tin_s.unsqueeze(1), pred_t[:, 1:]], dim=1)
+
+        if oanchor is not None:
+            # Round 8: T_outer anchored on Input_T, same reconstruction as
+            # T_inner above; the anchored value is what the position formula
+            # consumes and what feeds back into the AR window.
+            ka_o, kb_o, kc_o = oanchor
+            t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+            tout_s = ka_o * ref_o[:, t_a] + kb_o + kc_o * pred_t[:, 1]
+            pred_t = torch.cat([pred_t[:, :1], tout_s.unsqueeze(1), pred_t[:, 2:]], dim=1)
+
+        if OTHER_CH_MODE == 'pos_head':
+            # T_avg reconstruction (and any gates), the same helper as the
+            # forward_direct path, applied per step as (B, 1, C). T_inner
+            # must already be final (its anchor above) because the position's
+            # reference consumes it; the RECONSTRUCTED T_avg is what feeds
+            # back into the AR window below. Without this call the AR
+            # variant would compare (and feed back) the raw position z as if
+            # it were a temperature. t_outer0_s is unused by the pos_head
+            # branch; inp_t carries the full exogenous input-temperature
+            # profile for the case gate.
+            pred_t = apply_other_anchor(
+                model, pred_t.unsqueeze(1), None,
+                inp_t=inputs[:, :, IDX_INP], case_gate=case_gate,
+                time_s=inputs[:, t:t + 1, 0]).squeeze(1)
+
+        preds.append(pred_t)
+
+        # Save prediction as AR value at step t+1. (In anchor mode the
+        # fed-back T_inner is the RECONSTRUCTED value -- GT-anchor dominated,
+        # so feedback error resets every step instead of compounding.)
+        outer_hist.append(pred_t[:, 1])
+        avg_hist.append(pred_t[:, 2])
+        if inner_hist is not None:
+            inner_hist.append(pred_t[:, 0])
+
+    return torch.stack(preds, dim=1)
+
+
+def _rollout_inverse(model, variant, inputs, hidden, batch_size, W=None):
+    """Inverse rollout (Arnold 2026-05-21).
+
+    For all inverse variants, the per-step input contains only Time +
+    T_avg (and dT_avg / T_avg-window for delta / sliding flavors). T_avg
+    is GT EXOGENOUS at every step (the model assumes the user can
+    measure T_avg in deployment, like a sensor reading at the centre of
+    the media). No AR feedback in the input -- the model just maps the
+    observed T_avg trajectory to the unknown driving Input_T plus T_inner
+    and T_outer.
+
+    Inputs already contain the full feat_cols values (Time + T_avg [+
+    dT_avg]). For inverse_abs_sliding we additionally build a per-step
+    window over the past W T_avg values (current included at the last
+    slot), zero-padded at the oldest positions when t < W-1.
+
+    Returns predictions of shape (batch, seq_len, 3). The 3 channels are
+    (Input_T, T_inner, T_outer) for inverse variants (see
+    VARIANT_OUTPUT_CHANNELS).
+    """
+    if variant != 'inverse_abs_sliding':
+        # Non-sliding inverse variants: all inputs are GT, single forward.
+        out, _ = model(inputs, hidden)
+        return out
+
+    # inverse_abs_sliding (sequence-input, 2026-05-25 -- per Arnold):
+    # at each rollout step t, the GRU sees a W-step sequence
+    #     window[k] = [Time(t-W+1+k), T_avg(t-W+1+k)]   for k = 0..W-1
+    # Steps before 0 are zero-padded. All values are GT (no AR in the
+    # inverse problem). Hidden state CARRIES OVER between rollout steps;
+    # the GRU's last-step output is the prediction for step t+1.
+    if W is None:
+        W = WINDOW_SIZE
+    seq_len = inputs.size(1)
+    device = inputs.device
+
+    preds = []
+    cur_h = hidden
+
+    for t in range(seq_len):
+        window_steps = []
+        for offset in range(-(W - 1), 1):   # offset = -(W-1) .. 0
+            k = t + offset
+            if k < 0:
+                # See SLIDING_PAD_MODE: "variable" skips (variable-length window),
+                # "init" repeats the t=0 observation (Time, T_avg), "zero" legacy.
+                if SLIDING_PAD_MODE == "variable":
+                    continue
+                elif SLIDING_PAD_MODE == "zero":
+                    window_steps.append(torch.zeros(batch_size, 2, device=device))
+                else:  # "init"
+                    window_steps.append(inputs[:, 0, :2])
+            else:
+                # inputs has 2 features per step for inverse_abs_sliding:
+                # idx 0 = Time, idx 1 = T_avg. Both GT.
+                window_steps.append(inputs[:, k, :2])
+        window = torch.stack(window_steps, dim=1)   # (B, W, 2)
+
+        out, cur_h = model(window, cur_h)
+        preds.append(out[:, -1, :])   # last step's output = pred for t+1
+
+    return torch.stack(preds, dim=1)
+
+

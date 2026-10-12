@@ -1,0 +1,66 @@
+[
+  {
+    "script": "c16_curves",
+    "status": "PASS",
+    "n_smoke_runs": 28,
+    "test_csv_attempts": 0,
+    "allowed_csv_unique": 308,
+    "outputs": [
+      "c16_reference_statistics.csv",
+      "c16_validation_points.csv",
+      "c16_head_ranges.csv",
+      "c16_reference_quality.png",
+      "c16_horizons.png"
+    ]
+  },
+  {
+    "script": "error_budget",
+    "status": "PASS",
+    "n_smoke_runs": 2,
+    "test_csv_attempts": 0,
+    "allowed_csv_unique": 25,
+    "outputs": [
+      "error_budget.csv",
+      "error_floors.csv",
+      "error_oracle.csv",
+      "error_budget.png"
+    ]
+  },
+  {
+    "script": "g1_probe",
+    "status": "PASS",
+    "n_smoke_runs": 1,
+    "test_csv_attempts": 0,
+    "allowed_csv_unique": 3,
+    "outputs": [
+      "g1_probe.csv",
+      "g1_switch_summary.csv",
+      "g1_shift.png"
+    ]
+  },
+  {
+    "script": "e3_g11_shift",
+    "status": "PASS",
+    "n_smoke_runs": 2,
+    "test_csv_attempts": 0,
+    "allowed_csv_unique": 3,
+    "outputs": [
+      "e3_g11_per_file.csv",
+      "e3_g11_summary.csv",
+      "e3_g11_shift.png"
+    ]
+  },
+  {
+    "script": "f1_envelope",
+    "status": "PASS",
+    "n_smoke_runs": 11,
+    "test_csv_attempts": 0,
+    "allowed_csv_unique": 3,
+    "outputs": [
+      "f1_per_file.csv",
+      "f1_envelope.csv",
+      "f1_envelope_statement.json",
+      "f1_envelope.png"
+    ]
+  }
+]

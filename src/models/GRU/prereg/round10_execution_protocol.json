@@ -1,0 +1,35 @@
+{
+  "schema": "round10.execution/1",
+  "source": "round10_arms_full.json",
+  "source_sha256": "b00277e3ead132610cff94b7426bbf5a11f2db58263ec3e70e5e2af398082330",
+  "scope": "Only missing parameters of arms already listed in round10_v3; acceptance criteria remain round10_v3",
+  "G7a": {
+    "weight": 5,
+    "first_steps": 10
+  },
+  "G7b": {
+    "initial_observation": "repeat t0 (no future observations)",
+    "window": 10
+  },
+  "G7c": {
+    "scoring": "discard prefix",
+    "steps": 20
+  },
+  "G7d": {
+    "implementation_choice": "Even spacing and original case length; synthetic training only",
+    "T0_grid": "linspace(50,600,20)",
+    "files": 20,
+    "rows": 1441
+  },
+  "F1": {
+    "seeds": [
+      1,
+      2,
+      3,
+      5,
+      7
+    ],
+    "source": "F1 S5 in round10_arms_full.json"
+  },
+  "P4_recipe_interpretation": "Equivalent encoder/NO_TIME/startup adaptations are separately confirmed for deployment; paper recipe still requires BETTER at both capacities and F4; source old G7 explicitly distinguishes deployment from paper recipe"
+}

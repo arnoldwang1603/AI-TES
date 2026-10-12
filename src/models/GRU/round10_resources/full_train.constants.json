@@ -1,0 +1,241 @@
+{
+  "format": "tes_gru.constants/1",
+  "written_at": "2026-10-11 19:22:22",
+  "variant": "forward_direct",
+  "checkpoint": null,
+  "scaler": {
+    "columns": [
+      "Time (s)",
+      "T_outer (C)",
+      "T_inner (C)",
+      "T_avg (C)",
+      "Input Temperature (C)"
+    ],
+    "feature_range": [
+      0,
+      1
+    ],
+    "data_min_": [
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "data_max_": [
+      14400.0,
+      610.0,
+      610.0,
+      610.0,
+      610.0
+    ],
+    "data_range_": [
+      14400.0,
+      609.0,
+      609.0,
+      609.0,
+      609.0
+    ],
+    "scale_": [
+      6.944444444444444e-05,
+      0.0016420361247947454,
+      0.0016420361247947454,
+      0.0016420361247947454,
+      0.0016420361247947454
+    ],
+    "min_": [
+      0.0,
+      -0.0016420361247947454,
+      -0.0016420361247947454,
+      -0.0016420361247947454,
+      -0.0016420361247947454
+    ],
+    "n_samples_seen_": 409244
+  },
+  "constants": {
+    "tinner_anchor": [
+      1.0,
+      -0.0002452128267803489,
+      0.0010492939615973228
+    ],
+    "touter_anchor": null,
+    "touter_ref_affine": null,
+    "raw_affine": [
+      [
+        0.0016420361247947454,
+        -0.0016420361247947454
+      ],
+      [
+        0.0016420361247947454,
+        -0.0016420361247947454
+      ],
+      [
+        0.0016420361247947454,
+        -0.0016420361247947454
+      ]
+    ],
+    "step_anchor": null,
+    "other_anchor": null,
+    "pos_head": null,
+    "pos_mid": null,
+    "pos_time_prior": null,
+    "pos_time_affine": null,
+    "ratio_head": null,
+    "initial_head": null,
+    "phys_residual": null
+  },
+  "loss_weights": [
+    1.0,
+    6.0,
+    3.0
+  ],
+  "loss_weights_realised": [
+    1.0,
+    6.0,
+    3.0
+  ],
+  "physics_bound_weight": 0.0,
+  "knobs": {
+    "seed": 7,
+    "window_size": 10,
+    "sliding_pad_mode": "variable",
+    "tinner_mode": "anchor",
+    "touter_mode": "abs",
+    "touter_tau": 1200,
+    "touter_scale": 1.0,
+    "touter_ema_form": "euler",
+    "anchor_lead": 1,
+    "loss_weights": [
+      1.0,
+      6.0,
+      3.0
+    ],
+    "loss_w0_mode": "",
+    "enc_widths": "256,256",
+    "h0_mode": "linear",
+    "init_encoder": "point",
+    "feat_cols": "Time (s),Input Temperature (C)",
+    "early_step_weight": 1.0,
+    "ratio_channels": "R3",
+    "ratio_ref": "kelvin",
+    "phys_mode": "",
+    "physics_cache_dir": null,
+    "physics_cache_index_sha256": null,
+    "init_burnin_steps": 0,
+    "synthetic_rest_files": 0,
+    "synthetic_rest_manifest": null,
+    "constants_from": null,
+    "constants_from_sha256": null,
+    "physics_bound_weight": 0.0,
+    "other_ch_mode": "abs",
+    "input_lookahead": 0,
+    "anchor_scale": 1.0,
+    "pos_gap_floor": 0.0,
+    "pos_case_gate": false,
+    "pos_floor_soft": false,
+    "pos_temp_gate": 0.0,
+    "pos_temp_soft": 0.0,
+    "pos_abs_head": false,
+    "pos_learned_gate": false,
+    "pos_gate_bias": 2.0,
+    "pos_learned_pool": false,
+    "pos_anchored_fallback": false,
+    "pos_fit_clean": false,
+    "case_flag_input": "",
+    "exclude_both_phase": false,
+    "output_size": 3,
+    "model_split": "shared",
+    "pos_time_prior": "0",
+    "variants": [
+      "forward_direct"
+    ],
+    "input_dims": {
+      "delta": 5,
+      "abs+delta": 9,
+      "abs": 5,
+      "abs_window": 5,
+      "abs_sliding": 5,
+      "inverse_delta": 2,
+      "inverse_abs+delta": 3,
+      "inverse_abs": 2,
+      "inverse_abs_sliding": 2,
+      "forward_direct": 2
+    },
+    "latest_params": {
+      "hidden_size": 128,
+      "num_layers": 1,
+      "dropout": 0.0,
+      "lr": 0.0025,
+      "max_epochs": 1000,
+      "batch_size": 16,
+      "early_stop_patience": 150,
+      "sched_patience": 50,
+      "sched_factor": 0.5
+    },
+    "tf32": "0",
+    "tavg_mask": "split",
+    "tavg_mask_n_train": 115,
+    "tavg_mask_n_val": 3,
+    "tavg_mask_train_sha256": "247630c7a15261be19c0f04c59b76be31f394944530f7327e923162da3adf13a",
+    "tavg_mask_val_sha256": "9ccfdadba0c1c7685c773411af5b852351d9f408d63aa5b249764e52dffbc608",
+    "sealed": true,
+    "relabel_csv": null,
+    "relabel_path": null,
+    "relabel_sha256": null,
+    "relabel_n_train": 0,
+    "relabel_n_val": 0,
+    "data": {
+      "train_subdir": "Latest Database (Use this for training)",
+      "data_root": "C:\\Users\\FEvMo\\Documents\\GitHub\\AI-TES\\data",
+      "frozen_constants_split": null,
+      "frozen_train_sha256": null,
+      "frozen_train_n": 0,
+      "test_subdir": "Test_70_cases",
+      "manual_split_enabled": false,
+      "val_split": "stratified",
+      "val_per_type": 2,
+      "train_exclude_type": "",
+      "outer_test_frac": 0.2,
+      "inner_val_frac": 0.05,
+      "split_seed": 42,
+      "split_name": "round10_vs3_s42.json",
+      "split_tag": "vs3",
+      "split_sha256": "c52cf3bfc1f313be524394621e4e94bbcf9f591da8345d3de17444b5c52956ac"
+    }
+  },
+  "split": {
+    "val_split": "stratified",
+    "split_name": "round10_vs3_s42.json",
+    "split_tag": "vs3",
+    "split_sha256": "c52cf3bfc1f313be524394621e4e94bbcf9f591da8345d3de17444b5c52956ac",
+    "n_train": 284,
+    "n_val": 20,
+    "n_drop": 7,
+    "drop_sha256": "1a70f88c03b54910ec34590d387ee04c9642c8326c9ccbb5c185808cd0c07e6c",
+    "train_exclude_type": "",
+    "tavg_mask": "split",
+    "tavg_mask_n_train": 115,
+    "tavg_mask_n_val": 3,
+    "tavg_mask_train_sha256": "247630c7a15261be19c0f04c59b76be31f394944530f7327e923162da3adf13a",
+    "tavg_mask_val_sha256": "9ccfdadba0c1c7685c773411af5b852351d9f408d63aa5b249764e52dffbc608"
+  },
+  "git_head": null,
+  "runtime": {
+    "tf32": "0",
+    "torch": "2.8.0+cu126",
+    "cuda": "12.6",
+    "cudnn": 91002,
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "tf32_matmul": false,
+    "tf32_cudnn": false
+  },
+  "tf32": "0",
+  "seed": 7,
+  "extra": {
+    "variant": "forward_direct",
+    "frozen_constants_split": "round10_vs3_s42.json",
+    "frozen_train_n": 284,
+    "frozen_train_sha256": "33637726592300fafbae71660046f05db3734b27a0ff0a923cab8828ced3998e",
+    "generated_without_training": true
+  }
+}

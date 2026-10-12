@@ -1,0 +1,660 @@
+"""Per-case testing, metrics, and per-case prediction plots."""
+import os
+import time
+
+import numpy as np
+import pandas as pd
+import torch
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
+
+from .config import *
+from .runio import *
+from .rollout import apply_other_anchor, _input_case_gate, touter_reference   # shared reconstructions
+
+
+# ============================================================
+# 9. Testing (variant-aware)
+# ============================================================
+def _r2(y_true, y_pred):
+    """Coefficient of determination. Returns NaN if SS_tot == 0."""
+    y_true = np.asarray(y_true, dtype=np.float64)
+    y_pred = np.asarray(y_pred, dtype=np.float64)
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    if ss_tot <= 0:
+        return float('nan')
+    return 1.0 - ss_res / ss_tot
+
+
+def _mape(y_true, y_pred, eps=1e-6):
+    """Mean Absolute Percentage Error (in %). Skips |y_true| < eps to avoid blow-up."""
+    y_true = np.asarray(y_true, dtype=np.float64)
+    y_pred = np.asarray(y_pred, dtype=np.float64)
+    mask = np.abs(y_true) >= eps
+    if not np.any(mask):
+        return float('nan')
+    return float(np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100.0)
+
+
+def test_model(variant, model, test_datasets, output_dir, set_name,
+               suffix="", npz_path=None, plots_dir=None):
+    """Score `test_datasets` file by file; write summary_errors<suffix>.csv
+    and the per-case plots under output_dir, return (summary_df, speed_stats).
+
+    Round 10 / H3 additions (legacy call shape and numbers unchanged):
+      suffix     "" (test) | "_val" (validation): names the csv
+                 (summary_errors<suffix>.csv) and the plots folder
+                 (plots<suffix>/), so a validation scoring never overwrites
+                 the test artefacts of the same directory.
+      npz_path   where the raw predictions go; None = the legacy
+                 predictions.npz under variant_dir (gated on SAVE_PREDICTIONS).
+      plots_dir  overrides the plots folder (eval_checkpoint sends them to a
+                 scratch directory).
+    A dataset flagged tavg_masked (H2) is NOT scored on T_avg: its T_avg
+    metrics are NaN, the AVERAGE row's T_avg columns skip it (pandas mean),
+    and its ToTa jump counts use T_outer alone.
+    New columns: Err_step1_<ch> (C), MaxErr_1_5_<ch> (C) (G7 start-up
+    metrics), JumpSteps_gt2C_ToTa, JumpSteps_gt1C_ToTa (T_outer + T_avg,
+    first transition t0 -> t1 included). JumpSteps_gt2C is the old metric,
+    untouched."""
+    model.eval()
+    os.makedirs(output_dir, exist_ok=True)
+    # Per-case plots live in a `plots/` subfolder so the variant directory
+    # itself stays uncluttered (~70 PNGs per variant).
+    case_plots_dir = plots_dir or os.path.join(output_dir, "plots" + suffix)
+    os.makedirs(case_plots_dir, exist_ok=True)
+    summary = []
+    # Per-case inference time (ms). Excludes data loading / inverse_transform /
+    # plotting -- pure model forward time only.
+    per_case_infer_ms = []
+    total_steps_predicted = 0
+    # Raw predictions (collected for predictions.npz so plots can be regenerated
+    # later without re-running inference).
+    raw_predictions = []
+
+    print(f"\n{'=' * 60}")
+    print(f"[{variant}] Testing on {set_name}: {len(test_datasets)} cases")
+    print(f"{'=' * 60}")
+
+    for idx, ds in enumerate(test_datasets):
+        case_id = ds.file_name  # may be a relative path "subdir/Case 1.csv"
+        file_disp = os.path.basename(case_id)
+        # Sanitize for filesystem (the relative path can contain '/' '\' or
+        # other separators that aren't safe for filenames).
+        safe_id = (case_id.replace("/", "__")
+                          .replace("\\", "__")
+                          .replace(":", "_"))
+        print(f"  [{variant}] {idx + 1}/{len(test_datasets)}: {case_id}")
+
+        (x, _, _, init_cond, win_obs, ft, ft_out, ft_in, ft_avg, ft_inp,
+         inp_last, _loss_mask) = ds[0]
+        x = x.to(DEVICE)
+        init_cond_b = init_cond.unsqueeze(0).to(DEVICE)
+        win_obs_b = win_obs.unsqueeze(0).to(DEVICE)
+
+        # Sync GPU before timing so the previous case's kernels don't bleed in.
+        if DEVICE.type == "cuda":
+            torch.cuda.synchronize()
+        case_t0 = time.perf_counter()
+
+        if model.encoder_kind == 'point':
+            hidden = model.init_hidden(1, x0=init_cond_b)
+        else:
+            hidden = model.init_hidden(1, x_window=win_obs_b)
+
+        seq_len = x.shape[0]
+
+        if variant == 'forward_direct':
+            # Exogenous-only seq2seq: inputs [Time, Input_T] are the given
+            # boundary condition; one forward pass, no AR (mirrors
+            # run_rollout_train's forward_direct branch, anchor included).
+            with torch.no_grad():
+                out, _ = model(x.unsqueeze(0), hidden)
+            anc = getattr(model, 'tinner_anchor', None) \
+                if TINNER_MODE == "anchor" else None
+            if anc is not None:
+                ka, kb, kc = anc
+                inp_t = x[:, 1]
+                if ANCHOR_LEAD:
+                    # H9: the last step reads the true Input_T(N) (mirror of
+                    # rollout._anchor_tail), not a tail-hold of Input_T(N-1).
+                    inp_t = torch.cat([inp_t[1:], inp_last.reshape(1).to(inp_t.device, inp_t.dtype)])
+                out[0, :, 0] = ka * inp_t.to(out.device) + kb + kc * out[0, :, 0]
+            # Round 8: T_outer anchored on Input_T (mirror of the train path;
+            # must precede apply_other_anchor, whose position formula
+            # consumes T_outer).
+            oanc = getattr(model, 'touter_anchor', None) \
+                if TOUTER_MODE != "abs" else None
+            if oanc is not None:
+                ka_o, kb_o, kc_o = oanc
+                inp_o = touter_reference(x[:, 1].unsqueeze(0), e0=init_cond_b[:, 0],
+                                         model=model)[0]
+                if ANCHOR_LEAD:
+                    inp_o = torch.cat([inp_o[1:], inp_o[-1:]])
+                out[0, :, 1] = ka_o * inp_o.to(out.device) + kb_o + kc_o * out[0, :, 1]
+            # T_outer / T_avg anchors (mirror of the train path). init_cond
+            # layout is [T_outer, T_inner, T_avg, Input_T] at t=0, scaled.
+            out = apply_other_anchor(
+                model, out, init_cond_b[:, :1].to(out.device),
+                inp_t=x[:, 1].unsqueeze(0).to(out.device),
+                time_s=x[:, 0].unsqueeze(0).to(out.device))
+            pred_seq = out[0].cpu().numpy()
+        elif is_inverse(variant):
+            # Inverse rollout (single-case mirror of _rollout_inverse).
+            # All inputs are GT exogenous (no AR); single forward pass for
+            # non-sliding inverse variants, per-step window build for
+            # inverse_abs_sliding.
+            if variant != 'inverse_abs_sliding':
+                with torch.no_grad():
+                    out, _ = model(x.unsqueeze(0), hidden)
+                pred_seq = out[0].cpu().numpy()
+            else:
+                # Sequence-input sliding (single-case mirror of
+                # _rollout_inverse for inverse_abs_sliding -- Arnold's
+                # 2026-05-25 spec). Per rollout step, feed GRU a (1, W, 2)
+                # sequence of [Time(k), T_avg(k)] for k in [t-W+1, t];
+                # zero-pad k < 0. Carry hidden state. Last output = pred t+1.
+                W = WINDOW_SIZE
+                preds = []
+                cur_h = hidden
+                for t in range(seq_len):
+                    window_steps = []
+                    for offset in range(-(W - 1), 1):
+                        k = t + offset
+                        if k < 0:
+                            if SLIDING_PAD_MODE == "variable":
+                                continue
+                            elif SLIDING_PAD_MODE == "zero":
+                                window_steps.append([0.0, 0.0])
+                            else:  # "init": repeat t=0 observation (Time, T_avg)
+                                window_steps.append([x[0, 0].item(), x[0, 1].item()])
+                        else:
+                            window_steps.append(
+                                [x[k, 0].item(), x[k, 1].item()]
+                            )
+                    window = torch.tensor(
+                        window_steps, dtype=torch.float32
+                    ).unsqueeze(0).to(DEVICE)   # (1, W, 2)
+                    with torch.no_grad():
+                        out, cur_h = model(window, cur_h)
+                    preds.append(out[0, -1].cpu().numpy())   # last step
+                pred_seq = np.array(preds)
+        elif variant == 'abs_sliding':
+            # Sequence-input sliding (single-case mirror of _rollout_sliding
+            # -- Arnold's 2026-05-25 spec). Per rollout step t, feed GRU a
+            # (1, W, 5) sequence:
+            #   window[k] = [Time(t-W+1+k),
+            #                T_outer_AR(t-W+1+k),
+            #                T_inner_AR(t-W+1+k),
+            #                T_avg_AR(t-W+1+k),
+            #                Input_T(t-W+1+k)]
+            # Zero-pad k < 0. Hidden state carries over. Last-step output =
+            # prediction for t+1. Test time: tf_prob = 0 (no teacher forcing).
+            W = WINDOW_SIZE
+            # Column layout mirrors data.py / _rollout_sliding:
+            #   arfed/anchor: [Time, T_outer, T_inner, T_avg, Input_T] (5-d)
+            #   output_only : [Time, T_outer, T_avg, Input_T]          (4-d)
+            out_only = (TINNER_MODE == "output_only")
+            if out_only:
+                IDX_AVG, IDX_INP = 2, 3
+            else:
+                IDX_AVG, IDX_INP = 3, 4
+            feat_dim = x.shape[1]
+            outer_hist = [float(x[0, 1].item())]   # k=0: GT initial
+            inner_hist = None if out_only else [float(x[0, 2].item())]
+            avg_hist = [float(x[0, IDX_AVG].item())]
+            anchor = model.tinner_anchor if TINNER_MODE == "anchor" else None
+            oanchor = getattr(model, 'touter_anchor', None) \
+                if TOUTER_MODE != "abs" else None
+            ref_o = (touter_reference(x[:, IDX_INP].unsqueeze(0).to(DEVICE),
+                                      e0=x[0:1, 1].to(DEVICE), model=model)[0]   # T_outer(0) GT
+                     if oanchor is not None else None)
+            step_anchor = getattr(model, 'step_anchor', None) \
+                if OTHER_CH_MODE == "persistence" else None
+            # Round 8: the CASE_FLAG_INPUT column is the last input column
+            # (data.py appends it after Input_T); every window row carries it,
+            # exactly as _rollout_sliding does.
+            has_flag = bool(CASE_FLAG_INPUT)
+            idx_flag = feat_dim - 1
+            # The case gate's verdict depends only on the exogenous input
+            # profile: computed once per case, not 1440x (identical result).
+            inp_full = x[:, IDX_INP].unsqueeze(0).to(DEVICE)
+            case_gate = (_input_case_gate(inp_full)
+                         if (OTHER_CH_MODE == 'pos_head' and POS_CASE_GATE) else None)
+
+            preds = []
+            cur_h = hidden
+            for t in range(seq_len):
+                window_steps = []
+                for offset in range(-(W - 1), 1):
+                    k = t + offset
+                    if k < 0:
+                        if SLIDING_PAD_MODE == "variable":
+                            continue
+                        elif SLIDING_PAD_MODE == "zero":
+                            window_steps.append([0.0] * feat_dim)
+                        else:  # "init": repeat the t=0 steady-state row
+                            window_steps.append(
+                                [x[0, j].item() for j in range(feat_dim)])
+                    else:
+                        if out_only:
+                            row = [
+                                x[k, 0].item(),     # Time(k)      GT
+                                outer_hist[k],      # T_outer(k)   AR
+                                avg_hist[k],        # T_avg(k)     AR
+                                x[k, IDX_INP].item(),  # Input_T(k) GT
+                            ]
+                        else:
+                            row = [
+                                x[k, 0].item(),     # Time(k)      GT
+                                outer_hist[k],      # T_outer(k)   AR
+                                inner_hist[k],      # T_inner(k)   AR
+                                avg_hist[k],        # T_avg(k)     AR
+                                x[k, IDX_INP].item(),  # Input_T(k) GT
+                            ]
+                        if has_flag:
+                            row.append(x[k, idx_flag].item())   # flag(k) GT
+                        window_steps.append(row)
+                window = torch.tensor(
+                    window_steps, dtype=torch.float32
+                ).unsqueeze(0).to(DEVICE)   # (1, W, feat_dim)
+
+                with torch.no_grad():
+                    out, cur_h = model(window, cur_h)
+                pred = out[0, -1].cpu().numpy().copy()   # last step's output
+                if step_anchor is not None:
+                    (kb_o, kc_o), (kb_a, kc_a) = step_anchor
+                    pred[1] = outer_hist[t] + kb_o + kc_o * pred[1]
+                    pred[2] = avg_hist[t] + kb_a + kc_a * pred[2]
+                if anchor is not None:
+                    # Reconstruct T_inner from the z-scored residual head,
+                    # anchored on GT Input_T(t) -- mirrors _rollout_sliding.
+                    ka, kb, kc = anchor
+                    if ANCHOR_LEAD and t + 1 >= seq_len:
+                        ref_in = float(inp_last)            # true Input_T(N) (H9)
+                    else:
+                        t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+                        ref_in = float(x[t_a, IDX_INP].item())
+                    pred[0] = ka * ref_in + kb + kc * pred[0]
+                if oanchor is not None:
+                    # Round 8: T_outer anchored on Input_T -- mirrors
+                    # _rollout_sliding; precedes the position formula.
+                    ka_o, kb_o, kc_o = oanchor
+                    t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+                    pred[1] = ka_o * float(ref_o[t_a].item()) + kb_o + kc_o * pred[1]
+                if OTHER_CH_MODE == 'pos_head':
+                    # Mirror of the train-path call in _rollout_sliding.
+                    pt = torch.tensor(pred, dtype=torch.float32,
+                                      device=DEVICE).view(1, 1, -1)
+                    pt = apply_other_anchor(
+                        model, pt, None, inp_t=inp_full, case_gate=case_gate,
+                        time_s=x[t, 0].view(1, 1).to(DEVICE))
+                    pred = pt.view(-1).cpu().numpy()
+                preds.append(pred)
+
+                # pred channels (per VARIANT_OUTPUT_CHANNELS) = [T_inner, T_outer, T_avg]
+                outer_hist.append(float(pred[1]))
+                avg_hist.append(float(pred[2]))
+                if inner_hist is not None:
+                    inner_hist.append(float(pred[0]))
+            pred_seq = np.array(preds)
+        else:
+            # Unified per-step rollout for delta / abs+delta / abs / abs_window.
+            # Maintains two-step AR history for T_outer / T_inner / T_avg so
+            # dT slots can be derived from the AR chain (never future GT).
+            # Test time: tf_prob = 0 (no teacher forcing).
+            #
+            #   cur_X    : AR-fed T_X at the current step t
+            #              (= prediction from step t-1, or initial GT at t=0)
+            #   prev_X   : AR-fed T_X at step t-1
+            #              (= cur_X from previous iteration)
+            #
+            # The 'delta' variant has no abs T_X slots in x, so initial
+            # values come from init_cond rather than x[0].
+            if variant == 'delta':
+                cur_outer = float(init_cond[0].item())   # T_outer(0)
+                cur_inner = float(init_cond[1].item())   # T_inner(0)
+                cur_avg = float(init_cond[2].item())     # T_avg(0)
+            else:  # abs+delta / abs / abs_window
+                cur_outer = float(x[0, 1].item())
+                cur_inner = float(x[0, 2].item())
+                cur_avg = float(x[0, 3].item())
+            prev_outer, prev_inner, prev_avg = cur_outer, cur_inner, cur_avg
+
+            preds = []
+            cur_h = hidden
+            for t in range(seq_len):
+                x_t = x[t].clone()
+                dT_outer = cur_outer - prev_outer
+                dT_inner = cur_inner - prev_inner
+                dT_avg = cur_avg - prev_avg
+
+                if variant == 'delta':
+                    # 5-d: [Time, dT_outer, dT_inner, dT_avg, dInput_T]
+                    x_t[1] = dT_outer
+                    x_t[2] = dT_inner
+                    x_t[3] = dT_avg
+                    # idx 4 dInput_T stays GT
+                elif variant == 'abs+delta':
+                    # 9-d: [Time, T_outer, T_inner, T_avg, Input_T,
+                    #       dT_outer, dT_inner, dT_avg, dInput_T]
+                    x_t[1] = cur_outer
+                    x_t[2] = cur_inner
+                    x_t[3] = cur_avg
+                    # idx 4 Input_T stays GT
+                    x_t[5] = dT_outer
+                    x_t[6] = dT_inner
+                    x_t[7] = dT_avg
+                    # idx 8 dInput_T stays GT
+                else:  # abs / abs_window
+                    # 5-d: [Time, T_outer, T_inner, T_avg, Input_T]
+                    x_t[1] = cur_outer
+                    x_t[2] = cur_inner
+                    x_t[3] = cur_avg
+
+                x_in = x_t.unsqueeze(0).unsqueeze(0).to(DEVICE)
+                with torch.no_grad():
+                    out, cur_h = model(x_in, cur_h)
+                pred = out[0, 0].cpu().numpy()
+                preds.append(pred)
+
+                # Shift AR history forward.
+                prev_outer, prev_inner, prev_avg = cur_outer, cur_inner, cur_avg
+                cur_outer = float(pred[1])
+                cur_inner = float(pred[0])
+                cur_avg = float(pred[2])
+            pred_seq = np.array(preds)
+
+        if DEVICE.type == "cuda":
+            torch.cuda.synchronize()
+        case_infer_ms = (time.perf_counter() - case_t0) * 1000.0
+        per_case_infer_ms.append(case_infer_ms)
+
+        n = len(pred_seq)
+        total_steps_predicted += n
+
+        # Predictions correspond to steps t=1..n. Targets / actuals also at t=1..n.
+        # ft[1:n+1] is the time at those steps (length n).
+        sl = slice(1, n + 1) if len(ft) >= n + 1 else slice(0, n)
+
+        time_axis = ft[sl]
+        actual_outer = ft_out[sl]
+        actual_inner = ft_in[sl]
+        actual_avg = ft_avg[sl]
+        actual_input_temp = ft_inp[sl]
+
+        # Scaler columns layout (set in ThermalDataset.BASE_COLS):
+        # 0=Time, 1=T_outer, 2=T_inner, 3=T_avg, 4=Input_T.
+        SCALER_COL = {
+            'Time': 0, 'T_outer': 1, 'T_inner': 2,
+            'T_avg': 3, 'Input_T': 4,
+        }
+        ALL_CHANNELS = ['T_inner', 'T_outer', 'T_avg', 'Input_T']
+
+        # Build dummy_actual (all GT) and dummy_pred (GT in non-predicted
+        # columns, model outputs in predicted columns). Variant determines
+        # which of the 4 channels is predicted (3 of them).
+        dummy_actual = np.column_stack([
+            time_axis, actual_outer, actual_inner, actual_avg,
+            actual_input_temp,
+        ])
+        dummy_pred = dummy_actual.copy()
+
+        channel_names = VARIANT_OUTPUT_CHANNELS[variant]   # 3 strings
+        for ch_idx, ch_name in enumerate(channel_names):
+            dummy_pred[:, SCALER_COL[ch_name]] = pred_seq[:, ch_idx]
+
+        inv_pred = ds.scaler.inverse_transform(dummy_pred)
+        inv_actual = ds.scaler.inverse_transform(dummy_actual)
+
+        # The t=0 row (the GIVEN initial condition, identical for actual and
+        # pred): prepended for the plots (Arnold 2026-07-23) and, since Round
+        # 10 / H3, for the ToTa jump counts so the t0 -> t1 transition is
+        # seen. inv_actual / inv_pred and every other metric are untouched.
+        row0 = ds.scaler.inverse_transform(np.column_stack([
+            ft[:1], ft_out[:1], ft_in[:1], ft_avg[:1], ft_inp[:1],
+        ]).astype(np.float64))
+
+        # H3: a file whose T_avg label is masked (H2, validation side) is not
+        # scored on T_avg -- the label is a different convention there.
+        masked = bool(getattr(ds, 'tavg_masked', False)) and not is_inverse(variant)
+        scored_channels = [c for c in channel_names if not (masked and c == 'T_avg')]
+
+        # ---- Metrics (in deg C; per channel; NaN for non-predicted) ----
+        win = max(10, n // 10)
+        metric_row = {
+            'Case': case_id,
+            'CaseFile': file_disp,
+            'N_steps': n,
+            'Infer_ms_per_case': case_infer_ms,
+            'OutputChannels': '|'.join(channel_names),
+        }
+        for ch_name in ALL_CHANNELS:
+            col = SCALER_COL[ch_name]
+            if ch_name in scored_channels:
+                g = inv_actual[:, col]
+                p = inv_pred[:, col]
+                diff = np.abs(g - p)
+                sq = (g - p) ** 2
+                metric_row[f'MAE_{ch_name} (C)']    = float(np.mean(diff))
+                metric_row[f'RMSE_{ch_name} (C)']   = float(np.sqrt(np.mean(sq)))
+                metric_row[f'MaxErr_{ch_name} (C)'] = float(np.max(diff))
+                metric_row[f'EarlyMAE_{ch_name} (C)'] = float(
+                    np.mean(np.abs(g[:win] - p[:win])))
+                metric_row[f'LateMAE_{ch_name} (C)']  = float(
+                    np.mean(np.abs(g[-win:] - p[-win:])))
+                metric_row[f'MAPE_{ch_name} (%)'] = _mape(g, p)
+                metric_row[f'R2_{ch_name}']       = _r2(g, p)
+                # H3 / G7: the first predicted step (t=1) and the worst of
+                # the first five -- the start-up transient the Round 10
+                # encoder arms are judged on.
+                metric_row[f'Err_step1_{ch_name} (C)'] = float(diff[0])
+                metric_row[f'MaxErr_1_5_{ch_name} (C)'] = float(np.max(diff[:5]))
+            else:
+                # Channel not predicted by this variant (or T_avg on a
+                # masked file) -> NaN
+                for k in (f'MAE_{ch_name} (C)', f'RMSE_{ch_name} (C)',
+                          f'MaxErr_{ch_name} (C)',
+                          f'EarlyMAE_{ch_name} (C)', f'LateMAE_{ch_name} (C)',
+                          f'MAPE_{ch_name} (%)', f'R2_{ch_name}',
+                          f'Err_step1_{ch_name} (C)', f'MaxErr_1_5_{ch_name} (C)'):
+                    metric_row[k] = float('nan')
+
+        # Overall MAPE / R^2 (concatenate ONLY predicted -- and scored -- channels)
+        concat_g = np.concatenate(
+            [inv_actual[:, SCALER_COL[c]] for c in scored_channels])
+        concat_p = np.concatenate(
+            [inv_pred[:, SCALER_COL[c]] for c in scored_channels])
+        metric_row['MAPE_Overall (%)'] = _mape(concat_g, concat_p)
+        metric_row['R2_Overall']       = _r2(concat_g, concat_p)
+
+        # Spurious-jump metric (2026-08-22, the decision rule's tertiary
+        # veto): per step, how much LARGER the predicted change is than
+        # the true change. Hard per-step gates can manufacture exactly
+        # the single-step discontinuities Arnold flags in review, and an
+        # arm that wins MAE while jumping is not a winner. Computed here
+        # so it lands in every summary_errors.csv -- predictions.npz is
+        # not retained for most arms after export.
+        _jumps = []
+        for _c in channel_names:
+            _col = SCALER_COL[_c]
+            _dp = np.abs(np.diff(inv_pred[:, _col]))
+            _dg = np.abs(np.diff(inv_actual[:, _col]))
+            _jumps.append(np.maximum(_dp - _dg, 0.0))
+        _jumps = np.stack(_jumps) if _jumps else np.zeros((1, 1))
+        metric_row['MaxJump (C)'] = float(_jumps.max())
+        metric_row['JumpSteps_gt2C'] = int((_jumps > 2.0).sum())
+
+        # Round 10 / H3: the same statistic on T_outer and T_avg only (the
+        # channels the pre-registered vetoes read), with the t0 -> t1
+        # transition included by prepending the given initial row, at the
+        # 2 C and the 1 C threshold. A masked file contributes T_outer alone.
+        _j2 = _j1 = 0
+        for _c in ('T_outer', 'T_avg'):
+            if _c not in scored_channels:
+                continue
+            _col = SCALER_COL[_c]
+            _p = np.concatenate([row0[:, _col], inv_pred[:, _col]])
+            _g = np.concatenate([row0[:, _col], inv_actual[:, _col]])
+            _jj = np.maximum(np.abs(np.diff(_p)) - np.abs(np.diff(_g)), 0.0)
+            _j2 += int((_jj > 2.0).sum())
+            _j1 += int((_jj > 1.0).sum())
+        metric_row['JumpSteps_gt2C_ToTa'] = _j2
+        metric_row['JumpSteps_gt1C_ToTa'] = _j1
+
+        # Stash raw arrays for replotting (saved to predictions.npz at end).
+        raw_predictions.append({
+            'case_id': case_id,
+            'inv_actual': inv_actual.astype(np.float32),
+            'inv_pred': inv_pred.astype(np.float32),
+            'channels': channel_names,
+        })
+
+        summary.append(metric_row)
+
+        # ---- Plot ----
+        # Plot only the channels this variant predicts (actual vs pred).
+        # Channel -> color map for visual consistency across variants.
+        CH_COLOR = {
+            'T_inner': 'red',     'T_outer': 'blue',
+            'T_avg':   'green',   'Input_T': 'purple',
+        }
+        plt.figure(figsize=(14, 6))
+        # Prepend the t=0 row (Arnold 2026-07-23): predictions cover t=1..n,
+        # so plotting from t=1 hid the shared starting point and made a
+        # one-step-lagged prediction look like it started somewhere else
+        # (row0 is computed above, next to the metrics, since H3).
+        plot_actual = np.vstack([row0, inv_actual])
+        plot_pred = np.vstack([row0, inv_pred])
+        time_plot = plot_actual[:, 0]
+        for ch_name in channel_names:
+            col = SCALER_COL[ch_name]
+            c = CH_COLOR.get(ch_name, 'black')
+            plt.plot(time_plot, plot_actual[:, col],
+                     label=f"{ch_name} Actual", color=c)
+            plt.plot(time_plot, plot_pred[:, col], '--',
+                     label=f"{ch_name} Pred", color=c)
+        plt.xlabel("Time (s)")
+        plt.ylabel("Temperature (C)")
+        plt.title(f"[{variant}] Prediction - {case_id}")
+        # Legend and metrics box sit outside the axes, on the right, so they
+        # never cover the curves (2026-09-29; inside the axes they hid the
+        # first steps, where the early-window errors are).
+        ax = plt.gca()
+        ax.legend(fontsize=8, loc='upper left', bbox_to_anchor=(1.01, 1.0),
+                  borderaxespad=0.0)
+        # Composite info text from whatever channels exist
+        info_lines = [f"Channels: {'|'.join(channel_names)}"]
+        for ch in channel_names:
+            mae_v = metric_row[f'MAE_{ch} (C)']
+            rmse_v = metric_row[f'RMSE_{ch} (C)']
+            info_lines.append(f"  {ch}: MAE={mae_v:.3f}  RMSE={rmse_v:.3f}")
+        info_lines.append(
+            f"Overall: MAPE={metric_row['MAPE_Overall (%)']:.2f}%  "
+            f"R^2={metric_row['R2_Overall']:.4f}")
+        ax.text(1.01, 0.0, '\n'.join(info_lines),
+                transform=ax.transAxes, verticalalignment='bottom',
+                horizontalalignment='left',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5),
+                fontsize=8)
+        plt.tight_layout()
+        out_path = os.path.join(case_plots_dir,
+                                f"plot_{safe_id.replace('.csv', '.png')}")
+        plt.savefig(out_path, dpi=150, bbox_inches='tight')
+        plt.close()
+
+    summary_df = pd.DataFrame(summary)
+    avg_row = {'Case': 'AVERAGE', 'CaseFile': ''}
+    # Build AVERAGE row column-by-column. Only numeric columns get .mean();
+    # string columns (e.g. 'OutputChannels' = 'T_inner|T_outer|T_avg', added
+    # 2026-05-20 to label which channels the variant predicts) would raise
+    # TypeError on .mean(). For non-numeric columns we copy the first row's
+    # value, which is the canonical value for this variant since all 70 test
+    # cases share the same channel layout. (Bug found by santhosh on 2026-05-25.)
+    for col in summary_df.columns:
+        if col in ('Case', 'CaseFile'):
+            continue
+        if pd.api.types.is_numeric_dtype(summary_df[col]):
+            avg_row[col] = summary_df[col].mean()
+        else:
+            avg_row[col] = summary_df[col].iloc[0]
+    summary_df = pd.concat([summary_df, pd.DataFrame([avg_row])], ignore_index=True)
+
+    # Filename simplified to `summary_errors.csv` since the directory is
+    # already variant-scoped under runs/<RUN_NAME>/variants/<variant>/
+    # (summary_errors_val.csv for a validation scoring, H3).
+    csv_path = os.path.join(output_dir, "summary_errors%s.csv" % suffix)
+    summary_df.to_csv(csv_path, index=False, float_format='%.4f')
+
+    # Inference-speed aggregates (excludes the AVERAGE row).
+    avg_ms_per_case = float(np.mean(per_case_infer_ms))
+    total_infer_s = float(np.sum(per_case_infer_ms)) / 1000.0
+    cases_per_sec = (len(per_case_infer_ms) / total_infer_s) if total_infer_s > 0 else float('nan')
+    avg_ms_per_step = (sum(per_case_infer_ms) / total_steps_predicted
+                       if total_steps_predicted > 0 else float('nan'))
+
+    print(f"\n[{variant}] summary -> {csv_path}")
+    # Only print metrics for the channels this variant actually predicts.
+    channel_names = VARIANT_OUTPUT_CHANNELS[variant]
+
+    def _fmt(val, fmt='.4f'):
+        try:
+            return format(val, fmt) if not (isinstance(val, float) and
+                                            (val != val)) else '   nan'
+        except (TypeError, ValueError):
+            return '   nan'
+
+    mae_parts = '  '.join(
+        f"{ch}={_fmt(avg_row[f'MAE_{ch} (C)'])}" for ch in channel_names)
+    rmse_parts = '  '.join(
+        f"{ch}={_fmt(avg_row[f'RMSE_{ch} (C)'])}" for ch in channel_names)
+    mape_parts = '  '.join(
+        f"{ch}={_fmt(avg_row[f'MAPE_{ch} (%)'], '.3f')}%" for ch in channel_names)
+    r2_parts = '  '.join(
+        f"{ch}={_fmt(avg_row[f'R2_{ch}'])}" for ch in channel_names)
+    print(f"[{variant}] avg MAE   {mae_parts}")
+    print(f"[{variant}] avg RMSE  {rmse_parts}")
+    print(f"[{variant}] avg MAPE  {mape_parts}  Overall="
+          f"{_fmt(avg_row['MAPE_Overall (%)'], '.3f')}%")
+    print(f"[{variant}] avg R^2   {r2_parts}  Overall="
+          f"{_fmt(avg_row['R2_Overall'])}")
+    # Early / Late MAE is reported on the FIRST predicted channel (most
+    # informative for AR-drift diagnosis on the hardest channel).
+    primary_ch = channel_names[0] if not is_inverse(variant) else 'T_inner'
+    if primary_ch in channel_names:
+        print(f"[{variant}] avg Early/Late MAE  {primary_ch} "
+              f"{_fmt(avg_row[f'EarlyMAE_{primary_ch} (C)'])} / "
+              f"{_fmt(avg_row[f'LateMAE_{primary_ch} (C)'])}")
+    print(f"[{variant}] inference: {avg_ms_per_case:.1f} ms/case  |  "
+          f"{cases_per_sec:.2f} cases/s  |  "
+          f"{avg_ms_per_step * 1000:.2f} us/step")
+
+    speed_stats = {
+        'avg_ms_per_case': avg_ms_per_case,
+        'total_infer_s': total_infer_s,
+        'cases_per_sec': cases_per_sec,
+        'avg_us_per_step': avg_ms_per_step * 1000,
+        'total_steps_predicted': total_steps_predicted,
+    }
+
+    # Persist raw predictions so plots can be regenerated without re-running inference
+    if npz_path is not None:
+        # H3: an explicit destination (predictions_val.npz, or eval_checkpoint's
+        # --out-dir); never the run's test-set predictions.npz.
+        try:
+            save_predictions_npz(variant, raw_predictions, path=npz_path)
+            print(f"[{variant}] predictions saved -> {npz_path}")
+        except Exception as e:
+            print(f"[{variant}] WARNING: predictions save failed ({npz_path}): {e}")
+    elif SAVE_PREDICTIONS:
+        try:
+            save_predictions_npz(variant, raw_predictions)
+            print(f"[{variant}] predictions saved -> "
+                  f"{os.path.join(output_dir, 'predictions.npz')}")
+        except Exception as e:
+            print(f"[{variant}] WARNING: predictions.npz save failed: {e}")
+
+    return summary_df, speed_stats
+
+

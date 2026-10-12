@@ -4,6 +4,51 @@ Newest entries on top. **New to the project? Read "Start here" below first.**
 It explains what the model does and what the words in the entries mean. The
 entries themselves are a lab record, written for whoever runs the next round.
 
+## 2026-10-11 — PI material-refit column `[REPORT FIX]`
+
+The registered `batches.P3.re_fit_column` had no result-table export. Added
+`round10_refit.py` and connected it to per-channel P1/stage-level and C16
+CSV/Markdown outputs; F11 C16 points inherit the frozen training reference
+columns. Statements come directly from the unchanged prereg file. Physical
+input maintenance has its own column, keeping C13's direct output head
+distinct from its physical input requirements. A five-form guide includes
+EMA only as a protocol statement, with no new arm or performance number.
+
+The new actual-export check passes 40/40. Statistics/decision, stage resume,
+analysis, F11, report-gate and syntax checks pass again. An annotation-only
+preview retains all 84 saved ep2 C16 values unchanged. This is a reporting
+fix, not measured new-material transfer or additional model training.
+
+## 2026-10-12 — Round 10 package completion `[IMPLEMENTED / SMOKE]`
+
+Implemented HANDOFF section 10.3 in order: the B6/F11 access/report gate;
+H8, H7, NO_TIME, H10, H5 and H6 with the original seven checks after each;
+F4 redraws and all ten F1 folds; C16, E3/G11, linear sysID, error budget,
+G1 and A7; and the prereg-driven resumable S0–S9 pipeline. The teammate
+instructions are now in `ROUND10_RUNBOOK.md`; detailed evidence is in
+`ROUND10_VALIDATION_2026-10-12.md`.
+
+- Full dry run enumerates every possible conditional name. An actual
+  branch has 420–540 training runs: P1 is nine arms × ten seeds = 90,
+  correcting the old planning arithmetic without changing any arm list.
+- Actual GPU smoke: all 69 core/conditional/confirmation paths, seed 7,
+  two epochs each, PASS. Reloaded validation scoring differs by at most
+  1.14e-13 °C. Sealed metadata, no Test keys, constants sidecars and
+  validation artifacts were verified for every path.
+- Independent original P0 code versus new default behavior: all 20
+  validation files, all 1,440 steps and three channels; maximum scaled
+  prediction difference and weighted-loss difference both exactly zero
+  under TF32=legacy. The old test-scored gate is superseded.
+- Five analysis CLIs passed against the retained real smoke checkpoints;
+  E3/G1 use explicit reduced fixtures only for this functional check.
+  Full-population linear fitting and the archived 60-run A7 bridge were
+  checked separately. These ep2 analyses do not establish any scientific
+  winner, envelope or registered decision.
+- Runtime: Python 3.12.12, torch 2.8.0+cu126, RTX 4090. Python 3.9 grammar
+  passes; lab-server Python 3.10/3.11 execution remains a teammate smoke
+  requirement. No formal Round 10 run or real B6/F11 test scoring occurred
+  during package development. No source data or prior results were changed.
+
 ---
 
 ## Start here
@@ -243,8 +288,126 @@ rather than what it predicts:
 | 2026-09-30 | — | (diagnosis) | case 70 = T_avg label conflict (123/311 training files use an inner-weighted average; the model picks the convention by temperature level); startup bump = T0-only transient, untrained; fixes to test in round 10 |
 | 2026-09-28 | 9 | (results) | under a validation set with every case type the plain direct model wins: 0.51–0.55 °C single, 0.50–0.53 ensemble (legacy recipe 0.676); the position head's round-5 win was early stopping; gates, flag, time prior and split models leave the recipe; the round-8 anchor collapse was the validation set |
 | 2026-09-19 | 9 | re-test rounds 4–8 — every configuration ever trained (146) and every loss-weight vector — with a validation set that contains every case type; one network per temperature (and a two-network form: walls shared, T_avg separate); a time curve for the position head (the first-50-step T_avg problem) | `[CODE]` — runner ready: everything by default, 218 GPU-h ≈ 108 h wall with 3 seeds in parallel, S1 decision arms first; 3-seed pilots: the validation set caused the round-8 collapse (1.53 → 0.89), the reference still costs T_avg on the switched cases; the time curve cuts the first-50-step error 1.24 → 0.48 with nothing worse |
+| 2026-10-11 | 10 | pre-registration: T_avg label convention (mask / relabel), verdicts moved to the validation side with calibrated equivalence bands, test set sealed | `[PREREG]` — rules in `prereg/round10_v3.json`, statistics in `paper_stats.py`; results to follow |
 
 ---
+
+## 2026-10-11 — Round 10 pre-registration `[PREREG]` — labels, validation-side verdicts, sealed test set
+
+**In one line:** Round 10 is pre-registered before its first launch. The
+rules live in `prereg/round10_v3.json` (the wiki draft copied by
+`round10_checks/make_prereg_v3.py`, with sha256 digests of the split json
+and of the T_avg mask list added under `data.hashes`) and are evaluated by
+`paper_stats.py`; this entry restates them and quotes no number that is not
+in that file. Code hooks H9, H1, H2, H3, H4, A4, A5, A6 and their checks are
+tracked in `ROUND10_IMPLEMENTATION_SPEC.md`.
+
+**Data.** Split `round10_vs3_s42` (`splits/round10_vs3_s42.json`, tag
+`vs3`): 284 training files, 20 validation files (2 per case type), 7 dropped
+(Case 10/Case 8: corrupted T_avg, a validation file, swapped for Case 10 /
+Case 1; Case 1/new 1, 2, 3: thermal diffusivity about 2x; Case 8/Discharge
+13: byte-identical to Discharge 11; Case 1/new 19: a copy of new 7's
+temperatures; Case 1/new 20: shares new 18's inlet exactly, no provenance).
+T_avg mask: the 118 files whose T_avg follows the inner-weighted (117) or
+borderline (1) convention lose their T_avg term in the loss and in every
+T_avg statistic; walls unchanged. 3 of the 118 are validation files
+(Case 1/Case 16, Case 9/New 1, Case 9/New 4), so T_avg is scored on 17
+validation files, T_inner and T_outer on 20. The 70-case test set is
+untouched and read twice only (B6 after P1, F11 after P8) through
+`paper_report.py` with an access log; `SEAL_TEST=1` on every run.
+
+**Seeds.** S10 = 1, 2, 3, 5, 7, 11, 13, 21, 42, 123 on every arm; F9 uses
+20 fresh primes 71 … 167; pairing by seed label.
+
+**Statistic and bands.** Unit: per-channel MAE in °C over the validation
+files, full rollout, teacher forcing 0. Seed-paired mean difference, 95 % CI
+from 10,000 bootstrap resamples over seeds plus the exact sign-flip test
+(`analyze_round9.paired`); one primary comparison per batch, the rest
+descriptive or Holm within the named family; the three-channel mean is never
+the deciding statistic. Bands come from the 1b calibration (Round 9
+per-case per-seed test csvs resampled to n = 20): measured case half-widths
+0.011 / 0.038 / 0.058 °C for T_inner / T_outer / T_avg, 0.018 / 0.047 /
+0.078 once the seed term is added, 0.17 for a structural T_avg change.
+**Fixed bands 0.02 / 0.05 / 0.08 °C**; per comparison
+band_c = max(fixed_c, sqrt((1.96·sd_case/√n)² + seed_bootstrap_halfwidth²))
+from that comparison's own per-file paired differences, stated in the result
+table. A CI inside ±band reads **"indistinguishable at n=20"**. The
+validation set is not enlarged (30 files: T_avg case term 0.058 -> 0.047).
+
+**Vetoes (validation side).** V1: any seed whose mean of the three
+validation channel MAEs exceeds 1.5 °C. V2: paired JumpSteps (thresholds
+2 °C and 1 °C, T_outer + T_avg only, step t0→t1 included) increase across
+seeds with sign-flip p < 0.05. Computed by `eval_checkpoint --set val` under
+`SEAL_TEST=1`; the FLAGGED / SWITCHED test-id sets are never applied to
+validation files.
+
+**Verdict classes.** BETTER = CI of (T_outer+T_avg)/2 entirely < 0 AND
+T_avg CI upper ≤ 0 AND T_outer CI upper ≤ +band_T_outer AND T_inner CI upper
+≤ +band_T_inner AND no veto. NO_WORSE = every channel's CI upper ≤ +band_c
+and no veto. EQUIVALENT = every channel's CI inside ±band_c. Otherwise WORSE
+or undecided. Recipe change: a challenger replaces direct only if BETTER vs
+C1 at h128x1, BETTER vs B1-mask at h160x1 (C17, 10 seeds) and the top-2
+order holds on the F4 draws (2 of 3 required because band_T_avg > 0.05); the
+recipe is frozen in writing before F4 and F9; no selection after F9 launches.
+
+**Physics reference row E1.** r_o = 0.127 m, diffusivity scale s = 1.0 (the
+training-file grid optimum, identical to nominal). Validation (20): T_outer
+MAE 0.543 / RMSE 0.700; T_avg line MAE 0.409 / RMSE 0.475 on 17; T_inner
+reference MAE 0.588. Test row at F11 only.
+
+**Batches** (full arm lists and rules in the file).
+- P0 substrate: hooks A0+H9, H1, H2, H3, H4, A4, A5, A6; gate to P1: prereg
+  committed with the bands above, smoke runs pass, sidecar round-trips to
+  1e-6 scaled on the 20 validation files, the all-ones mask reproduces the
+  current loss to 1e-7, the runner forces SEAL_TEST=1.
+- P1 labels and controls: B1 direct h160x1 mask vs orig (20 runs); retrain =
+  champion h160x1 abs 1-6-3 vs2 291 files orig labels (10); B2 direct h128x1
+  mask / orig / relabel / drop-Case 9 (40); B7 random mask of the same
+  number of training files (10); B8 original training labels, only the
+  masked validation files masked in the validation scalar (10). Primary:
+  mask minus orig NO_WORSE on T_outer and on T_avg separately AND the
+  hot-discharge side score (Case 9 New 1 / New 4: model T_avg vs the
+  s-inverse line average, seed-paired, n = 2 files, no case-level claim)
+  lower under mask with CI excluding 0. B7 must not lower the side score;
+  if B8 explains more than half of (mask minus orig) on it, K04 reads
+  "label content plus stopping rule". Then B6 and the G1 probe.
+- P2 anchor (1e): ANCHOR_SCALE × INPUT_LOOKAHEAD cells (50 runs),
+  LOSS_W0_MODE=inv_kc, C14 anchor off, C15 ANCHOR_LEAD=0 (10 each); a cell
+  is adopted only if the overall and T_inner CIs are entirely < 0 AND the
+  T_outer / T_avg uppers ≤ +band.
+- P3 ratio (Yimin): R3 all three ratios (primary), R1, R2, R2C, C3, C2, 10
+  seeds each; Ref(t) = Input_T(t+1) + 273.15 K; identity gate 1e-4 °C on 5
+  files; R3 vs C1 by the verdict classes with T_inner included.
+- P4 start-up and encoder: EARLY_STEP_WEIGHT, window encoder, ENC linear /
+  4-16-16-H, H0_MODE tanh / zero, NO_TIME; smallest encoder with every
+  channel's CI upper ≤ +band_c vs C1 and a first-5-step spike share not
+  worse than C1; G7 only if the T0 sweep (50:600:10, 60 steps) stays within
+  0.5 °C on every channel AND the first-5-step max error halves with CI < 0.
+- P5 physics reference: C11 residual, C12, C13; epoch-0 identity to the E1
+  row (0.543 / 0.409) to 1e-3 °C; C11 → C17 only if BETTER vs C1 AND it
+  beats the E1 validation row on T_avg (17) and T_outer (20) with CI < 0;
+  then E3 / G11 (k × 0.8 / 1.2) and the linear sysID baseline.
+- P6 confirmations at h160x1 vs B1-mask; P7 F4 redraws (split seeds 43, 44)
+  and F1 leave-one-family-out (5 seeds × 10 families, constants frozen);
+  P8 F9 frozen recipe on the 20 fresh primes; P9 `paper_report.py` once.
+
+**Test reads.** B6: B1 mask vs orig h160x1 on cases 70 / 42 / 66 / 67 only,
+thresholds 1.5 / 2.0 / 1.0 / 1.0 °C; the other 66 cases summarised as the
+paired-difference CI upper ≤ +0.03 without printing any arm's level; logged
+before the call; no decision changes. F11 after P8. Nothing else.
+
+**Disclosures.** B6 is a pre-registered single look; the 1b calibration used
+Round 9 per-case per-seed TEST csvs that Round 9 had already read; the PINN
+branch evaluated the 70-case set about 20 times in 2026-08/09 and Round 9's
+main.py wrote Test_MAE on every run — the seal reads "sealed from Round 10
+onward, read at B6 and F11"; the T_inner anchor last-step off-by-one is
+fixed in Round 10 (Round 9 T_inner numbers are not quoted next to Round 10
+ones without this note); the E1 re-selection on training files alone
+returned the nominal parameters; case 70 is an extrapolation after masking.
+
+**Hygiene.** No arm runs that is not in the prereg file; no post-hoc
+validation-set change; smoke directories deleted before real runs; unique
+run-name tag per arm; retrain = vs2 / 291 / orig; TF32 pinned and recorded.
 
 ## 2026-09-30 — Diagnosis `[DIAG]` — case 70 is a T_avg label conflict in the training data; the startup bump is a transient fixed by T0 alone
 

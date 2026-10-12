@@ -1,0 +1,10 @@
+{
+  "test_csv_attempts": 0,
+  "blocked_test_csv": [],
+  "allowed_csv_unique": 3,
+  "allowed_csv_paths": [
+    "C:/Users/FEvMo/Documents/GitHub/AI-TES/data/Latest Database (Use this for training)/Case 1 (linear charging)/Case 16.csv",
+    "runs/_round10_analysis_checks/real_ep2/g1_probe/g1_probe.csv",
+    "runs/_round10_analysis_checks/real_ep2/g1_probe/g1_switch_summary.csv"
+  ]
+}

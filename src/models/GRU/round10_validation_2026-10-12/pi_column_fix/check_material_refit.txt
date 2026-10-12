@@ -1,0 +1,42 @@
+PASS  five refit requirements are read verbatim from the frozen prereg
+PASS  prereg path and prereg object give the same parsed requirements
+PASS  changed prereg requirements propagate instead of using hardcoded values
+PASS  missing registered output form is refused
+PASS  duplicate registered output form is refused
+PASS  B1_mask maps the actual channel output forms
+PASS  B1_orig maps the actual channel output forms
+PASS  RETRAIN maps the actual channel output forms
+PASS  C2 maps the actual channel output forms
+PASS  C3 maps the actual channel output forms
+PASS  R1 maps the actual channel output forms
+PASS  R2 maps the actual channel output forms
+PASS  R2C maps the actual channel output forms
+PASS  R3 maps the actual channel output forms
+PASS  C11 maps the actual channel output forms
+PASS  C12 maps the actual channel output forms
+PASS  C13 maps the actual channel output forms
+PASS  EMA_description maps the actual channel output forms
+PASS  C14 maps the actual channel output forms
+PASS  physics-as-input direct heads still disclose the physical input update
+PASS  plain direct heads do not acquire a physical-input requirement
+PASS  residual-only heads list the physical base in the main requirement without adding physical inputs
+PASS  physical-input residual heads expose both reference and input maintenance
+PASS  P1 actual CSV contains all three arms and their per-channel refit requirements
+PASS  P1 actual Markdown exports the requested column and channel requirements
+PASS  five-form guide exports EMA as a protocol note without fabricating model metrics
+PASS  P1 refit annotations preserve original numerical readouts
+PASS  saved P1 output uses the supplied prereg source values
+PASS  same arm with inconsistent output forms across seeds is refused in P1
+PASS  C16 training references carry actual-channel metadata for all synthetic arms
+PASS  C16 rejects inconsistent per-seed output forms before accepting one arm's reference
+PASS  validation point join preserves the PI refit column
+PASS  F11 F9 alias join inherits frozen C11 metadata without refitting
+PASS  F11 alias annotations preserve model errors and frozen training statistics
+PASS  old pure-memory F11 fixtures stay numerically compatible without metadata
+PASS  c16_reference_statistics actual CSV and Markdown contain the requested column
+PASS  c16_validation_points actual CSV and Markdown contain the requested column
+PASS  F11 actual CSV and Markdown retain the inherited column
+PASS  sealed real-test CSV paths are rejected by the verification guard
+PASS  frozen prereg bytes are unchanged after every table-generation check
+
+check_material_refit: 40/40 PASS; CPU synthetic only, no real test CSV read

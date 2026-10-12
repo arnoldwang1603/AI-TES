@@ -1,0 +1,227 @@
+{
+  "date": "2026-10-11",
+  "n_layers": 60,
+  "sub_steps": 2,
+  "drive": "Input Temperature (C)",
+  "nominal": {
+    "r_o": 0.127,
+    "s": 1.0
+  },
+  "calibrated": {
+    "r_o": 0.127,
+    "s": 1.0
+  },
+  "r_o": 0.127,
+  "s": 1.0,
+  "s_definition": "k(T) multiplied by s (equivalent to dividing rho*cp by s); 1.0 = FE-report properties",
+  "grid": {
+    "r_o_m": [
+      0.1016,
+      0.1143,
+      0.127,
+      0.1397,
+      0.1524
+    ],
+    "s": [
+      0.85,
+      1.0,
+      1.15
+    ]
+  },
+  "selection": {
+    "objective": "mean over training files of per-file RMSE(T_outer_phys, T_outer); T_avg_line never used",
+    "scope": "all 284 training files of round10_vs3_s42",
+    "subset60_choice": {
+      "r_o": 0.127,
+      "s": 1.0,
+      "same_as_full": true
+    },
+    "subset60_rule": "6 per folder, sorted keys, numpy default_rng(42).choice without replacement"
+  },
+  "split": {
+    "file": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\.claude\\worktrees\\pensive-cohen-d3486a\\outputs\\round10_plan\\split_vs3\\round10_vs3_s42.draft.json",
+    "name": "round10_vs3_s42",
+    "n_train": 284,
+    "n_val": 20,
+    "n_test": 70,
+    "n_tavg_mask": 118,
+    "n_train_tavg_scored": 169,
+    "n_val_tavg_scored": 17
+  },
+  "package": {
+    "path": "C:\\Users\\FEvMo\\Documents\\GitHub\\calit2-thermal-wiki\\.claude\\worktrees\\pensive-cohen-d3486a\\outputs\\email_data_group\\radial1d_model\\radial1d_model.py",
+    "sha256": "bc800d697e1998fa8d8b57514c4ae47bcd0ffc8f55e4d78f34a8a90a212bff8d",
+    "mtime": "2026-10-09T01:52:31",
+    "R_IN": 0.0254,
+    "R_OUT": 0.127,
+    "RHO": 2400.0,
+    "K_TEMPS": [
+      100.0,
+      400.0
+    ],
+    "K_VALUES": [
+      2.5,
+      2.0
+    ],
+    "CP_TEMPS": [
+      100.0,
+      200.0,
+      400.0
+    ],
+    "CP_VALUES": [
+      900.0,
+      1000.0,
+      1100.0
+    ],
+    "N_LAYERS": 60,
+    "SUB_STEPS": 2
+  },
+  "nominal_equality_check": {
+    "max_abs_diff_C": 0.0,
+    "files": [
+      {
+        "key": "Case 1 (linear charging)/Case 1.csv",
+        "max_abs_diff_T_outer": 0.0,
+        "max_abs_diff_T_avg_line": 0.0
+      },
+      {
+        "key": "Case 1 (linear charging)/Case 10.csv",
+        "max_abs_diff_T_outer": 0.0,
+        "max_abs_diff_T_avg_line": 0.0
+      },
+      {
+        "key": "Case 1 (linear charging)/Case 11.csv",
+        "max_abs_diff_T_outer": 0.0,
+        "max_abs_diff_T_avg_line": 0.0
+      }
+    ]
+  },
+  "timing": {
+    "file": "Case 1 (linear charging)/Case 1.csv",
+    "n_layers": 60,
+    "sub_steps": 2,
+    "repeats": 3,
+    "wall_s_per_file_median": 0.0656455000000733,
+    "wall_s_per_file_all": [
+      0.06554839999989781,
+      0.06674560000010388,
+      0.0656455000000733
+    ],
+    "extrapolated_374_files_s": 24.551417000027413,
+    "extrapolated_374_files_x2_param_sets_s": 49.10283400005483,
+    "extrapolated_grid_15x284_s": 279.64983000031225,
+    "slow_threshold_s": 2.0,
+    "is_slow": false,
+    "sub_steps_1_vs_2_check": [
+      {
+        "key": "Case 1 (linear charging)/Case 1.csv",
+        "max_abs_diff_T_outer": 0.0036710818975791426,
+        "max_abs_diff_T_avg_line": 0.0026546089373198356
+      },
+      {
+        "key": "Case 1 (linear charging)/Case 10.csv",
+        "max_abs_diff_T_outer": 0.007467268376615266,
+        "max_abs_diff_T_avg_line": 0.005437355184028547
+      },
+      {
+        "key": "Case 1 (linear charging)/Case 11.csv",
+        "max_abs_diff_T_outer": 0.007433501787886598,
+        "max_abs_diff_T_avg_line": 0.005420273570535983
+      }
+    ]
+  },
+  "training_summary": {
+    "nominal": {
+      "r_o": 0.127,
+      "s": 1.0,
+      "n_files_T_outer": 284,
+      "rmse_T_outer_mean_over_files": 0.6464777455623767,
+      "rmse_T_outer_median_over_files": 0.5040085463723523,
+      "mae_T_outer_mean_over_files": 0.5079499503421591,
+      "n_files_T_avg_line": 169,
+      "rmse_T_avg_line_mean_over_files": 0.4028033928714959,
+      "rmse_T_avg_line_median_over_files": 0.29677759781857477,
+      "mae_T_avg_line_mean_over_files": 0.3428621736232448
+    },
+    "calibrated": {
+      "r_o": 0.127,
+      "s": 1.0,
+      "n_files_T_outer": 284,
+      "rmse_T_outer_mean_over_files": 0.6464777455623767,
+      "rmse_T_outer_median_over_files": 0.5040085463723523,
+      "mae_T_outer_mean_over_files": 0.5079499503421591,
+      "n_files_T_avg_line": 169,
+      "rmse_T_avg_line_mean_over_files": 0.4028033928714959,
+      "rmse_T_avg_line_median_over_files": 0.29677759781857477,
+      "mae_T_avg_line_mean_over_files": 0.3428621736232448
+    }
+  },
+  "validation_summary": [
+    {
+      "param_set": "nominal",
+      "r_o": 0.127,
+      "s": 1.0,
+      "n_files_T_outer": 20,
+      "mae_T_outer_filemean": 0.5428205122213268,
+      "rmse_T_outer_filemean": 0.7003306065293711,
+      "mae_T_outer_pooled": 0.5428205122213267,
+      "rmse_T_outer_pooled": 0.8954040686267437,
+      "n_files_T_avg_line": 17,
+      "mae_T_avg_line_filemean": 0.40889146821748446,
+      "rmse_T_avg_line_filemean": 0.47481479516315933,
+      "mae_T_avg_line_pooled": 0.4088914682174844,
+      "rmse_T_avg_line_pooled": 0.615270593944913,
+      "n_files_T_inner": 20,
+      "mae_T_inner_ref_filemean": 0.5878132314728214,
+      "rmse_T_inner_ref_filemean": 0.6486176487593702,
+      "mae_T_inner_ref_pooled": 0.5878132314728214,
+      "rmse_T_inner_ref_pooled": 0.8984598116192278
+    },
+    {
+      "param_set": "calibrated",
+      "r_o": 0.127,
+      "s": 1.0,
+      "n_files_T_outer": 20,
+      "mae_T_outer_filemean": 0.5428205122213268,
+      "rmse_T_outer_filemean": 0.7003306065293711,
+      "mae_T_outer_pooled": 0.5428205122213267,
+      "rmse_T_outer_pooled": 0.8954040686267437,
+      "n_files_T_avg_line": 17,
+      "mae_T_avg_line_filemean": 0.40889146821748446,
+      "rmse_T_avg_line_filemean": 0.47481479516315933,
+      "mae_T_avg_line_pooled": 0.4088914682174844,
+      "rmse_T_avg_line_pooled": 0.615270593944913,
+      "n_files_T_inner": 20,
+      "mae_T_inner_ref_filemean": 0.5878132314728214,
+      "rmse_T_inner_ref_filemean": 0.6486176487593702,
+      "mae_T_inner_ref_pooled": 0.5878132314728214,
+      "rmse_T_inner_ref_pooled": 0.8984598116192278
+    }
+  ],
+  "cache": {
+    "n_npz": 748,
+    "npz_keys": [
+      "time",
+      "T_inner_phys",
+      "T_outer_phys",
+      "T_avg_line_phys",
+      "T_avg_volume_phys",
+      "r_o",
+      "s",
+      "n_layers",
+      "sub_steps",
+      "key"
+    ],
+    "file_name_rule": "<folder>__<file>.npz (the split key with '/' -> '__')"
+  },
+  "hot_discharge_side_reference": [
+    "Case 9 (non-linear discharging)/Case New 1 (Tejas).csv",
+    "Case 9 (non-linear discharging)/Case New 4 (Tejas).csv",
+    "Case 1 (linear charging)/Case 16.csv"
+  ],
+  "test_set_rule": "test files read with usecols=[Time (s), Input Temperature (C)] only; no test label loaded, no test error computed",
+  "python": "3.13.7",
+  "numpy": "2.3.5",
+  "pandas": "2.3.3",
+  "wall_s_total": 742.3306994
+}

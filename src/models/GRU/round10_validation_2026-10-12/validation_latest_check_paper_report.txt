@@ -1,0 +1,23 @@
+PASS  test-access capability absent outside the report
+PASS  F11 cannot precede a completed B6
+PASS  incomplete B1 manifest refused
+PASS  duplicate arm/seed B1 manifest refused before any scoring
+PASS  interrupted window remains reserved and restores capability env
+PASS  reserved B6 refuses changed manifest
+PASS  reserved B6 refuses a different output directory
+PASS  active-process report lock refuses concurrent access
+PASS  B6 exposes exactly the registered four T_avg cases
+PASS  B6 remaining 66 and other channels have no arm levels in report
+PASS  B6 T_avg paired residual66 contrast has the expected upper bound
+PASS  all 20 synthetic score calls occur inside a logged capability
+PASS  completed B6 cannot be read again
+PASS  F11 capability matches the registered second mode
+PASS  exactly two begin events, B6 and F11; identical resume is logged
+PASS  terminated-process lock recovers only for the same reserved window
+PASS  a missing output report cannot leave a completed window
+PASS  checkpoint byte change changes the reserved manifest fingerprint
+PASS  unsealed runs cannot enter a report
+PASS  smoke checkpoints cannot enter a real report
+PASS  generic test scorer refuses unregistered calls before run/data loading
+
+check_paper_report: 22/22 PASS

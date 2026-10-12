@@ -1,0 +1,20 @@
+PASS widths='256,256' mode=linear Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+params=99968 name=r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x5dp0.3
+PASS widths='' mode=linear Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+params=640 name=r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x5dp0.3_encl
+PASS widths='16,16' mode=linear Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+params=2528 name=r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x5dp0.3_enc16-16
+PASS widths='256,256' mode=tanh Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+params=99968 name=r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x5dp0.3_h0t
+PASS widths='256,256' mode=zero Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+params=0 name=r10_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x5dp0.3_h0z

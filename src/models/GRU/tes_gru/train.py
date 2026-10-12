@@ -43,14 +43,18 @@ def fit_model_constants(model, variant, train_dfs, scaler):
     # ---- Raw-space affine constants for the T_avg physics bound ----
     # (scaled = raw * scale_ + min_, per channel). Order matches the model's
     # output channels: T_inner, T_outer, T_avg.
-    if PHYSICS_BOUND_WEIGHT > 0.0 and not is_inverse(variant):
+    # Round 10 / H9: the triple is fitted for EVERY forward variant and always
+    # handed to weighted_loss; the hinge itself stays gated on
+    # PHYSICS_BOUND_WEIGHT > 0 inside the loss, so the value is unchanged at 0.
+    if not is_inverse(variant):
         _i = {c: ThermalDataset.BASE_COLS.index(c) for c in
               ("T_inner (C)", "T_outer (C)", "T_avg (C)")}
         model.raw_affine = tuple(
             (float(scaler.scale_[_i[c]]), float(scaler.min_[_i[c]]))
             for c in ("T_inner (C)", "T_outer (C)", "T_avg (C)"))
-        print(f"[{variant}] physics bound ON (w={PHYSICS_BOUND_WEIGHT}): "
-              f"T_avg constrained to [min(T_inner,T_outer), max(...)]")
+        if PHYSICS_BOUND_WEIGHT > 0.0:
+            print(f"[{variant}] physics bound ON (w={PHYSICS_BOUND_WEIGHT}): "
+                  f"T_avg constrained to [min(T_inner,T_outer), max(...)]")
     else:
         model.raw_affine = None
     print(f"[{variant}] loss weights (T_inner,T_outer,T_avg) = {LOSS_WEIGHTS}")
@@ -220,7 +224,7 @@ def fit_model_constants(model, variant, train_dfs, scaler):
     else:
         model.pos_head = None
 
-    if variant in ('abs_sliding', 'forward_direct') and OTHER_CH_MODE.startswith('anchor'):
+    if variant in ('abs_sliding', 'forward_direct') and OTHER_CH_MODE.startswith('anchor') and OTHER_CH_MODE != 'anchor_initial':
         d_out, num, den, parts = [], 0.0, 0.0, []
         for df, _ in train_dfs:
             d = df.copy()
@@ -350,17 +354,123 @@ def fit_model_constants(model, variant, train_dfs, scaler):
         model.touter_anchor = None
         model.touter_ref_affine = None
 
+    model.ratio_head = None
+    model.initial_head = None
+    model.phys_residual = None
+    if OTHER_CH_MODE in ('ratio_input', 'anchor_initial'):
+        tr_masked, _ = get_tavg_mask_sets(getattr(scaler, '_round10_frozen_split', None))
+        values = {j: [] for j in (RATIO_INDICES if OTHER_CH_MODE == 'ratio_input' else (1, 2))}
+        columns = ('T_inner (C)', 'T_outer (C)', 'T_avg (C)')
+        for df, fid in train_dfs:
+            d = df.rename(columns={'T_ave (C)': 'T_avg (C)'})
+            inp = d['Input Temperature (C)'].to_numpy(dtype=float) if 'Input Temperature (C)' in d else d['T_inner (C)'].to_numpy(dtype=float)
+            ref = inp[1:] + 273.15 if RATIO_REF == 'kelvin' else np.maximum(inp[1:], 20.0)
+            for j in values:
+                if j == 2 and is_tavg_masked(fid, tr_masked):
+                    continue
+                raw = d[columns[j]].to_numpy(dtype=float)
+                values[j].append(raw[1:] / ref if OTHER_CH_MODE == 'ratio_input' else raw[1:] - raw[0])
+        stats = {}
+        for j, arrays in values.items():
+            if not arrays:
+                raise RuntimeError('no unmasked training samples for head %d' % j)
+            a = np.concatenate(arrays)
+            stats[str(j)] = (float(a.mean()), float(max(a.std(), 0.05)))
+        aff = model.raw_affine
+        if OTHER_CH_MODE == 'ratio_input':
+            k = ThermalDataset.BASE_COLS.index('Input Temperature (C)')
+            model.ratio_head = dict(stats=stats, channels=list(RATIO_INDICES), ref=RATIO_REF,
+                                    input_affine=(float(scaler.scale_[k]), float(scaler.min_[k])),
+                                    target_affine=aff, sigma_floor=0.05)
+        else:
+            model.initial_head = dict(stats=stats, target_affine=aff)
+    if PHYS_MODE in ('residual', 'input_residual'):
+        tr_masked, _ = get_tavg_mask_sets(getattr(scaler, '_round10_frozen_split', None))
+        values = {1: [], 2: []}
+        for df, fid in train_dfs:
+            d = df.rename(columns={'T_ave (C)': 'T_avg (C)'})
+            physical = load_physics_cache(fid, d['Time (s)'].to_numpy(float))
+            for j, name in ((1, 'T_outer (C)'), (2, 'T_avg (C)')):
+                if j == 2 and is_tavg_masked(fid, tr_masked):
+                    continue
+                values[j].append(d[name].to_numpy(float)[1:] - physical[1:, j-1])
+        stats = {}
+        for j, arrays in values.items():
+            if not arrays:
+                raise RuntimeError('no unmasked residual samples for channel %d' % j)
+            residual = np.concatenate(arrays)
+            mu, sd = float(residual.mean()), float(max(residual.std(), 0.05))
+            stats[str(j)] = dict(mu=mu, sd=sd, z0=-mu/sd)
+        model.phys_residual = dict(stats=stats, target_affine=model.raw_affine,
+                                   reconstruction='phys + mu + sd * (z0 + head)', sigma_floor_C=0.05)
     return model
+
+
+def _tupled(x):
+    if isinstance(x, list):
+        return tuple(_tupled(v) for v in x)
+    if isinstance(x, dict):
+        return {k: _tupled(v) for k, v in x.items()}
+    return x
+
+
+def set_model_constants(model, consts):
+    """Round 10 / H4: the inverse of fit_model_constants -- attach the
+    constants a sidecar recorded (runio.load_constants_sidecar(p)["constants"])
+    to `model`. JSON lists come back as tuples (the reconstructions unpack
+    them), pos_time_prior as a float32 tensor, absent modes as None. The
+    constants belong to the checkpoint's own split; never pair a sidecar
+    with another run's data."""
+    for k in MODEL_CONSTANT_ATTRS:
+        v = consts.get(k)
+        if k == "pos_time_prior":
+            v = None if v is None else torch.tensor(v, dtype=torch.float32)
+        else:
+            v = _tupled(v)
+        setattr(model, k, v)
+    return model
+
+
+def realised_loss_weights(model):
+    """H8: preserve the old weights unless the inverse anchor scale is requested."""
+    weights = torch.tensor(LOSS_WEIGHTS, dtype=torch.float32)
+    if LOSS_W0_MODE == "inv_kc":
+        anchor = getattr(model, "tinner_anchor", None)
+        if anchor is None or float(anchor[2]) <= 0:
+            raise RuntimeError("inv_kc needs fitted positive T_inner KC")
+        weights[0] = float(LOSS_WEIGHTS[0]) / float(anchor[2])
+    return weights
+
+
+def fit_training_constants(model, variant, train_dfs, scaler):
+    """Checkpoint constants: explicit frozen sidecar, or registered fit pool."""
+    if CONSTANTS_FROM:
+        frozen = load_constants_sidecar(CONSTANTS_FROM)
+        return set_model_constants(model, frozen['constants'])
+    return fit_model_constants(model, variant, getattr(scaler, '_round10_fit_records', train_dfs), scaler)
 
 
 def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
     print(f"\n--- Building datasets for variant '{variant}' ---")
-    train_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
+    # H2: per-file T_avg loss mask. Empty sets under the legacy TAVG_MASK="".
+    tr_masked, va_masked = get_tavg_mask_sets()
+    train_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn,
+                                     tavg_masked=is_tavg_masked(fn, tr_masked))
                       for df, fn in train_dfs]
-    val_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
+    val_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn,
+                                   tavg_masked=is_tavg_masked(fn, va_masked))
                     for df, fn in val_dfs]
-    test_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
-                     for df, fn in test_dfs]
+    if TAVG_MASK:
+        n_tr = sum(ds.tavg_masked for ds in train_datasets)
+        n_va = sum(ds.tavg_masked for ds in val_datasets)
+        print(f"[{variant}] TAVG_MASK={TAVG_MASK}: T_avg label masked on {n_tr}/{len(train_datasets)} "
+              f"training files and {n_va}/{len(val_datasets)} validation files "
+              f"(validation T_avg scored on {len(val_datasets) - n_va})")
+    # H3: under SEAL_TEST the test files are never turned into datasets --
+    # the run scores its validation files instead (main.py).
+    test_datasets = ([] if SEAL_TEST else
+                     [ThermalDataset(df, variant, scaler=scaler, file_name=fn)
+                      for df, fn in test_dfs])
 
     pin = (DEVICE.type == "cuda")
     train_loader = DataLoader(ConcatDataset(train_datasets),
@@ -387,7 +497,7 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
               f"(and window encoder if present)"
               + (f" -- {len(parts)} independent nets" if len(parts) > 1 else ""))
 
-    fit_model_constants(model, variant, train_dfs, scaler)
+    fit_training_constants(model, variant, train_dfs, scaler)
 
     # ---- Trainable parameter counts (broken down) ----
     def _count(module):
@@ -403,7 +513,28 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
 
     os.makedirs(checkpoints_dir(), exist_ok=True)
     ckpt_path = os.path.join(checkpoints_dir(), f"best_gru_variant_{variant}.pth")
-    full_weights = torch.tensor(LOSS_WEIGHTS, dtype=torch.float32)
+    full_weights = realised_loss_weights(model)
+    print("[%s] realised loss weights = %s" % (variant, full_weights.tolist()))
+    epoch0_mae = None
+    if PHYS_MODE in ('residual', 'input_residual'):
+        _, scaled_mae = validate_epoch(model, variant, val_loader, full_weights, model.raw_affine)
+        epoch0_mae = {ch: float(scaled_mae[j] / scaler.scale_[k]) for j, (ch, k) in enumerate((('T_inner', 2), ('T_outer', 1), ('T_avg', 3)))}
+        print('[%s] epoch-0 physical validation MAE (C): %s' % (variant, epoch0_mae))
+
+    # Round 10 / H4: the constants sidecar next to the best checkpoint --
+    # written now, right after fit_model_constants (a crashed run still has
+    # it), and again at every best-checkpoint save so the pair always agrees.
+    sidecar_path = constants_sidecar_path(ckpt_path)
+
+    def _write_sidecar(**kw):
+        info = dict(variant=variant, checkpoint=os.path.basename(ckpt_path),
+                    loss_weights_realised=[float(w) for w in full_weights.tolist()],
+                    epoch0_validation_mae=epoch0_mae)
+        info.update(kw)
+        return write_constants_sidecar(sidecar_path, model, scaler, extra=info)
+
+    _write_sidecar(stage="after_fit")
+    print(f"[{variant}] constants sidecar -> {sidecar_path}")
 
     if MODEL_GROUPS is not None:
         # One stage per part, in channel order (independent: T_inner,
@@ -423,7 +554,7 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
             r = _train_stage(model, variant, params, train_loader, val_loader,
                              ckpt_path, label, w, trainable=list(part.parameters()),
                              frozen=[q for j, q in enumerate(parts) if j != k],
-                             resume_ok=False)
+                             resume_ok=False, on_best=_write_sidecar)
             if r['best_epoch'] == 0:
                 raise RuntimeError(f"[{label}] stage recorded no validation improvement "
                                    f"(best_val={r['best_val']}); refusing to continue")
@@ -446,7 +577,7 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         r = _train_stage(model, variant, params, train_loader, val_loader,
                          ckpt_path, variant, full_weights,
                          trainable=list(model.parameters()), frozen=[],
-                         resume_ok=True)
+                         resume_ok=True, on_best=_write_sidecar)
         best_val, best_epoch, total_epoch = r['best_val'], r['best_epoch'], r['total_epoch']
         train_hist, val_hist, lr_hist = r['train_hist'], r['val_hist'], r['lr_hist']
         val_hist_ch = r['val_hist_ch']
@@ -470,14 +601,74 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
             param_breakdown, train_hist, val_hist, lr_hist, stages)
 
 
+def validate_epoch(model, variant, val_loader, weights, raw_affine, use_mask=None):
+    """One full-autoregressive pass over val_loader -> (scalar, [per-channel]).
+
+    Legacy (use_mask False, the default under TAVG_MASK=""): the exact mean
+    over validation FILES of the weighted loss -- each batch's mean loss
+    weighted by its size (with batch 16 the 20-file stratified set is 16 + 4,
+    where a plain per-batch average gave the last four files 1/8 each) -- and
+    the unweighted per-channel MAE over all files. Arithmetic unchanged from
+    Round 9.
+
+    Masked (H2): numerator sum(|p-t| w m) and denominator sum(m) accumulated
+    across batches, so the scalar is the masked loss over the whole set; the
+    per-channel MAE counts unmasked files only (vs3: T_avg on 17 files,
+    T_inner / T_outer on 20). The scalar drives early stopping and
+    ReduceLROnPlateau. (The physics hinge is excluded here; config asserts
+    PHYSICS_BOUND_WEIGHT == 0 under TAVG_MASK.)"""
+    if use_mask is None:
+        use_mask = bool(TAVG_MASK)
+    model.eval()
+    vloss, n_val = 0.0, 0
+    vch = torch.zeros(3, dtype=torch.float64)
+    vnum, vden = 0.0, 0.0
+    vch_num = torch.zeros(3, dtype=torch.float64)
+    vch_den = torch.zeros(3, dtype=torch.float64)
+    with torch.no_grad():
+        for batch in val_loader:
+            items = [b.to(DEVICE, non_blocking=True) if torch.is_tensor(b) else b
+                     for b in batch]
+            inputs, targets, init_conds, win_obs = items[0], items[1], items[3], items[4]
+            inp_last = items[ITEM_INP_LAST]
+            preds = run_rollout_train(model, variant, inputs, targets,
+                                      init_conds, win_obs,
+                                      tf_prob=0.0, inp_last=inp_last,
+                                      phys_targets=items[ITEM_PHYS_TARGETS] if PHYS_MODE else None)
+            nb = int(inputs.shape[0])
+            if use_mask or EARLY_STEP_WEIGHT != 1:
+                m = items[ITEM_LOSS_MASK] if use_mask else torch.ones_like(items[ITEM_LOSS_MASK])
+                num, den = masked_loss_terms(preds, targets, weights.to(preds.device), m)
+                vnum += float(num.item())
+                vden += float(den.item())
+                m3 = m.to(preds.device, preds.dtype).unsqueeze(1)          # (B, 1, 3)
+                ae = (preds - targets).abs()
+                vch_num += (ae * m3).sum(dim=(0, 1)).double().cpu()
+                vch_den += m3.expand_as(ae).sum(dim=(0, 1)).double().cpu()
+            else:
+                vloss += weighted_loss(preds, targets, weights=weights,
+                                       raw_affine=raw_affine).item() * nb
+                vch += (preds - targets).abs().mean(dim=(0, 1)).double().cpu()[:3] * nb
+            n_val += nb
+    if use_mask or EARLY_STEP_WEIGHT != 1:
+        avg_val = vnum / max(vden, 1.0)
+        vch_list = (vch_num / vch_den.clamp_min(1.0)).tolist()
+    else:
+        avg_val = vloss / max(1, n_val)
+        vch_list = (vch / max(1, n_val)).tolist()
+    return avg_val, vch_list
+
+
 def _train_stage(model, variant, params, train_loader, val_loader, ckpt_path,
-                 label, weights, trainable, frozen, resume_ok):
+                 label, weights, trainable, frozen, resume_ok, on_best=None):
     """One early-stopped training run of `trainable` (a parameter list) with
     the per-channel loss `weights`; `frozen` modules are kept in eval mode
     (dropout off) while `model.train()` is on. Saves the FULL model state to
     ckpt_path at every validation improvement and restores it at the end.
     Shared mode calls this once with everything trainable; independent mode
-    once per net. Resume-from-interruption only when resume_ok."""
+    once per net. Resume-from-interruption only when resume_ok. on_best
+    (H4): called with best_epoch / best_val / stage after each best save
+    (the constants sidecar)."""
     optimizer = optim.Adam(trainable, lr=params['lr'])
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min',
@@ -535,6 +726,7 @@ def _train_stage(model, variant, params, train_loader, val_loader, ckpt_path,
                 train_hist, val_hist, lr_hist = [], [], []
 
     raw_affine = getattr(model, 'raw_affine', None)
+    use_mask = bool(TAVG_MASK)          # H2
     for epoch in range(start_epoch, params['max_epochs']):
         # Teacher-forcing probability for this epoch (decay 0.5 -> 0 over
         # the first TF_DECAY_EPOCHS, then 0 thereafter).
@@ -558,15 +750,20 @@ def _train_stage(model, variant, params, train_loader, val_loader, ckpt_path,
             m.eval()
         tloss = 0.0
         for batch in train_loader:
-            inputs, targets, _, init_conds, win_obs, *_ = [
-                b.to(DEVICE, non_blocking=True) if torch.is_tensor(b) else b
-                for b in batch
-            ]
+            items = [b.to(DEVICE, non_blocking=True) if torch.is_tensor(b) else b
+                     for b in batch]
+            inputs, targets, init_conds, win_obs = items[0], items[1], items[3], items[4]
+            inp_last = items[ITEM_INP_LAST]
+            # H2: the mask is handed over ONLY under TAVG_MASK, so the legacy
+            # path keeps its exact mean() arithmetic (bit-for-bit Round 9).
+            mask = items[ITEM_LOSS_MASK] if use_mask else None
             optimizer.zero_grad()
             preds = run_rollout_train(model, variant, inputs, targets,
                                        init_conds, win_obs,
-                                       tf_prob=tf_prob_train)
-            loss = weighted_loss(preds, targets, weights=weights, raw_affine=raw_affine)
+                                       tf_prob=tf_prob_train, inp_last=inp_last,
+                                       phys_targets=items[ITEM_PHYS_TARGETS] if PHYS_MODE else None)
+            loss = weighted_loss(preds, targets, weights=weights, raw_affine=raw_affine,
+                                 mask=mask)
             loss.backward()
             # ---- Gradient clipping (Pascanu 2013) ----
             if GRADIENT_CLIP_NORM is not None and GRADIENT_CLIP_NORM > 0:
@@ -579,30 +776,10 @@ def _train_stage(model, variant, params, train_loader, val_loader, ckpt_path,
         train_hist.append(avg_train)
 
         # ---- val (always full autoregressive, tf_prob=0) ----
-        # Exact mean over validation FILES: each batch's mean loss is
-        # weighted by its size. With batch 16 the legacy 15-file set is one
-        # batch (unchanged); the 20-file stratified set is 16 + 4, where the
-        # old per-batch average gave the last four files 1/8 each.
-        model.eval()
-        vloss, n_val = 0.0, 0
-        vch = torch.zeros(3, dtype=torch.float64)
-        with torch.no_grad():
-            for batch in val_loader:
-                inputs, targets, _, init_conds, win_obs, *_ = [
-                    b.to(DEVICE, non_blocking=True) if torch.is_tensor(b) else b
-                    for b in batch
-                ]
-                preds = run_rollout_train(model, variant, inputs, targets,
-                                          init_conds, win_obs,
-                                          tf_prob=0.0)
-                nb = int(inputs.shape[0])
-                vloss += weighted_loss(preds, targets, weights=weights,
-                                       raw_affine=raw_affine).item() * nb
-                vch += (preds - targets).abs().mean(dim=(0, 1)).double().cpu()[:3] * nb
-                n_val += nb
-        avg_val = vloss / max(1, n_val)
+        avg_val, vch_list = validate_epoch(model, variant, val_loader, weights,
+                                           raw_affine, use_mask=use_mask)
         val_hist.append(avg_val)
-        val_hist_ch.append((vch / max(1, n_val)).tolist())
+        val_hist_ch.append(vch_list)
 
         # ReduceLROnPlateau only runs AFTER warmup is over.
         if not in_warmup:
@@ -617,6 +794,11 @@ def _train_stage(model, variant, params, train_loader, val_loader, ckpt_path,
             best_epoch = epoch + 1
             early = 0
             torch.save(model.state_dict(), ckpt_path)
+            if on_best is not None:
+                try:
+                    on_best(best_epoch=best_epoch, best_val=float(best_val), stage=label)
+                except Exception as e:
+                    print(f"[{label}] WARNING: constants sidecar write failed: {e}")
         else:
             early += 1
 

@@ -13,7 +13,8 @@ def variant_to_encoder(variant):
     # The "sliding window" in abs_sliding is in the per-step INPUT, not
     # in the h0 computation. Inverse variants likewise use the point
     # encoder (init_cond is 4-d, h0 from t=0 absolute state).
-    return 'window' if variant == 'abs_window' else 'point'
+    return ('window' if variant == 'abs_window' else
+            INIT_ENCODER if variant == 'forward_direct' else 'point')
 
 
 def _rewrite_step_input(variant, x_t,
@@ -273,8 +274,80 @@ def apply_other_anchor(model, pred, t_outer0_s, inp_t=None, case_gate=None,
     return torch.stack([t_in, t_out, t_avg], dim=-1)
 
 
+def _anchor_tail(inp_t, inp_last):
+    """Last column of the lead-1 anchor reference (B, 1): the true scaled
+    Input_T(N) when the dataset supplies it (H9 fix), else the legacy
+    tail-hold of Input_T(N-1)."""
+    if inp_last is None:
+        return inp_t[:, -1:]
+    return inp_last.to(inp_t.device, inp_t.dtype).reshape(-1, 1)
+
+
+def reconstruct_ratio(model, out, input_next):
+    """H5 ratio-to-inlet reconstruction in raw Celsius, loss in scaled C."""
+    head = model.ratio_head
+    si, mi = head['input_affine']
+    raw_input = (input_next.to(out.dtype) - mi) / si
+    ref = raw_input + 273.15 if head['ref'] == 'kelvin' else raw_input.clamp_min(20.0)
+    channels = []
+    for j in range(3):
+        if j in head['channels']:
+            mu, sd = head['stats'][str(j)]
+            s, m = head['target_affine'][j]
+            channels.append((mu + sd * out[..., j]) * ref * s + m)
+        else:
+            channels.append(out[..., j])
+    return torch.stack(channels, dim=-1)
+
+
+def reconstruct_forward_direct(model, out, inputs, init_conds, inp_last=None, phys_targets=None):
+    """The single reconstruction used by training and evaluation (H5/H6)."""
+    current = inputs[:, :, FORWARD_INPUT_INDEX]
+    next_input = torch.cat([current[:, 1:], _anchor_tail(current, inp_last)], dim=1)
+    anc = getattr(model, 'tinner_anchor', None) if TINNER_MODE == 'anchor' else None
+    if anc is not None and not (OTHER_CH_MODE == 'ratio_input' and RATIO_CHANNELS == 'R3'):
+        ka, kb, kc = anc
+        tin = ka * (next_input if ANCHOR_LEAD else current) + kb + kc * out[..., 0]
+        out = torch.cat([tin.unsqueeze(-1), out[..., 1:]], dim=-1)
+    oanc = getattr(model, 'touter_anchor', None) if TOUTER_MODE != 'abs' else None
+    if oanc is not None:
+        ka, kb, kc = oanc
+        ref = touter_reference(current, e0=init_conds[:, 0], model=model)
+        if ANCHOR_LEAD:
+            ref = torch.cat([ref[:, 1:], ref[:, -1:]], dim=1)
+        tout = ka * ref + kb + kc * out[..., 1]
+        out = torch.cat([out[..., :1], tout.unsqueeze(-1), out[..., 2:]], dim=-1)
+    if OTHER_CH_MODE == 'ratio_input':
+        return reconstruct_ratio(model, out, next_input)
+    if OTHER_CH_MODE == 'anchor_initial':
+        head = model.initial_head
+        channels = [out[..., 0]]
+        for j, initial in ((1, init_conds[:, 0:1]), (2, init_conds[:, 2:3])):
+            mu, sd = head['stats'][str(j)]
+            s, _ = head['target_affine'][j]
+            channels.append(initial + s * (mu + sd * out[..., j]))
+        return torch.stack(channels, dim=-1)
+    if PHYS_MODE in ('residual', 'input_residual'):
+        if phys_targets is None:
+            raise RuntimeError('physical residual rollout needs target-aligned reference series')
+        physical = phys_targets.to(out.device, out.dtype)
+        head = model.phys_residual
+        channels = [out[..., 0]]
+        for j in (1, 2):
+            st = head['stats'][str(j)]
+            s, _ = head['target_affine'][j]
+            # Algebraically mu + sd*(z0+head), with z0=-mu/sd. Compute the
+            # cancelled constant in Python precision: a zero head preserves
+            # the reference exactly instead of introducing fp32 cancellation.
+            offset = st['mu'] + st['sd'] * st['z0']
+            channels.append(physical[..., j-1] + s * (offset + st['sd'] * out[..., j]))
+        return torch.stack(channels, dim=-1)
+    return apply_other_anchor(model, out, init_conds[:, :1].to(out.device),
+                              inp_t=current, time_s=None if NO_TIME else inputs[:, :, 0])
+
+
 def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
-                      tf_prob=0.0):
+                      tf_prob=0.0, inp_last=None, phys_targets=None):
     """Forward pass during training/validation, variant-aware.
 
     abs_sliding has its own logic in _rollout_sliding. The other 4 variants
@@ -289,6 +362,10 @@ def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
 
     targets: (B, N, 3) tensor of GT (T_inner, T_outer, T_avg) at steps 1..N.
     Used only when tf_prob > 0.
+
+    inp_last: (B,) scaled Input_T(N) from the dataset (H9). With ANCHOR_LEAD=1
+    the T_inner anchor at the last step reads it instead of tail-holding
+    Input_T(N-1); None keeps the pre-Round-10 tail-hold.
     """
     batch_size = inputs.shape[0]
     if model.encoder_kind == 'point':
@@ -297,45 +374,21 @@ def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
         hidden = model.init_hidden(batch_size, x_window=win_obs)
 
     if variant == 'forward_direct':
-        # Exogenous-only seq2seq: inputs are [Time, Input_T] (all GT given
-        # boundary conditions), one forward pass over the whole sequence.
-        # No AR feedback exists, so the TF gate is a no-op. h0 still comes
-        # from the InitStateEncoder (initial state is given).
+        if INIT_BURNIN_STEPS:
+            # G7(c): prepend constant t0 conditions in the network stream;
+            # discard their readouts before reconstruction/scoring, preserving
+            # every original target time and NPZ length.
+            prefix = inputs[:, :1, :].expand(-1, INIT_BURNIN_STEPS, -1).clone()
+            prefix[:, :, FORWARD_INPUT_INDEX:FORWARD_INPUT_INDEX + INPUT_LOOKAHEAD + 1] = init_conds[:, 3].reshape(-1, 1, 1)
+            if CASE_FLAG_INPUT:
+                prefix[:, :, -1] = 0
+            _, hidden = model(prefix, hidden)
         out, _ = model(inputs, hidden)
-        anc = getattr(model, 'tinner_anchor', None) \
-            if TINNER_MODE == "anchor" else None
-        if anc is not None:
-            # Same T_inner reconstruction as the sliding path, vectorized over
-            # the whole sequence. Input_T is column 1 here (inputs are
-            # [Time, Input_T]); ANCHOR_LEAD=1 shifts the anchor to step t+1.
-            ka, kb, kc = anc
-            inp_t = inputs[:, :, 1]
-            if ANCHOR_LEAD:
-                inp_t = torch.cat([inp_t[:, 1:], inp_t[:, -1:]], dim=1)
-            tin = ka * inp_t + kb + kc * out[..., 0]
-            out = torch.cat([tin.unsqueeze(-1), out[..., 1:]], dim=-1)
-        # Round 8 (Arnold): T_outer anchored on the live input temperature,
-        # the T_inner reconstruction applied verbatim to head 1. Done before
-        # the T_avg step so the position formula consumes the anchored value.
-        oanc = getattr(model, 'touter_anchor', None) \
-            if TOUTER_MODE != "abs" else None
-        if oanc is not None:
-            ka_o, kb_o, kc_o = oanc
-            inp_o = touter_reference(inputs[:, :, 1], e0=init_conds[:, 0], model=model)
-            if ANCHOR_LEAD:
-                inp_o = torch.cat([inp_o[:, 1:], inp_o[:, -1:]], dim=1)
-            tout = ka_o * inp_o + kb_o + kc_o * out[..., 1]
-            out = torch.cat([out[..., :1], tout.unsqueeze(-1), out[..., 2:]], dim=-1)
-        # T_outer / T_avg anchors. T_outer(0) is the GT initial condition,
-        # available in init_conds[:, 0] (scaled). Applied after the T_inner
-        # anchor because T_avg's reference consumes the final T_inner.
-        out = apply_other_anchor(model, out, init_conds[:, :1].to(out.device),
-                                 inp_t=inputs[:, :, 1], time_s=inputs[:, :, 0])
-        return out
+        return reconstruct_forward_direct(model, out, inputs, init_conds, inp_last, phys_targets)
 
     if variant == 'abs_sliding':
         return _rollout_sliding(model, inputs, targets, hidden, batch_size,
-                                tf_prob=tf_prob)
+                                tf_prob=tf_prob, inp_last=inp_last)
 
     if is_inverse(variant):
         # Inverse rollout: T_avg is GT exogenous (in inputs[:, :, 1] for
@@ -395,7 +448,7 @@ def run_rollout_train(model, variant, inputs, targets, init_conds, win_obs,
 
 
 def _rollout_sliding(model, inputs, targets, hidden, batch_size,
-                     tf_prob=0.0, W=None):
+                     tf_prob=0.0, W=None, inp_last=None):
     """abs_sliding rollout (sequence-input, 2026-05-25 -- per Arnold).
 
     Earlier (now removed) version flattened the past W steps into a
@@ -563,8 +616,12 @@ def _rollout_sliding(model, inputs, targets, hidden, batch_size,
             ka, kb, kc = anchor
             # ANCHOR_LEAD=1 uses Input_T(t+1) (exogenous, known in advance);
             # falls back to Input_T(t) at the last step.
-            t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
-            tin_s = ka * inputs[:, t_a, IDX_INP] + kb + kc * pred_t[:, 0]
+            if ANCHOR_LEAD and t + 1 >= seq_len and inp_last is not None:
+                ref_in = inp_last.to(inputs.device, inputs.dtype)   # true Input_T(N) (H9)
+            else:
+                t_a = min(t + 1, seq_len - 1) if ANCHOR_LEAD else t
+                ref_in = inputs[:, t_a, IDX_INP]
+            tin_s = ka * ref_in + kb + kc * pred_t[:, 0]
             pred_t = torch.cat([tin_s.unsqueeze(1), pred_t[:, 1:]], dim=1)
 
         if oanchor is not None:

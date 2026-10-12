@@ -1,0 +1,692 @@
+[
+  {
+    "arm": "B1_mask",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 2.842170943040401e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "B1_orig",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "RETRAIN",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "B2_mask",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "B2_orig",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "B2_relabel",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "B2_drop9",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 5.684341886080802e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "B7",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "B8",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 5.684341886080802e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "H8_a6_l0",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "H8_a12_l0",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "H8_a1_l1",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "H8_a6_l1",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "H8_a12_l1",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "H8_inv_kc",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C14",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C15",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "R3",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "R1",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 2.842170943040401e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "R2",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 7.105427357601002e-15,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "R2C",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C3",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 2.842170943040401e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C2",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "G7a",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "G7b",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "ENC_linear",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "ENC_16_16",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "H0_tanh",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "H0_zero",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "NO_TIME",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "G7c",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "G7d",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C11",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 5.551115123125783e-17,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C12",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 5.551115123125783e-17,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C13",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 1.1368683772161603e-13,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F4_direct_43",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F4_R3_43",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F4_direct_44",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F4_R3_44",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_1",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_2",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 5.684341886080802e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_3",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_4",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 5.684341886080802e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_5",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_6",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_7",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_8",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_9",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F1_10",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F9",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "F10",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 2.842170943040401e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_H8_a6_l0",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 2.842170943040401e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_H8_a12_l0",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 2.842170943040401e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_H8_a1_l1",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 5.684341886080802e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_H8_a6_l1",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_H8_a12_l1",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_H8_inv_kc",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_R3",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_G7a",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_G7b",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_ENC_linear",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_ENC_16_16",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 2.842170943040401e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_H0_tanh",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_H0_zero",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_NO_TIME",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_G7c",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_G7d",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 2.842170943040401e-14,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_C11",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  },
+  {
+    "arm": "C17_C12",
+    "seed": 7,
+    "ok": true,
+    "max_delta": 0.0,
+    "sealed": true,
+    "no_test_key": true,
+    "sidecar": true,
+    "repro": true
+  }
+]

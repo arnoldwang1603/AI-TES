@@ -7,6 +7,7 @@ do `from .config import *`; runio/main also `from . import config` so they
 can read/write the mutable RUN_NAME live.
 """
 import os
+import json
 import random
 
 import numpy as np
@@ -52,6 +53,16 @@ HIDDEN_SIZE = int(os.environ.get("HIDDEN_SIZE", "128"))
 NUM_LAYERS = int(os.environ.get("NUM_LAYERS", "5"))
 DROPOUT = float(os.environ.get("DROPOUT", "0.3"))
 assert 8 <= HIDDEN_SIZE <= 1024 and 1 <= NUM_LAYERS <= 8 and 0.0 <= DROPOUT < 0.9
+# Round 10 / H9 (2026-10-11): nn.GRU applies dropout BETWEEN layers only, so at
+# NUM_LAYERS == 1 any DROPOUT is a no-op (models.py already passes 0.0). The
+# run name still carried the requested value, so one-layer dp0.2 / dp0.3 runs
+# were distinct directories holding the same model. Normalise here: every
+# one-layer run is tagged dp0.0, and preflight_arm_configs catches the
+# collision instead of launching a duplicate.
+if NUM_LAYERS == 1 and DROPOUT != 0.0:
+    print("NOTE: NUM_LAYERS=1 -> GRU dropout is a no-op; DROPOUT %g normalised to 0.0 (run name dp0.0)" % DROPOUT)
+    DROPOUT = 0.0
+_DP_TAG = "0.0" if NUM_LAYERS == 1 else "%g" % DROPOUT
 
 LATEST_PARAMS = dict(
     hidden_size=HIDDEN_SIZE,
@@ -311,6 +322,25 @@ assert ANCHOR_LEAD in (0, 1)
 LOSS_WEIGHTS = [float(x) for x in
                 os.environ.get("LOSS_WEIGHTS", "1,6,3").split(",")]
 assert len(LOSS_WEIGHTS) == 3, "LOSS_WEIGHTS needs 3 comma-separated values"
+LOSS_W0_MODE = os.environ.get("LOSS_W0_MODE", "").strip()
+assert LOSS_W0_MODE in ("", "inv_kc"), LOSS_W0_MODE
+if LOSS_W0_MODE:
+    assert TINNER_MODE == "anchor", "LOSS_W0_MODE=inv_kc needs the T_inner anchor"
+ENC_WIDTHS = os.environ.get("ENC_WIDTHS", "256,256").strip()
+ENC_WIDTHS_LIST = [int(v) for v in ENC_WIDTHS.split(",") if v.strip()]
+assert all(v > 0 for v in ENC_WIDTHS_LIST), ENC_WIDTHS
+H0_MODE = os.environ.get("H0_MODE", "linear").strip()
+assert H0_MODE in ("linear", "tanh", "zero"), H0_MODE
+INIT_ENCODER = os.environ.get("INIT_ENCODER", "point").strip()
+assert INIT_ENCODER in ("point", "window"), INIT_ENCODER
+EARLY_STEP_WEIGHT = float(os.environ.get("EARLY_STEP_WEIGHT", "1"))
+assert 0 < EARLY_STEP_WEIGHT <= 100, EARLY_STEP_WEIGHT
+INIT_BURNIN_STEPS = int(os.environ.get('INIT_BURNIN_STEPS', '0'))
+SYNTHETIC_REST_FILES = int(os.environ.get('SYNTHETIC_REST_FILES', '0'))
+assert 0 <= INIT_BURNIN_STEPS <= 200 and 0 <= SYNTHETIC_REST_FILES <= 100, 'invalid startup controls'
+CONSTANTS_FROM = os.environ.get('CONSTANTS_FROM', os.environ.get('FROZEN_CONSTANTS', '')).strip()
+if CONSTANTS_FROM:
+    assert os.path.isfile(CONSTANTS_FROM), 'missing frozen constants sidecar: %s' % CONSTANTS_FROM
 
 # Physics bound penalty (also from the LSTM recipe): T_avg must lie between
 # T_inner and T_outer. Verified on our data: holds at 98.76% of all timesteps
@@ -400,9 +430,21 @@ PHYSICS_BOUND_WEIGHT = float(os.environ.get("PHYSICS_BOUND_WEIGHT", "0.0"))
 #                 are detached, as in anchor_avg.
 OTHER_CH_MODE = os.environ.get("OTHER_CH_MODE", "abs")
 _OTHER_OK = ("abs", "persistence", "anchor", "anchor_avg", "anchor_avg_grad",
-             "pos_head")
+             "pos_head", "ratio_input", "anchor_initial")
 assert OTHER_CH_MODE in _OTHER_OK, \
     f"OTHER_CH_MODE must be one of {_OTHER_OK}, got {OTHER_CH_MODE!r}"
+RATIO_CHANNELS = os.environ.get("RATIO_CHANNELS", "R3").strip().upper()
+RATIO_REF = os.environ.get("RATIO_REF", "kelvin").strip().lower()
+assert RATIO_CHANNELS in ("R1", "R2", "R3"), RATIO_CHANNELS
+assert RATIO_REF in ("kelvin", "celsius20"), RATIO_REF
+RATIO_INDICES = {"R1": (1,), "R2": (1, 2), "R3": (0, 1, 2)}[RATIO_CHANNELS]
+PHYS_MODE = os.environ.get("PHYS_MODE", "").strip()
+PHYSICS_CACHE_DIR = os.environ.get("PHYSICS_CACHE_DIR", "").strip()
+assert PHYS_MODE in ("", "residual", "input", "input_residual"), PHYS_MODE
+if PHYS_MODE:
+    assert PHYSICS_CACHE_DIR and os.path.isdir(PHYSICS_CACHE_DIR), "PHYS_MODE needs an existing PHYSICS_CACHE_DIR"
+    assert OTHER_CH_MODE == "abs" and TOUTER_MODE == "abs", "physics and other reference heads are exclusive"
+    assert PHYSICS_BOUND_WEIGHT == 0, "physics residual heads require zero bound weight"
 
 
 def warmup_lr(epoch, base_lr, warmup_epochs=None):
@@ -554,6 +596,12 @@ INPUT_DIMS = {
 # (forward_direct only; the AR variants are untouched.)
 INPUT_LOOKAHEAD = int(os.environ.get("INPUT_LOOKAHEAD", "0"))
 assert 0 <= INPUT_LOOKAHEAD <= 30
+FEAT_COLS = os.environ.get("FEAT_COLS", "Time (s),Input Temperature (C)").strip()
+NO_TIME = FEAT_COLS.lower() in ("input temperature (c)", "input_t", "input", "no_time")
+assert NO_TIME or FEAT_COLS in ("Time (s),Input Temperature (C)", "time,input"), FEAT_COLS
+FORWARD_INPUT_INDEX = 0 if NO_TIME else 1
+if NO_TIME:
+    assert all(v == "forward_direct" for v in VARIANTS), "NO_TIME supports forward_direct only"
 
 # ------------------------------------------------------------
 # Case-flag input (2026-09-06, Round 7)
@@ -580,7 +628,7 @@ assert 0 <= INPUT_LOOKAHEAD <= 30
 # where VARIANTS is in scope.
 CASE_FLAG_INPUT = os.environ.get("CASE_FLAG_INPUT", "").strip().lower()
 assert CASE_FLAG_INPUT in ("", "case", "phase", "zero"), CASE_FLAG_INPUT
-INPUT_DIMS['forward_direct'] = 2 + INPUT_LOOKAHEAD + (1 if CASE_FLAG_INPUT else 0)
+INPUT_DIMS['forward_direct'] = (1 if NO_TIME else 2) + INPUT_LOOKAHEAD + (2 if PHYS_MODE in ('input', 'input_residual') else 0) + (1 if CASE_FLAG_INPUT else 0)
 INPUT_DIMS['abs_sliding'] += 1 if CASE_FLAG_INPUT else 0
 
 # EXCLUDE_BOTH_PHASE (Arnold, 2026-09-05): drop every run the case detector
@@ -796,6 +844,14 @@ else:
 #   from scratch; done.flag resume across seeds is unaffected).
 MODEL_SPLIT = os.environ.get("MODEL_SPLIT", "shared")
 assert MODEL_SPLIT in ("shared", "independent", "avg_only"), MODEL_SPLIT
+if OTHER_CH_MODE in ("ratio_input", "anchor_initial"):
+    assert MODEL_SPLIT == "shared" and TOUTER_MODE == "abs", "new heads require shared model and absolute T_outer"
+    assert PHYSICS_BOUND_WEIGHT == 0, "z heads require zero physics-bound weight"
+    assert all(v == "forward_direct" for v in VARIANTS), "new heads support forward_direct only"
+if PHYS_MODE:
+    assert MODEL_SPLIT == "shared" and all(v == "forward_direct" for v in VARIANTS), "physics modes require shared forward_direct"
+if OTHER_CH_MODE == "ratio_input" and RATIO_CHANNELS == "R3":
+    assert TINNER_MODE != "anchor", "R3 replaces the T_inner anchor; set TINNER_MODE=arfed"
 # Output-channel groups, one model (and one training stage) per group.
 MODEL_GROUPS = {"shared": None,
                 "independent": ((0,), (1,), tuple(range(2, OUTPUT_SIZE))),
@@ -873,16 +929,187 @@ if TRAIN_EXCLUDE_TYPE:
     assert TRAIN_EXCLUDE_TYPE.isdigit(), "TRAIN_EXCLUDE_TYPE is the case-type number, got %r" % TRAIN_EXCLUDE_TYPE
     assert VAL_SPLIT == "stratified", "TRAIN_EXCLUDE_TYPE needs VAL_SPLIT=stratified (the frozen split is filtered)"
 
+# ------------------------------------------------------------
+# Split file (2026-10-11, Round 10 / H1)
+# ------------------------------------------------------------
+# SPLIT_NAME = "" (default: the legacy formula stratified_v<VAL_PER_TYPE>_s<SPLIT_SEED>.json)
+#            | the basename of a json in splits/. Besides the legacy keys a
+#            split json may carry `drop` (files removed from the training
+#            pool before anything else -- never test files), `tavg_mask`
+#            (H2), `tag` (the run-name token, e.g. vs3; default vs<N>) and
+#            `split_name`. The json is read again, and validated, in
+#            data.load_all_data; here only the tag is needed for RUN_NAME.
+SPLIT_NAME = os.environ.get("SPLIT_NAME", "").strip()
+SPLIT_TAG = "vs%d" % VAL_PER_TYPE
+if SPLIT_NAME:
+    assert VAL_SPLIT == "stratified", "SPLIT_NAME needs VAL_SPLIT=stratified"
+    assert os.path.basename(SPLIT_NAME) == SPLIT_NAME and SPLIT_NAME.endswith(".json"), \
+        "SPLIT_NAME is the basename of a json in splits/, got %r" % SPLIT_NAME
+    _split_p = os.path.join(BASE_DIR, "splits", SPLIT_NAME)
+    assert os.path.isfile(_split_p), "SPLIT_NAME: %s does not exist" % _split_p
+    _split_tag = json.load(open(_split_p, encoding="utf-8")).get("tag")
+    if _split_tag:
+        assert str(_split_tag).isalnum(), "split tag must be alphanumeric, got %r" % (_split_tag,)
+        SPLIT_TAG = str(_split_tag)
+
+
+# ------------------------------------------------------------
+# Per-file T_avg loss mask (2026-10-11, Round 10 / H2)
+# ------------------------------------------------------------
+# TAVG_MASK = ""            legacy: every file's T_avg label is trained on
+#           | "split"       the json's `tavg_mask` list: those training files
+#                           lose their T_avg term in the loss, those validation
+#                           files are excluded from the T_avg part of the
+#                           validation scalar (tag mk)
+#           | "random:<s>"  B7 control: the SAME NUMBER of training files as
+#                           the json masks among training files, drawn
+#                           uniformly from the training list with seed s;
+#                           validation mask = the json's (tag mkr<s>)
+#           | "valonly"     B8 control: training labels untouched, validation
+#                           mask = the json's (tag mkv)
+# The dataset carries a per-file loss_mask (3,) with the T_avg entry 0 when
+# masked; models.weighted_loss and train.validate_epoch consume it. The
+# scaler fit is untouched. data.get_tavg_mask_sets is the single routing
+# point for every later T_avg statistic (A4, H5, H6).
+TAVG_MASK = os.environ.get("TAVG_MASK", "").strip()
+TAVG_MASK_SEED = None
+TAVG_MASK_TAG = ""
+if TAVG_MASK:
+    assert VAL_SPLIT == "stratified", "TAVG_MASK needs VAL_SPLIT=stratified (the mask lives in the split json)"
+    assert PHYSICS_BOUND_WEIGHT == 0.0, "TAVG_MASK and PHYSICS_BOUND_WEIGHT > 0 are exclusive (masked files have no T_avg term)"
+    if TAVG_MASK.startswith("random:"):
+        TAVG_MASK_SEED = int(TAVG_MASK.split(":", 1)[1])
+        TAVG_MASK_TAG = "mkr%d" % TAVG_MASK_SEED
+    elif TAVG_MASK == "split":
+        TAVG_MASK_TAG = "mk"
+    elif TAVG_MASK == "valonly":
+        TAVG_MASK_TAG = "mkv"
+    else:
+        raise AssertionError("TAVG_MASK must be '', split, valonly or random:<seed>, got %r" % TAVG_MASK)
+
+
+# ------------------------------------------------------------
+# Algebraic T_avg relabel (2026-10-11, Round 10 / A4)
+# ------------------------------------------------------------
+# RELABEL_CSV = ""  (default) labels as given
+#             | the label table tavg_convention_by_file.csv (a basename in
+#               splits/, or a path). For every TRAINING / VALIDATION file the
+#               table marks inner-weighted or borderline, with inner share
+#               s = inner_share_pct / 100, T_avg is replaced by the line
+#               average  T_line = (T_avg - s * T_inner) / (1 - s)  in
+#               data.load_all_data -- before the scaler fit and before any
+#               mask logic. Test files are never relabelled. Tag `rl`; path
+#               + sha256 into run_config.json; eval_checkpoint re-applies it.
+RELABEL_CSV = os.environ.get("RELABEL_CSV", "").strip()
+RELABEL_CSV_PATH = None
+RELABEL_TAG = ""
+if RELABEL_CSV:
+    _rl = RELABEL_CSV
+    if not (os.path.isabs(_rl) or "/" in _rl or os.sep in _rl):
+        _rl = os.path.join(BASE_DIR, "splits", _rl)
+    assert os.path.isfile(_rl), "RELABEL_CSV: %s does not exist" % _rl
+    RELABEL_CSV_PATH = os.path.normpath(_rl)
+    RELABEL_TAG = "rl"
+
+
+def split_file_name():
+    """Basename of the split json in use (legacy formula unless SPLIT_NAME)."""
+    return SPLIT_NAME or "stratified_v{}_s{}.json".format(VAL_PER_TYPE, SPLIT_SEED)
+
+
+def split_file_path():
+    return os.path.join(BASE_DIR, "splits", split_file_name())
+
+
+# ------------------------------------------------------------
+# TF32 (2026-10-11, Round 10 / H9)
+# ------------------------------------------------------------
+# Nothing pinned the Ampere+ TF32 switches before Round 10, so the numbers
+# depended on the framework default and on the GPU generation.
+#   "0"      (default) matmul.allow_tf32 = cudnn.allow_tf32 = False: exact
+#            fp32 on every GPU. New Round 10 runs.
+#   "1"      both True.
+#   "legacy" the torch default every run through Round 9 actually used:
+#            matmul False, cuDNN True. Verified 2026-10-11 on the 4090: it
+#            reproduces the champion's archived predictions.npz BIT-FOR-BIT
+#            (3 test cases, every step but the H9-fixed last one), whereas
+#            "0" and "1" differ from it by 1e-2 .. 6e-2 C per step. Use it
+#            for every re-score of a pre-Round-10 checkpoint
+#            (eval_checkpoint does so by default when run_config.json has
+#            no tf32 key).
+# Applied in set_seed (every seed, and eval_checkpoint's re-import); recorded
+# in run_config.json with the torch / CUDA / cuDNN versions and the GPU name.
+# Tags: "1" -> tf32, "legacy" -> tf32c, "0" -> none (legacy names unchanged).
+TF32 = os.environ.get("TF32", "0").strip()
+assert TF32 in ("0", "1", "legacy"), "TF32 must be 0, 1 or legacy, got %r" % TF32
+
+
+def tf32_switches(mode):
+    """(matmul_allow_tf32, cudnn_allow_tf32) for a TF32 knob value."""
+    return (mode == "1", mode in ("1", "legacy"))
+
+
+TF32_MATMUL, TF32_CUDNN = tf32_switches(TF32)
+TF32_ENABLED = (TF32 != "0")           # any TF32 switch on
+
+# ------------------------------------------------------------
+# SEAL_TEST (2026-10-11, Round 10 / H3)
+# ------------------------------------------------------------
+# "1": a training run never scores the test set. main.py scores the
+#      VALIDATION files through the same test_model path instead (masked
+#      files unscored on T_avg), writes Val_<metric> keys to meta.json,
+#      summary_errors_val.csv / predictions_val.npz, and "sealed": true to
+#      run_config.json and meta; no Test_* key is ever written. The test set
+#      is read once, later, by eval_checkpoint --set test (F11). A sealed and
+#      a test-scored run share a run name (no tag); the done.flag resume
+#      refuses to reuse one as the other (main.check_cached_meta_seal).
+# "0": (default) the legacy flow -- train, then score the 70 test cases.
+SEAL_TEST = os.environ.get("SEAL_TEST", "0").strip() not in ("0", "", "false", "False")
+
 _LW = "-".join(f"{w:g}" for w in LOSS_WEIGHTS)
 _VTAG = "-".join(VARIANTS)
 # Run-name scheme (2026-08-06 rebuild): only the knobs that VARY between runs
 # are folded in; constants (epoch cap, ES patience, pad mode when default) live
 # in run_config.json. Kept short deliberately -- the old scheme plus new tags
 # was pushing full plot paths toward the Windows 260-char limit.
-_parts = [f"2026-08-06_{_VTAG}", f"W{WINDOW_SIZE}",
-          f"Tin-{TINNER_MODE}", f"l{ANCHOR_LEAD}", f"w{_LW}",
-          f"oth-{OTHER_CH_MODE}",
-          f"h{HIDDEN_SIZE}x{NUM_LAYERS}dp{DROPOUT:g}"]
+# RUN_PREFIX (2026-10-12): the leading token used to be the fixed string
+# "2026-08-06" (the date of the naming rebuild), which read like a run date.
+# Round 10 runs are prefixed "r10"; set RUN_PREFIX=2026-08-06 to rebuild a
+# Round 9 name. run_round9.RUN_PREFIX reads the same env var.
+RUN_PREFIX = os.environ.get("RUN_PREFIX", "r10").strip() or "r10"
+_parts = [f"{RUN_PREFIX}_{_VTAG}"]
+if any(v != "forward_direct" for v in VARIANTS):
+    _parts.append(f"W{WINDOW_SIZE}")             # window matters for sliding variants only
+_parts += [f"Tin-{TINNER_MODE}", f"l{ANCHOR_LEAD}", f"w{_LW}",
+           f"oth-{OTHER_CH_MODE}",
+           f"h{HIDDEN_SIZE}x{NUM_LAYERS}dp{_DP_TAG}"]
+if LOSS_W0_MODE:
+    _parts.append("w0ikc")
+if ENC_WIDTHS != "256,256":
+    _parts.append("enc" + ("-".join(str(v) for v in ENC_WIDTHS_LIST) or "l"))
+if H0_MODE != "linear":
+    _parts.append("h0t" if H0_MODE == "tanh" else "h0z")
+if INIT_ENCODER != "point":
+    _parts.append("ew%d" % WINDOW_SIZE)
+if NO_TIME:
+    assert POS_TIME_PRIOR == "0", "NO_TIME cannot use a position time prior"
+    _parts.append("nt")
+if EARLY_STEP_WEIGHT != 1:
+    _parts.append("esw%g" % EARLY_STEP_WEIGHT)
+if OTHER_CH_MODE == "ratio_input":
+    _parts.append("rt%s%s" % (RATIO_CHANNELS, "k" if RATIO_REF == "kelvin" else "c"))
+if OTHER_CH_MODE == "anchor_initial":
+    _parts.append("init")
+if PHYS_MODE:
+    _parts.append("ph" + {"residual": "r", "input": "i", "input_residual": "ir"}[PHYS_MODE])
+if INIT_BURNIN_STEPS:
+    _parts.append('bi%d' % INIT_BURNIN_STEPS)
+if SYNTHETIC_REST_FILES:
+    _parts.append('rest%d' % SYNTHETIC_REST_FILES)
+if CONSTANTS_FROM:
+    import hashlib
+    with open(CONSTANTS_FROM, 'rb') as _frozen_file:
+        _parts.append('cf' + hashlib.sha256(_frozen_file.read()).hexdigest()[:12])
 if INPUT_LOOKAHEAD:
     _parts.append(f"la{INPUT_LOOKAHEAD}")
 if CASE_FLAG_INPUT:
@@ -929,9 +1156,17 @@ if MODEL_SPLIT == "independent":
 elif MODEL_SPLIT == "avg_only":
     _parts.append("inda")
 if VAL_SPLIT == "stratified":
-    _parts.append("vs%d" % VAL_PER_TYPE)
+    _parts.append(SPLIT_TAG)                 # vs<N>, or the json's tag (vs3) under SPLIT_NAME (H1)
+    if TAVG_MASK_TAG:
+        _parts.append(TAVG_MASK_TAG)         # mk / mkr<seed> / mkv (H2)
+if RELABEL_TAG:
+    _parts.append(RELABEL_TAG)               # rl: algebraically relabelled T_avg (A4)
 if TRAIN_EXCLUDE_TYPE:
     _parts.append("xt%s" % TRAIN_EXCLUDE_TYPE)      # leave-one-type-out fold
+if TF32 == "1":
+    _parts.append("tf32")                    # H9: both TF32 switches on
+elif TF32 == "legacy":
+    _parts.append("tf32c")                   # H9: cuDNN-only TF32 (pre-Round-10 numerics)
 if SLIDING_PAD_MODE != "variable":
     _parts.append(SLIDING_PAD_MODE)
 RUN_NAME_BASE = "_".join(_parts)
@@ -1019,7 +1254,8 @@ NEW_DATA_ROOT_CANDIDATES = [
 #     NEW_DATA_ROOT_ABSOLUTE = "/home/<user>/calit2-thermal-wiki/raw/R199 299 AI-TES Project_Arnold Team/2026 Spring/ML Group/data"  # Linux
 #     NEW_DATA_ROOT_ABSOLUTE = "/Users/<user>/.../ML Group/data"           # macOS
 # =============================================================
-NEW_DATA_ROOT_ABSOLUTE = ""  # <-- TODO: set to your absolute data path, or leave "" if relative paths work
+DATA_ROOT = os.environ.get("DATA_ROOT", "").strip()
+NEW_DATA_ROOT_ABSOLUTE = DATA_ROOT
 
 # Legacy fallback (old 177-file dataset under
 # raw/ML-model-for-thermal-predictions/data/) -- only used if every
@@ -1058,6 +1294,25 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    # H9: pin the TF32 switches (process-global) on every seed.
+    torch.backends.cuda.matmul.allow_tf32 = TF32_MATMUL
+    torch.backends.cudnn.allow_tf32 = TF32_CUDNN
+
+
+def runtime_env_info():
+    """torch / CUDA / cuDNN versions, GPU name and the TF32 switches as they
+    are set right now -- written to run_config.json (H9) so a result can be
+    tied to the numerics it was produced with."""
+    info = {
+        'tf32': TF32,
+        'torch': str(torch.__version__),
+        'cuda': str(torch.version.cuda) if torch.version.cuda else None,
+        'cudnn': torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None,
+        'gpu': torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        'tf32_matmul': bool(torch.backends.cuda.matmul.allow_tf32),
+        'tf32_cudnn': bool(torch.backends.cudnn.allow_tf32),
+    }
+    return info
 
 
 set_seed(SEED)

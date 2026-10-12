@@ -1,0 +1,852 @@
+design,seed,family,channel,file,MAE
+ID,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 16.csv,0.1490301662021213
+ID,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 16.csv,195.10341088904275
+ID,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 5.csv,0.5642776913113065
+ID,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 5.csv,158.62487783696918
+ID,7,Case 1 (linear charging),T_avg,Case 1 (linear charging)/Case new 5.csv,232.30121260339317
+ID,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 1.csv,1.0749558872646756
+ID,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 1.csv,298.82118755578995
+ID,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 1.csv,325.27921837233134
+ID,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 17.csv,0.16734921137491862
+ID,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 17.csv,237.2974993666013
+ID,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 17.csv,259.3999546822652
+ID,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 22.csv,0.6107544369167752
+ID,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 22.csv,304.7326036784384
+ID,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 22.csv,399.64487676599657
+ID,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 3.csv,0.4251692559983995
+ID,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 3.csv,175.43213871585
+ID,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 3.csv,249.84528377700676
+ID,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 15.csv,0.3268116209242079
+ID,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 15.csv,230.7008884297477
+ID,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 15.csv,305.6609297208837
+ID,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 17.csv,0.4310975604587131
+ID,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 17.csv,139.5512908909056
+ID,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 17.csv,212.04338327311368
+ID,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 15.csv,0.12712779574924046
+ID,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 15.csv,299.216668732961
+ID,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 15.csv,359.5725068263037
+ID,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 19.csv,0.1226613998413086
+ID,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 19.csv,154.31300122208066
+ID,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 19.csv,207.1340143548855
+ID,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 21.csv,0.794985580444336
+ID,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 21.csv,141.61844763358434
+ID,7,Case 5 (Linear charging + constant),T_avg,Case 5 (Linear charging + constant)/Case 21.csv,223.11144139232346
+ID,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 23.csv,0.2704015519883898
+ID,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 23.csv,149.5666734404034
+ID,7,Case 5 (Linear charging + constant),T_avg,Case 5 (Linear charging + constant)/Case 23.csv,214.18858477016653
+ID,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 10.csv,1.647314809428321
+ID,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 10.csv,63.80107303327984
+ID,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 10.csv,132.70033610368588
+ID,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 11.csv,0.20077909098731148
+ID,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 11.csv,18.45985934999254
+ID,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 11.csv,65.25817897982714
+ID,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 14.csv,2.1313926537831622
+ID,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 14.csv,175.61619740857017
+ID,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 14.csv,251.18848758018189
+ID,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 3.csv,0.6392692459954156
+ID,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 3.csv,206.08985344833798
+ID,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 3.csv,277.3182696762443
+ID,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 16 - Darien.csv,0.7007211685180664
+ID,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 16 - Darien.csv,352.5073508090443
+ID,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 16 - Darien.csv,395.6675977730179
+ID,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 18 - Darien.csv,1.0730470657348632
+ID,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 18 - Darien.csv,366.1169706609514
+ID,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 18 - Darien.csv,397.35666135939147
+ID,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 1 (Tejas).csv,0.14804467095269097
+ID,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 1 (Tejas).csv,380.0364517543051
+ID,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 4 (Tejas).csv,0.15367533365885416
+ID,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 4 (Tejas).csv,483.6916001227167
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 1.csv,0.13861434194776748
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 1.csv,64.68100425336095
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 10.csv,0.14519577026367186
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 10.csv,149.3562281317181
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 11.csv,0.14641825358072916
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 11.csv,168.3479629887475
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 12.csv,0.14946537017822265
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 12.csv,216.48140289386114
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 13.csv,0.1450156635708279
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 13.csv,128.3913163304329
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 14.csv,0.14877871407402887
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 14.csv,183.83208906120723
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 15.csv,0.14734388987223307
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 15.csv,167.53903051084941
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 16.csv,0.1502104123433431
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 16.csv,200.07737816969555
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 17.csv,0.1453183439042833
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 17.csv,106.13532230191761
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 18.csv,0.14862024519178602
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 18.csv,142.18984775278304
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 19.csv,0.14795322418212892
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 19.csv,177.00963557826148
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 2.csv,0.14028370115492078
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 2.csv,73.18596440487438
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 20.csv,0.1484744389851888
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 20.csv,179.09711262517504
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 3.csv,0.14194821251763237
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 3.csv,81.19465127786
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 4.csv,0.14305191569858128
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 4.csv,89.31859184304874
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 5.csv,0.144707277086046
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 5.csv,96.64045562479231
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 6.csv,0.14691301451789007
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 6.csv,104.35071303976906
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 7.csv,0.14151528146531847
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 7.csv,92.09036032888625
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 8.csv,0.142744074927436
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 8.csv,111.1248476571507
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case 9.csv,0.1439714855617947
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case 9.csv,130.30045132372115
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 10.csv,0.13247578408983018
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 10.csv,95.40488051043616
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 11.csv,0.1282038688659668
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 11.csv,166.60961267153422
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 12.csv,0.13216787974039715
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 12.csv,212.40276710192362
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 13.csv,0.13070390489366318
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 13.csv,191.8390356010861
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 14.csv,0.13091419008043076
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 14.csv,195.7335353559918
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 15.csv,0.12643258306715224
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 15.csv,113.86180089049869
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 16.csv,0.12812062369452581
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 16.csv,155.91914502779642
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 17.csv,0.135814815097385
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 17.csv,185.07402816348605
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 18 (1 second step).csv,0.1192186090681288
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 18 (1 second step).csv,106.0621242304643
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 4.csv,0.29589718712700736
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 4.csv,311.36112418572105
+LOTO,7,Case 1 (linear charging),T_avg,Case 1 (linear charging)/Case new 4.csv,379.8477358954325
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 5.csv,0.5632109112209744
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 5.csv,163.55123294326995
+LOTO,7,Case 1 (linear charging),T_avg,Case 1 (linear charging)/Case new 5.csv,231.6075541345519
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 6.csv,0.13526810540093315
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 6.csv,136.96840033663645
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 7.csv,0.1295678562588162
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 7.csv,151.60571305619345
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 8.csv,0.13919555875990125
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 8.csv,176.95696114301683
+LOTO,7,Case 1 (linear charging),T_inner,Case 1 (linear charging)/Case new 9.csv,0.1306049558851454
+LOTO,7,Case 1 (linear charging),T_outer,Case 1 (linear charging)/Case new 9.csv,129.38620792892243
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 1.csv,0.9393229007720947
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 1.csv,108.94090005689198
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 1.csv,198.65747858186563
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 10.csv,0.7333153088887533
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 10.csv,139.64425175322427
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 10.csv,221.7852689590512
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 11.csv,0.024041758643256292
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 11.csv,68.39176917341021
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 11.csv,119.55209868165095
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 12.csv,0.023855484856499565
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 12.csv,116.40081563658184
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 12.csv,170.28365615457295
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 13.csv,0.023295243581136067
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 13.csv,164.42998929686016
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 13.csv,221.02092921598813
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 14.csv,0.02063804202609592
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 14.csv,212.71260673999785
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 14.csv,271.9378157316293
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 15.csv,0.018167071872287326
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 15.csv,261.02092172967065
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 15.csv,322.8625329516608
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 16.csv,0.015861638387044272
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 16.csv,309.3461238596174
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 16.csv,373.7871823250303
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 17.csv,0.014614613850911458
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 17.csv,357.7235156999694
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 17.csv,424.7431576092417
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 18.csv,0.013501336839463975
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 18.csv,406.6680327097575
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 18.csv,476.11873784627403
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 19.csv,1.2084293948279488
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 19.csv,178.52821349832746
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 19.csv,287.5600742340243
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 2.csv,0.43367569181654186
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 2.csv,85.80289392603768
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 2.csv,152.3291327666336
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 20.csv,0.8639400906032986
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 20.csv,233.49916734430525
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 20.csv,331.686055067492
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 21.csv,0.8443041854434543
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 21.csv,145.39923609097798
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 21.csv,235.3883712471631
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 22.csv,0.6120864656236437
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 22.csv,309.263829281595
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 22.csv,401.9381072063232
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 3.csv,0.4259345054626465
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 3.csv,179.5462315215005
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 3.csv,251.92185635966146
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 4.csv,0.413966433207194
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 4.csv,274.44777182473075
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 4.csv,352.42230483422367
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 5.csv,0.6787704679701063
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 5.csv,99.52893359131284
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 5.csv,177.19840490920987
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 6.csv,0.9210625012715657
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 6.csv,112.29741850561565
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 6.csv,201.16843378113893
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 7.csv,0.18852769533793132
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 7.csv,70.95274867349201
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 7.csv,126.40814225058097
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 8.csv,0.4818539513481988
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 8.csv,82.08219266864988
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 8.csv,149.51503390468812
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case 9.csv,0.47368595335218644
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case 9.csv,175.76729648510616
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case 9.csv,249.0437271477357
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 1 (Tejas).csv,0.14401313993665907
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 1 (Tejas).csv,137.08222687774236
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 1.csv,0.11724872589111328
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 1.csv,178.38482121096717
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case new 1.csv,237.54623842603243
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 2 (Tejas).csv,0.14818139606051975
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 2 (Tejas).csv,198.18989756239785
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 2.csv,0.36880623499552406
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 2.csv,176.41538408464857
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case new 2.csv,243.74696652259834
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 3 (Tejas).csv,0.1423620859781901
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 3 (Tejas).csv,107.46578259203169
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 3.csv,0.5467277314927843
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 3.csv,287.0023612525728
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case new 3.csv,367.63052856777665
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 4 (Tejas).csv,0.14605170355902777
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 4 (Tejas).csv,159.1841159939766
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 4.csv,0.33239417605929905
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 4.csv,294.4705695271492
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case new 4.csv,367.8932820218046
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 5 (Tejas).csv,0.1524070315890842
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 5 (Tejas).csv,209.28548942274517
+LOTO,7,Case 2 (Nonlinear Charging),T_inner,Case 2 (Nonlinear Charging)/Case new 5.csv,0.6267243491278754
+LOTO,7,Case 2 (Nonlinear Charging),T_outer,Case 2 (Nonlinear Charging)/Case new 5.csv,230.97943260537252
+LOTO,7,Case 2 (Nonlinear Charging),T_avg,Case 2 (Nonlinear Charging)/Case new 5.csv,310.41088307531834
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 1.csv,0.7482880486382378
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 1.csv,135.50009039375516
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 1.csv,218.61585755498768
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 10.csv,0.35590429306030275
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 10.csv,226.63014775514603
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 10.csv,299.6442443229142
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 11.csv,0.31051403681437173
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 11.csv,130.41941744618947
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 11.csv,195.49257154619036
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 12.csv,0.30696129269070094
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 12.csv,207.04920754962498
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 12.csv,276.87383961806125
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 13.csv,0.6055356343587239
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 13.csv,190.01767538521025
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 13.csv,271.06162313513664
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 14.csv,0.22994717491997613
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 14.csv,276.9638275080257
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 14.csv,346.9061277640143
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 15.csv,0.32777184380425345
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 15.csv,234.984417075581
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 15.csv,307.3885268653976
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 16.csv,0.25159490373399523
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 16.csv,264.21261277861066
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 16.csv,334.6993742351808
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 17.csv,0.4319978396097819
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 17.csv,143.62764983177186
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 17.csv,213.67852123469734
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 18.csv,0.3306813134087457
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 18.csv,283.56046374903786
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 18.csv,358.25424270782645
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 19.csv,0.3760019620259603
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 19.csv,136.50224875873988
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 19.csv,204.292098635633
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 2.csv,0.5134659343295627
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 2.csv,224.66855013105604
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 2.csv,304.472199280886
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 20.csv,0.3143538369072808
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 20.csv,155.8922847482893
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 20.csv,222.10219238625788
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 3.csv,0.7200533548990885
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 3.csv,117.0865609659089
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 3.csv,197.59778246655412
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 4.csv,0.2646510230170356
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 4.csv,312.2488675779766
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 4.csv,386.71951099993765
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 5.csv,0.343554327223036
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 5.csv,270.83678945038054
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 5.csv,346.10043540263496
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 6.csv,0.35173346201578776
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 6.csv,274.636909365654
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 6.csv,350.127578357514
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 7.csv,0.4037960052490234
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 7.csv,231.43430623080997
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 7.csv,306.5129902100747
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 8.csv,0.6164766841464573
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 8.csv,173.89102601740095
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 8.csv,254.21613573434814
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case 9.csv,0.09975518120659722
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case 9.csv,361.09195086691113
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case 9.csv,429.46495090311447
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new 10.csv,0.1259778658548991
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new 10.csv,127.3023167014122
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new 11.csv,0.13377222485012477
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new 11.csv,205.56688682635624
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new 13.csv,0.13203898535834419
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new 13.csv,237.6971873773469
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new 6.csv,0.13226802614000108
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new 6.csv,147.6623820066452
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new 7.csv,0.12703069051106772
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new 7.csv,125.78463915321562
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new 8.csv,0.13088484870062933
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new 8.csv,181.34779737790424
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new 9.csv,0.14140001932779947
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new 9.csv,284.40468213160835
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new_1.csv,0.6208297835456
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new_1.csv,106.41112222406599
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new_2.csv,0.3644031630622016
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new_2.csv,147.40043286482492
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case new_2.csv,211.33501631131446
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new_3.csv,0.33308244281344945
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new_3.csv,202.07113936079872
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case new_3.csv,268.23018808873735
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new_4.csv,0.3117575963338216
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new_4.csv,248.93647410737142
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case new_4.csv,316.86348253240703
+LOTO,7,Case 3 (Charging with noise),T_inner,Case 3 (Charging with noise)/Case new_5.csv,0.2844789081149631
+LOTO,7,Case 3 (Charging with noise),T_outer,Case 3 (Charging with noise)/Case new_5.csv,274.2011473496755
+LOTO,7,Case 3 (Charging with noise),T_avg,Case 3 (Charging with noise)/Case new_5.csv,342.6819098715295
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 1.csv,0.279766313234965
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 1.csv,24.116635876893998
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 1.csv,67.91344846970557
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 10.csv,0.14405770831637912
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 10.csv,88.00571719275581
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 10.csv,134.53378066321213
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 11.csv,0.1266503863864475
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 11.csv,159.17708135181005
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 11.csv,209.16395307981617
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 12.csv,0.13069903055826823
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 12.csv,204.87899364497926
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 12.csv,256.557472726867
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 14.csv,0.15954403347439236
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 14.csv,220.51492496993808
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 14.csv,274.3051001837982
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 15.csv,0.1284439934624566
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 15.csv,303.8449726316664
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 15.csv,360.8448609983911
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 16.csv,0.13467928568522136
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 16.csv,345.46151578161454
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 16.csv,405.31884103654886
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 17.csv,0.17248418596055773
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 17.csv,406.74366863833535
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 17.csv,470.3720597937367
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 18.csv,0.13210472530788844
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 18.csv,432.2501030312644
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 18.csv,495.92708267226766
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 19.csv,0.12357167137993706
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 19.csv,158.55988884104622
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 19.csv,208.39297498062433
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 2.csv,0.2787114143371582
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 2.csv,72.27510820229848
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 2.csv,119.18697606156347
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 20.csv,0.14938152101304797
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 20.csv,161.33745181825427
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 20.csv,211.8621030450889
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 3.csv,0.27475812700059676
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 3.csv,120.3206080728107
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 3.csv,169.9222685745154
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 4.csv,0.26950790617201065
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 4.csv,168.3488998360104
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 4.csv,220.63662242168664
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 5.csv,0.26316533618503146
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 5.csv,216.64199776914384
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 5.csv,271.53007087213916
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 6.csv,0.2566439946492513
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 6.csv,264.9406643999947
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 6.csv,322.4187349168519
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 7.csv,0.24977298312717014
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 7.csv,313.2424519207743
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 7.csv,373.300183749728
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 8.csv,0.24548072814941407
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 8.csv,361.65658248795404
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 8.csv,424.2847311169879
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case 9.csv,0.2455291536119249
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case 9.csv,410.625483669175
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case 9.csv,475.61801823186556
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case New 13 (Tejas).csv,0.1435856819152832
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case New 13 (Tejas).csv,156.09113504224354
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case New 14 (Tejas).csv,0.156899897257487
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case New 14 (Tejas).csv,318.024298063914
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case New 15 (Tejas).csv,0.1643450631035699
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case New 15 (Tejas).csv,472.5651713901096
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case New 16 (Tejas).csv,0.15313812891642253
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case New 16 (Tejas).csv,264.65808306535087
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case New 17 (Tejas).csv,0.1576708263821072
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case New 17 (Tejas).csv,334.8668382181062
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 1.csv,0.1525555928548177
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 1.csv,352.0206564015812
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 10.csv,0.14144699308607314
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 10.csv,115.51655629343456
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case new 10.csv,164.79449483359673
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 11.csv,0.13960789574517143
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 11.csv,133.27573955456415
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 12.csv,0.1405307133992513
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 12.csv,141.8658755434884
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 2.csv,0.15551846822102863
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 2.csv,400.91017151408727
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 3.csv,0.15432696872287327
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 3.csv,381.3209471795294
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 4.csv,0.158048947652181
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 4.csv,393.0998011059231
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 5.csv,0.786637274424235
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 5.csv,221.28409971661037
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Case new 5.csv,282.70064493050256
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 6.csv,0.15040160285101997
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 6.csv,320.3831321424908
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 7.csv,0.15109225379096136
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 7.csv,296.1446515176031
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 8.csv,0.1482073254055447
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 8.csv,275.55694589482414
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Case new 9.csv,0.1393875069088406
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Case new 9.csv,103.16028627024757
+LOTO,7,Case 4 (Linear Charging+Discharging),T_inner,Case 4 (Linear Charging+Discharging)/Casw 13.csv,0.12686051262749565
+LOTO,7,Case 4 (Linear Charging+Discharging),T_outer,Case 4 (Linear Charging+Discharging)/Casw 13.csv,256.5172039164437
+LOTO,7,Case 4 (Linear Charging+Discharging),T_avg,Case 4 (Linear Charging+Discharging)/Casw 13.csv,311.48308821604326
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 1.csv,1.5926008754306369
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 1.csv,154.88437917364968
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 10.csv,0.8047601381937662
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 10.csv,124.3331255555153
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 11.csv,0.8119767400953505
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 11.csv,213.6527656197548
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 12.csv,0.8089529461330838
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 12.csv,305.3056773848004
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 13.csv,1.4183779080708823
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 13.csv,130.82445653147167
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 14.csv,0.6584890418582492
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 14.csv,94.51156466007232
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 15.csv,0.6568322711520724
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 15.csv,186.48935288058388
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 16.csv,0.6433657540215386
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 16.csv,279.9203258792559
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 17.csv,0.2692527453104655
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 17.csv,74.00990048117107
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 18.csv,0.27032658259073894
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 18.csv,168.49321077929602
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 19.csv,0.25965419345431856
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 19.csv,263.8807515276803
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 2.csv,0.7431640519036187
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 2.csv,108.06193252007166
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 20.csv,0.25270858340793184
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 20.csv,359.7872930659188
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 21.csv,0.7967570728725857
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 21.csv,142.02703697813882
+LOTO,7,Case 5 (Linear charging + constant),T_avg,Case 5 (Linear charging + constant)/Case 21.csv,222.15559240152749
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 22.csv,0.495651732550727
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 22.csv,248.15931733316845
+LOTO,7,Case 5 (Linear charging + constant),T_avg,Case 5 (Linear charging + constant)/Case 22.csv,325.51383502207335
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 23.csv,0.272018739912245
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 23.csv,149.98388038476307
+LOTO,7,Case 5 (Linear charging + constant),T_avg,Case 5 (Linear charging + constant)/Case 23.csv,213.26425631576242
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 24.csv,0.5226950539482964
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 24.csv,285.3299416515562
+LOTO,7,Case 5 (Linear charging + constant),T_avg,Case 5 (Linear charging + constant)/Case 24.csv,366.1646310557974
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 25.csv,0.704412375556098
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 25.csv,278.12376862366995
+LOTO,7,Case 5 (Linear charging + constant),T_avg,Case 5 (Linear charging + constant)/Case 25.csv,364.9896643479859
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 3.csv,0.7448965390523274
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 3.csv,198.74149573644002
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 4.csv,0.7362033632066515
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 4.csv,291.2413309680091
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 5.csv,0.30820727348327637
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 5.csv,81.29755292336147
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 6.csv,0.3123977979024251
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 6.csv,175.00212662882274
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 7.csv,0.3022881189982096
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 7.csv,269.78684415949715
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 8.csv,0.2959713829888238
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 8.csv,365.3511271887355
+LOTO,7,Case 5 (Linear charging + constant),T_inner,Case 5 (Linear charging + constant)/Case 9.csv,1.7246802382998996
+LOTO,7,Case 5 (Linear charging + constant),T_outer,Case 5 (Linear charging + constant)/Case 9.csv,184.1126254386372
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 1.csv,1.4905182732476128
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 1.csv,138.85642159779866
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 1.csv,216.80999112731985
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 10.csv,1.6473965366681418
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 10.csv,65.8968558245235
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 10.csv,135.52206837319795
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 11.csv,0.20091229279836018
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 11.csv,21.275623040066826
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 11.csv,67.95799055381342
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 12.csv,0.1996052000257704
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 12.csv,69.80332117213143
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 12.csv,119.31014749992043
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 13.csv,0.19579090542263455
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 13.csv,117.81666408247418
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 13.csv,170.1056010133742
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 14.csv,0.1909480200873481
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 14.csv,165.85445765654245
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 14.csv,220.91539668673002
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 15.csv,0.18594724867078993
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 15.csv,214.12645237445832
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 15.csv,271.8890579308668
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 16.csv,0.1805052227444119
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 16.csv,262.3924225886663
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 16.csv,322.83892315158545
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 17.csv,0.17498512268066407
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 17.csv,310.71598637633855
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 17.csv,373.8550871209914
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 18.csv,0.1711830774943034
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 18.csv,359.05911702712376
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 18.csv,424.81619929361494
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 19.csv,0.17098617553710938
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 19.csv,407.9772765106625
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 19.csv,476.207638314572
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 2.csv,1.1532741016811794
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 2.csv,214.0556759370698
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 2.csv,292.8876126175048
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 20.csv,0.20103466643227472
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 20.csv,8.75690732134713
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 20.csv,37.218675876606724
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 3.csv,0.7541704813639323
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 3.csv,288.4506582432323
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 3.csv,363.9920359153533
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 4.csv,1.1591370317671035
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 4.csv,119.69253118303087
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 4.csv,189.15865142410362
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 5.csv,0.7748213450113932
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 5.csv,98.98361750576231
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 5.csv,159.9083579085819
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 6.csv,0.7426896942986383
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 6.csv,191.43652842839558
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 6.csv,258.8577743270046
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 7.csv,1.0659891181521945
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 7.csv,40.30236824618446
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 7.csv,99.9485456198635
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 8.csv,0.7143351978725857
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 8.csv,22.849481087260777
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 8.csv,76.40771688994977
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case 9.csv,1.431968519422743
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case 9.csv,60.153252010213
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case 9.csv,127.95111230694327
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case new 1.csv,0.33200110329522026
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case new 1.csv,112.10187857018576
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case new 1.csv,165.8461567468385
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case new 2.csv,0.4048646608988444
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case new 2.csv,160.26178942256504
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case new 2.csv,218.33582685258136
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case new 3.csv,0.4092431174384223
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case new 3.csv,242.29053226179548
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case new 3.csv,306.27871149278815
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case new 4.csv,0.6992922782897949
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case new 4.csv,220.61359473334417
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case new 4.csv,288.75158143207403
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Case new 5.csv,0.42716935475667317
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Case new 5.csv,321.42902859449384
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Case new 5.csv,390.78158453856463
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case 6 New- Erick.csv,0.37852317492167153
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case 6 New- Erick.csv,12.357416375974815
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case 6 New- Erick.csv,40.11714701029058
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case New 10- Erick.csv,0.49163087209065753
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case New 10- Erick.csv,376.0137183745702
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case New 10- Erick.csv,449.53984411979326
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case New 11- Erick.csv,0.17293423546685113
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case New 11- Erick.csv,457.7958075682322
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case New 11- Erick.csv,532.5462842204544
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case New 12- Erick.csv,0.4036493937174479
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case New 12- Erick.csv,236.45810456408395
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case New 12- Erick.csv,302.7664098442041
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case New 13- Erick.csv,0.17782221900092232
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case New 13- Erick.csv,375.18926321797903
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case New 13- Erick.csv,443.30452638566624
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case New 14- Erick.csv,0.6512002944946289
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case New 14- Erick.csv,397.5096083217197
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case New 14- Erick.csv,482.80776751851147
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case New 15- Erick.csv,0.6285852856106229
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case New 15- Erick.csv,326.1376381384002
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case New 15- Erick.csv,403.8109335449434
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case New 7- Erick.csv,1.5549510820044412
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case New 7- Erick.csv,107.00649291326603
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case New 7- Erick.csv,192.45382445790392
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case New 8- Erick.csv,2.010680090056525
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case New 8- Erick.csv,137.7978878337476
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case New 8- Erick.csv,240.52185102371084
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_inner,Case 6 (Non-linear charging+Discharging)/Final Case new 9- Erick.csv,0.7089866638183594
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_outer,Case 6 (Non-linear charging+Discharging)/Final Case new 9- Erick.csv,398.68326071368324
+LOTO,7,Case 6 (Non-linear charging+Discharging),T_avg,Case 6 (Non-linear charging+Discharging)/Final Case new 9- Erick.csv,493.28158993528535
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 1.csv,0.32264755566914877
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 1.csv,83.37250565025542
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 1.csv,136.71339189861126
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 10.csv,1.2945384979248047
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 10.csv,161.192079255316
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 10.csv,244.5844061679957
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 11.csv,0.561746072769165
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 11.csv,92.822059293588
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 11.csv,143.81403078118908
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 12.csv,1.1121894783443875
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 12.csv,123.69273553821776
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 12.csv,181.91634269486596
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 13.csv,1.0552447742886013
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 13.csv,216.80971094899706
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 13.csv,281.85545505206875
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 14.csv,2.1315168062845866
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 14.csv,179.68255786763297
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 14.csv,253.2815089034848
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 15.csv,0.5400876786973742
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 15.csv,186.90381223360697
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 15.csv,243.8583977328277
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 16.csv,0.7742454316880968
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 16.csv,296.56639721790947
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 16.csv,363.8587722644365
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 17.csv,0.8275185055202908
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 17.csv,156.06842176649306
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 17.csv,214.37722395655518
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 18.csv,0.7823128594292534
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 18.csv,251.86096571286518
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 18.csv,315.8832390609896
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 19.csv,0.5002143647935655
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 19.csv,383.6572715944714
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 19.csv,451.5217298306318
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 2.csv,0.6709094895256891
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 2.csv,110.36364665163887
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 2.csv,173.21898368945114
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 20.csv,1.6357559204101562
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 20.csv,152.9821707394388
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 20.csv,219.37107841746183
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 3.csv,0.6391419304741753
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 3.csv,210.16976965003545
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 3.csv,279.4188164861226
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 4.csv,1.366507069269816
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 4.csv,149.1829192969534
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 4.csv,229.92015571425566
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 5.csv,0.4635629442003038
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 5.csv,286.29801215993035
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 5.csv,357.74187873878594
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 6.csv,0.47204371558295355
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 6.csv,151.0974304821756
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 6.csv,212.72844673875693
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 7.csv,0.4607227113511827
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 7.csv,243.61807561715443
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 7.csv,311.1442240728777
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 8.csv,0.15889657338460286
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 8.csv,364.7719696164131
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 8.csv,431.617302136237
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case 9.csv,0.9762357393900554
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case 9.csv,141.19278421269522
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case 9.csv,213.68492176379854
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 1.csv,1.093205181757609
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 1.csv,141.5489242553711
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case new 1.csv,201.89984440176568
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 10.csv,0.1368287828233507
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 10.csv,112.69289209577772
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 11.csv,0.13711972766452366
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 11.csv,152.79004749324588
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 12.csv,0.1387852880689833
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 12.csv,173.51079678403008
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 13.csv,0.14077734417385526
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 13.csv,200.6323746614986
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 14.csv,0.14138806660970052
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 14.csv,234.73958383666144
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 15.csv,0.1396503448486328
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 15.csv,210.3565711988343
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 2.csv,0.7474062813652886
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 2.csv,177.62389382123948
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case new 2.csv,239.41898340101793
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 3.csv,0.6791156133015951
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 3.csv,237.40170296430588
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case new 3.csv,302.0855755273201
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 4.csv,0.5323203828599717
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 4.csv,272.7053059286541
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case new 4.csv,337.1265679222764
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 5.csv,0.40855587853325737
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 5.csv,152.8204482793808
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_avg,Case 7 (Linear charging+discharging with noise)/Case new 5.csv,206.30340772570602
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 6.csv,0.13807965384589302
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 6.csv,131.15468810929193
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 7.csv,0.14254089991251628
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 7.csv,232.3179528395335
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 8.csv,0.14411638047960068
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 8.csv,257.13078582949106
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_inner,Case 7 (Linear charging+discharging with noise)/Case new 9.csv,0.14687923855251736
+LOTO,7,Case 7 (Linear charging+discharging with noise),T_outer,Case 7 (Linear charging+discharging with noise)/Case new 9.csv,312.1732850697305
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 1.csv,0.8993164486355252
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 1.csv,306.39555012252595
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 1.csv,331.91468275399853
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 10- Erick wCpK.csv,1.5401687198215062
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 10- Erick wCpK.csv,394.16272481415007
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 10- Erick wCpK.csv,411.89751490401494
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 11- Erick wCpK.csv,0.7355544196234809
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 11- Erick wCpK.csv,519.4935467984941
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 11- Erick wCpK.csv,571.4194881459996
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 12- Erick wCpK.csv,0.5623348236083985
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 12- Erick wCpK.csv,427.5999649776353
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 12- Erick wCpK.csv,480.5205123104478
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 14- Erick WKCp.csv,0.8468210856119792
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 14- Erick WKCp.csv,223.72987854745654
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 14- Erick WKCp.csv,257.36548389993067
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 15- Erick WKCp.csv,1.5574742158253987
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 15- Erick WKCp.csv,343.793703145451
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 15- Erick WKCp.csv,359.7200381008339
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 16 - Darien.csv,0.7016924328274197
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 16 - Darien.csv,352.3611231340302
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 16 - Darien.csv,396.29852985026344
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 17 - Darien.csv,0.4409819073147244
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 17 - Darien.csv,254.68258120086458
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 17 - Darien.csv,302.75011183874966
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 18 - Darien.csv,1.0739748424953885
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 18 - Darien.csv,365.97584293550915
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 18 - Darien.csv,397.97131121659834
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 19 - Darien.csv,1.11292528046502
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 19 - Darien.csv,302.48983205689325
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 19 - Darien.csv,330.6715860934204
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 2.csv,1.0880258348253038
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 2.csv,396.7015716062652
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 2.csv,416.9462973476931
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 20 - Darien.csv,1.1192209349738227
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 20 - Darien.csv,353.5188188327683
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 20 - Darien.csv,383.47363995428634
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 21 - Darien.csv,0.8494920942518446
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 21 - Darien.csv,308.27426224417155
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 21 - Darien.csv,345.33233520477336
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 22 - Darien.csv,0.5209179560343424
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 22 - Darien.csv,175.0871983938747
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 22 - Darien.csv,216.73348117726078
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 23 - Aaron.csv,0.9039834234449599
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 23 - Aaron.csv,349.2219671368599
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 23 - Aaron.csv,386.16598315061873
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 24 - Aaron.csv,0.16106607649061416
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 24 - Aaron.csv,272.2012654648887
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 25 - Aaron.csv,0.16992007361518013
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 25 - Aaron.csv,310.9296294503742
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 3.csv,1.2984850565592447
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 3.csv,353.1069283896022
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 3.csv,377.1310269109866
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 4.csv,0.7726087093353271
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 4.csv,282.5801764316029
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 4.csv,312.97570614325036
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 5.csv,0.6473540253109402
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 5.csv,238.8805810769399
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 5.csv,273.1659308873802
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 6.csv,0.951569922765096
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 6.csv,265.01753828790453
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 6.csv,297.001040661388
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 7.csv,1.0163468095991346
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 7.csv,370.5862921860483
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 7.csv,393.0748546718568
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 8.csv,0.9375278260972765
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 8.csv,374.4007852276166
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 8.csv,400.6449409615132
+LOTO,7,Case 8 (linear discharging),T_inner,Case 8 (linear discharging)/Discharge 9- Erick wCpK.csv,0.8484926488664415
+LOTO,7,Case 8 (linear discharging),T_outer,Case 8 (linear discharging)/Discharge 9- Erick wCpK.csv,218.677479660511
+LOTO,7,Case 8 (linear discharging),T_avg,Case 8 (linear discharging)/Discharge 9- Erick wCpK.csv,252.38293461717356
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 1 (Tejas).csv,0.14967851638793944
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 1 (Tejas).csv,380.82765551540587
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 10 (Tejas).csv,0.1524931165907118
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 10 (Tejas).csv,391.7019360264142
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 11 (Tejas).csv,0.1460765308803982
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 11 (Tejas).csv,410.2206050846312
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 12 (Tejas).csv,0.14725083245171441
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 12 (Tejas).csv,300.66296574936973
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 13 (Tejas).csv,0.14843080308702256
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 13 (Tejas).csv,442.89190743101966
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 14 (Tejas).csv,0.1502063963148329
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 14 (Tejas).csv,386.09517181714375
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 15 (Tejas).csv,0.15546817779541017
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 15 (Tejas).csv,432.3464009271728
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 16 (Tejas).csv,0.14586140314737955
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 16 (Tejas).csv,229.40156838364072
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 17 (Tejas).csv,0.1496659172905816
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 17 (Tejas).csv,376.19193828900654
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 18 (Tejas).csv,0.14752927356296117
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 18 (Tejas).csv,433.54344730112285
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 19 (Tejas).csv,0.1451186392042372
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 19 (Tejas).csv,256.4495556579696
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 2 (Tejas).csv,0.15367386076185438
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 2 (Tejas).csv,378.2081767876943
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 20 (Tejas).csv,0.15063738293117948
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 20 (Tejas).csv,460.43773738543194
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 21 (Tejas).csv,0.14692056443956164
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 21 (Tejas).csv,377.0495093226433
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 22 (Tejas).csv,0.14433622360229492
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 22 (Tejas).csv,297.4807673957613
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 23 (Tejas).csv,0.1465989006890191
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 23 (Tejas).csv,299.3110487514072
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 24 (Tejas).csv,0.15089246961805555
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 24 (Tejas).csv,430.861654762427
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 25 (Tejas).csv,0.14617931577894422
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 25 (Tejas).csv,307.53928409285015
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 3 (Tejas).csv,0.1485900984870063
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 3 (Tejas).csv,281.2414424922731
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 4 (Tejas).csv,0.1554602093166775
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 4 (Tejas).csv,484.442395471202
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 5 (Tejas).csv,0.1467323833041721
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 5 (Tejas).csv,258.14697339667214
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 6 (Tejas).csv,0.1497780270046658
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 6 (Tejas).csv,441.51327323118846
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 7 (Tejas).csv,0.15230630238850912
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 7 (Tejas).csv,438.6696539560954
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 8 (Tejas).csv,0.1494368659125434
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 8 (Tejas).csv,416.4568765123685
+LOTO,7,Case 9 (non-linear discharging),T_inner,Case 9 (non-linear discharging)/Case New 9 (Tejas).csv,0.15763609144422744
+LOTO,7,Case 9 (non-linear discharging),T_outer,Case 9 (non-linear discharging)/Case New 9 (Tejas).csv,505.07311306926937
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 1.csv,1.075242445203993
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 1.csv,298.64508622752294
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 1.csv,325.565462827407
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 10.csv,0.1726235177781847
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 10.csv,352.1046044561598
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 10.csv,381.4577195780274
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 11.csv,0.16960728963216146
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 11.csv,266.98383033275604
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 11.csv,289.72505289263273
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 12.csv,0.16805479261610243
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 12.csv,367.702399275038
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 12.csv,407.1209575337177
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 13.csv,0.16193963686625162
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 13.csv,193.4017840160264
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 13.csv,219.55535914372757
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 14.csv,0.15849131478203668
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 14.csv,220.7797666311264
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 14.csv,256.00454538988157
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 15.csv,0.1657671398586697
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 15.csv,323.6835488782989
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 15.csv,360.8202390167772
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 16 .csv,0.16419006983439127
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 16 .csv,275.0852161924044
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 16 .csv,308.3487194258862
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 17.csv,0.16760424507988825
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 17.csv,237.18381146325007
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 17.csv,259.72560393363756
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 18.csv,0.1698972913953993
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 18.csv,352.0346909125646
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 18.csv,386.3549142217031
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 19.csv,0.1575070063273112
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 19.csv,162.79751074843938
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 19.csv,191.75463147598268
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 2.csv,1.55700527826945
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 2.csv,272.8455890893936
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 2.csv,282.6845169312502
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 20.csv,0.16540482838948567
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 20.csv,204.03988325066035
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 20.csv,226.09442975085048
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 21.csv,0.1697593265109592
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 21.csv,295.69534962442185
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 21.csv,322.42949236039357
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 22.csv,0.15893237855699327
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 22.csv,261.861169078615
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 22.csv,302.4319485987149
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 23.csv,1.2358976629045275
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 23.csv,243.4344698694017
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 23.csv,262.9834515453032
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 24.csv,0.15066494411892362
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 24.csv,146.79418820672566
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 24.csv,184.98684929281524
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 25.csv,0.18926208284166124
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 25.csv,340.4185982717408
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 25.csv,338.7258799433553
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 3.csv,1.0772847652435302
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 3.csv,195.39299504227108
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 3.csv,218.52649018869917
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 4.csv,1.3165976047515868
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 4.csv,233.666147810883
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 4.csv,250.38958571309533
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 5.csv,1.0774317741394044
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 5.csv,247.0306876924303
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 5.csv,272.13951769699474
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 6.csv,0.8385602103339301
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 6.csv,157.9402607374721
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 6.csv,187.41566964021314
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 7.csv,0.9545470237731933
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 7.csv,330.17794298860764
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 7.csv,362.3114511184265
+LOTO,7,Case 10 (Discharging + Constant),T_inner,Case 10 (Discharging + Constant)/Case 9.csv,0.1683539178636339
+LOTO,7,Case 10 (Discharging + Constant),T_outer,Case 10 (Discharging + Constant)/Case 9.csv,221.51652351617813
+LOTO,7,Case 10 (Discharging + Constant),T_avg,Case 10 (Discharging + Constant)/Case 9.csv,240.58408517423604

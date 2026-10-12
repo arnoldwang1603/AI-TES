@@ -1,0 +1,6 @@
+output_form,换材料时每种输出形式要重拟合什么,refit_rule_source,status
+direct,none,batches.P3.re_fit_column,protocol annotation only; no new-material validation
+anchor,mu/sigma,batches.P3.re_fit_column,protocol annotation only; no new-material validation
+EMA,tau,batches.P3.re_fit_column,protocol annotation only; no new-material validation
+ratio,mu/sigma,batches.P3.re_fit_column,protocol annotation only; no new-material validation
+physics residual,"k, rho, cp or one diffusivity",batches.P3.re_fit_column,protocol annotation only; no new-material validation

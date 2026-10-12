@@ -15,15 +15,26 @@ class InitStateEncoder(nn.Module):
         super().__init__()
         self.num_layers = num_layers
         self.hidden_size = hidden_size
-        self.encoder = nn.Sequential(
-            nn.Linear(obs_size, 256), nn.ReLU(),
-            nn.Linear(256, 256), nn.ReLU(),
-            nn.Linear(256, num_layers * hidden_size),
-        )
+        layers, width = [], obs_size
+        for next_width in ENC_WIDTHS_LIST:
+            layers.extend([nn.Linear(width, next_width), nn.ReLU()])
+            width = next_width
+        layers.append(nn.Linear(width, num_layers * hidden_size))
+        self.encoder = nn.Sequential(*layers)
 
     def forward(self, x0):
         h = self.encoder(x0).view(-1, self.num_layers, self.hidden_size)
         return h.permute(1, 0, 2).contiguous()
+
+
+class ZeroInitStateEncoder(nn.Module):
+    """The H0=0 control has no trainable encoder parameters."""
+    def __init__(self, hidden_size, num_layers):
+        super().__init__()
+        self.hidden_size, self.num_layers = hidden_size, num_layers
+
+    def forward(self, x):
+        return x.new_zeros(self.num_layers, x.shape[0], self.hidden_size)
 
 
 class WindowInitStateEncoder(nn.Module):
@@ -69,7 +80,7 @@ class ThermalGRU(nn.Module):
         super().__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.encoder_kind = encoder
+        self.encoder_kind = 'point' if H0_MODE == 'zero' else encoder
 
         self.gru = nn.GRU(
             input_size=input_size, hidden_size=hidden_size,
@@ -78,8 +89,14 @@ class ThermalGRU(nn.Module):
             batch_first=True,
         )
         self.fc = nn.Linear(hidden_size, output_size)
+        if PHYS_MODE in ('residual', 'input_residual'):
+            with torch.no_grad():
+                self.fc.weight[1:3].zero_()
+                self.fc.bias[1:3].zero_()
 
-        if encoder == 'point':
+        if H0_MODE == 'zero':
+            self.init_encoder = ZeroInitStateEncoder(hidden_size, num_layers)
+        elif encoder == 'point':
             self.init_encoder = InitStateEncoder(
                 obs_size=4, hidden_size=hidden_size, num_layers=num_layers,
             )
@@ -95,10 +112,11 @@ class ThermalGRU(nn.Module):
         device = next(self.parameters()).device
         if self.encoder_kind == 'point':
             assert x0 is not None, "point encoder needs x0"
-            return self.init_encoder(x0.to(device))
+            hidden = self.init_encoder(x0.to(device))
         else:
             assert x_window is not None, "window encoder needs x_window"
-            return self.init_encoder(x_window.to(device))
+            hidden = self.init_encoder(x_window.to(device))
+        return torch.tanh(hidden) if H0_MODE == 'tanh' else hidden
 
     def forward(self, x, hidden):
         out, hidden = self.gru(x, hidden)
@@ -196,10 +214,42 @@ def stage_loss_weights(group, full_weights):
 _DEFAULT_WEIGHTS = torch.tensor(LOSS_WEIGHTS)
 
 
-def weighted_loss(predictions, targets, weights=None, raw_affine=None):
+def masked_loss_terms(predictions, targets, weights, mask):
+    """(numerator, denominator) of the masked weighted L1 (H2):
+        num = sum(|p - t| * w * m),  den = sum over (B, T, 3) of m,
+    with mask (B, 3) or (B, 1, 3) broadcast over time. The denominator counts
+    the unmasked (file, step, channel) entries, so with an all-ones mask
+    num / den == mean(|p - t| * w), the legacy loss, exactly. Both terms are
+    returned so train.validate_epoch can accumulate them across batches."""
+    m = loss_weight_tensor(predictions, mask)
+    ae = torch.abs(predictions - targets)
+    num = (ae * weights * m).sum()
+    den = m.expand_as(ae).sum()
+    return num, den
+
+
+def loss_weight_tensor(predictions, mask=None):
+    """H10: one broadcast tensor combines file masks and first-ten weights."""
+    m = (torch.ones((1, 1, 3), device=predictions.device, dtype=predictions.dtype)
+         if mask is None else mask.to(predictions.device, predictions.dtype))
+    if m.dim() == 2:
+        m = m.unsqueeze(1)                     # (B, 1, 3)
+    if EARLY_STEP_WEIGHT != 1:
+        step = predictions.new_ones((1, predictions.shape[1], 1))
+        step[:, :10] = EARLY_STEP_WEIGHT
+        m = m * step
+    return m
+
+
+def weighted_loss(predictions, targets, weights=None, raw_affine=None, mask=None):
     """Per-channel weighted L1 + optional T_avg physics-bound hinge.
 
     predictions / targets are in the MinMax-SCALED space.
+
+    mask: optional per-file (B, 3) loss mask (H2, ThermalDataset.loss_mask).
+    None keeps the legacy mean(|p - t| * w) bit-for-bit; with a mask the loss
+    is sum(|p - t| * w * m) / sum(m) (see masked_loss_terms), which reduces
+    to the legacy value when m is all ones.
 
     raw_affine: optional ((s_in, m_in), (s_out, m_out), (s_avg, m_avg)) from
     the fitted scaler (scaled = raw * s + m). When given together with a
@@ -211,7 +261,18 @@ def weighted_loss(predictions, targets, weights=None, raw_affine=None):
     if weights is None:
         weights = _DEFAULT_WEIGHTS
     weights = weights.to(predictions.device)
-    loss = torch.mean(torch.abs(predictions - targets) * weights)
+    if mask is None and EARLY_STEP_WEIGHT == 1:
+        loss = torch.mean(torch.abs(predictions - targets) * weights)
+    else:
+        # sum(|p-t| w m) / sum(m), written as the mean over ALL entries
+        # (masked ones contribute 0) divided by the unmasked fraction: the
+        # same reduction kernel as the legacy line, and the fraction is
+        # exactly 1.0 for an all-ones mask, so the legacy value is
+        # reproduced BIT-FOR-BIT rather than to rounding.
+        m = loss_weight_tensor(predictions, mask)
+        ae = torch.abs(predictions - targets)
+        frac = m.expand_as(ae).sum() / float(ae.numel())
+        loss = torch.mean(ae * weights * m) / frac
 
     if raw_affine is not None and PHYSICS_BOUND_WEIGHT > 0.0:
         (s_in, m_in), (s_out, m_out), (s_avg, m_avg) = raw_affine

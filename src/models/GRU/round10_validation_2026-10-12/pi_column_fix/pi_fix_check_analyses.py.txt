@@ -1,0 +1,16 @@
+PASS analysis modules parse asPython3.11
+PASS nominal solver exactlymatchesvendoredsource
+PASS prefix fit recoverssynthetic0.8diffusivity
+PASS G11 never usesobservedtailforfit
+PASS masked Tavg ignoredbyglobalandbinnedfits
+PASS linear predict shapeandfinite
+PASS linear score excludesmaskedTavg
+PASS MSE identity andensemble-removablevariance
+PASS G1 uses14validationderivedshapes
+PASS validation loader rejectstest path
+PASS portableA7 contains60distinctcheckpoints
+PASS F11yardstickmetadatahas67strictlineaveragefiles
+PASS F11providedframes67yardstickand21oracle strata
+PASS F11C16providedbundlesretaintrainingreferences
+PASS F11bracketoracle positiveflooronclippedfixtures
+15checks,0FAIL; no realtestCSVread

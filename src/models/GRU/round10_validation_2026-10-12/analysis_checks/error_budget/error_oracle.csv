@@ -1,0 +1,18 @@
+set,file,case_id,stratum,bracket_clip_oracle_MAE_C,bracket_violation_share,interpretation
+val,Case 1 (linear charging)/Case new 5.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 10 (Discharging + Constant)/Case 1.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 10 (Discharging + Constant)/Case 17.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 2 (Nonlinear Charging)/Case 22.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 2 (Nonlinear Charging)/Case 3.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 3 (Charging with noise)/Case 15.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 3 (Charging with noise)/Case 17.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 4 (Linear Charging+Discharging)/Case 15.csv,,both_phase,0.01572916666666661,0.035416666666666666,minimum error imposed by clipping true T_avg between true walls
+val,Case 4 (Linear Charging+Discharging)/Case 19.csv,,both_phase,0.013430555555555538,0.029166666666666667,minimum error imposed by clipping true T_avg between true walls
+val,Case 5 (Linear charging + constant)/Case 21.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 5 (Linear charging + constant)/Case 23.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 6 (Non-linear charging+Discharging)/Case 10.csv,,both_phase,0.2943402777777777,0.03611111111111111,minimum error imposed by clipping true T_avg between true walls
+val,Case 6 (Non-linear charging+Discharging)/Case 11.csv,,both_phase,0.01560902777777778,0.03125,minimum error imposed by clipping true T_avg between true walls
+val,Case 7 (Linear charging+discharging with noise)/Case 14.csv,,both_phase,0.42161111111111105,0.03611111111111111,minimum error imposed by clipping true T_avg between true walls
+val,Case 7 (Linear charging+discharging with noise)/Case 3.csv,,both_phase,0.11468055555555531,0.052083333333333336,minimum error imposed by clipping true T_avg between true walls
+val,Case 8 (linear discharging)/Discharge 16 - Darien.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls
+val,Case 8 (linear discharging)/Discharge 18 - Darien.csv,,other,0.0,0.0,minimum error imposed by clipping true T_avg between true walls

@@ -1,0 +1,55 @@
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\round10_checks\check_h10.py:19: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:836.)
+  check('early weights share mask denominator',abs(float(actual-expected))<1e-12 and abs(float(num/den-expected))<1e-12)
+PASS early weights share mask denominator
+PASS masked channel gradient remains zero
+PASS time weight is (1,T,1) broadcast
+PASS plumbing
+PASS spike metric and 60-step sweep registered
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\round10_checks\check_h10.py:19: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:836.)
+  check('early weights share mask denominator',abs(float(actual-expected))<1e-12 and abs(float(num/den-expected))<1e-12)
+PASS early weights share mask denominator
+PASS masked channel gradient remains zero
+PASS time weight is (1,T,1) broadcast
+PASS plumbing
+PASS spike metric and 60-step sweep registered
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\round10_checks\check_h10.py:19: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:836.)
+  check('early weights share mask denominator',abs(float(actual-expected))<1e-12 and abs(float(num/den-expected))<1e-12)
+PASS early weights share mask denominator
+PASS masked channel gradient remains zero
+PASS time weight is (1,T,1) broadcast
+PASS plumbing
+PASS spike metric and 60-step sweep registered
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\round10_checks\check_h10.py:19: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:836.)
+  check('early weights share mask denominator',abs(float(actual-expected))<1e-12 and abs(float(num/den-expected))<1e-12)
+PASS early weights share mask denominator
+PASS masked channel gradient remains zero
+PASS time weight is (1,T,1) broadcast
+PASS plumbing
+PASS spike metric and 60-step sweep registered
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+C:\Users\FEvMo\Documents\GitHub\calit2-thermal-wiki\outputs\round10_package_2026-10-12\GRU\round10_checks\check_h10.py:19: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:836.)
+  check('early weights share mask denominator',abs(float(actual-expected))<1e-12 and abs(float(num/den-expected))<1e-12)
+PASS early weights share mask denominator
+PASS masked channel gradient remains zero
+PASS time weight is (1,T,1) broadcast
+PASS plumbing
+PASS spike metric and 60-step sweep registered

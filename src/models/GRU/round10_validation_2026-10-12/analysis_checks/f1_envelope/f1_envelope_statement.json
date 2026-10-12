@@ -1,0 +1,8 @@
+{
+  "n_families": 10,
+  "n_within2x": 9,
+  "criterion": "8 of10 families within2x",
+  "complete_five_seed_protocol": false,
+  "passes": false,
+  "meaning": "descriptive family envelope; no n=5 significance claim"
+}

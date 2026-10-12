@@ -345,8 +345,8 @@ BASE = dict(TINNER_MODE="anchor", ANCHOR_LEAD="1", PHYSICS_BOUND_WEIGHT="0",
             TOUTER_MODE="abs", TOUTER_TAU="1200", TOUTER_SCALE="1.0", TOUTER_EMA_FORM="euler",
             MAX_EPOCHS="2000", MODEL_SPLIT="shared",
             VAL_SPLIT="stratified", VAL_PER_TYPE="2", TRAIN_EXCLUDE_TYPE="")
-RUN_PREFIX = "2026-08-06_"
-SPLIT_FILE = os.path.join("splits", "stratified_v2_s42.json")
+RUN_PREFIX = (os.environ.get("RUN_PREFIX", "r10").strip() or "r10") + "_"   # same env var as tes_gru.config (2026-10-12)
+SPLIT_FILE = os.path.join("splits", os.environ.get("SPLIT_NAME", "").strip() or "stratified_v2_s42.json")
 W = "1,6,1"
 
 
@@ -593,13 +593,17 @@ def preflight_split_file():
             SPLIT_FILE, n_types, per, len(spec["val"])))
     if set(spec["val"]) & set(spec["train"]):
         sys.exit("{}: validation and training lists overlap".format(SPLIT_FILE))
+    drop = set(spec.get("drop") or [])                 # Round 10 / H1
+    if drop & (set(spec["val"]) | set(spec["train"])):
+        sys.exit("{}: drop list overlaps val/train".format(SPLIT_FILE))
     by_type = {}
     for f in spec["val"]:
         by_type[f.split("/")[0]] = by_type.get(f.split("/")[0], 0) + 1
     if set(by_type.values()) != {per}:
         sys.exit("{}: validation count per type is {}".format(SPLIT_FILE, by_type))
-    print("  split file: {} types x {} = {} validation, {} training (seed {})".format(
-        n_types, per, len(spec["val"]), len(spec["train"]), spec["split_seed"]))
+    print("  split file: {} types x {} = {} validation, {} training, {} dropped (seed {}, tag {})".format(
+        n_types, per, len(spec["val"]), len(spec["train"]), len(drop), spec["split_seed"],
+        spec.get("tag") or "vs%d" % per))
 
 
 def preflight_stale_dirs():
@@ -667,8 +671,11 @@ from tes_gru.config import VAL_SPLIT
 from tes_gru.data import load_all_data, ThermalDataset, input_case_flag_np
 from tes_gru.rollout import _input_case_gate
 assert VAL_SPLIT == "stratified", VAL_SPLIT
+import json
+from tes_gru.config import split_file_path
+_spec = json.load(open(split_file_path(), encoding="utf-8"))     # Round 10 / H1: sizes from the json
 tr, va, te, sc = load_all_data()
-if not (len(tr) == 291 and len(va) == 20 and len(te) == 70):
+if not (len(tr) == len(_spec["train"]) and len(va) == len(_spec["val"]) and len(te) == 70):
     print("  unexpected split sizes: train %d val %d test %d" % (len(tr), len(va), len(te))); sys.exit(4)
 bad, counts = [], []
 for name, dfs in (("train", tr), ("val", va), ("test", te)):

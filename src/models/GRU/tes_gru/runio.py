@@ -9,7 +9,7 @@ import torch
 
 from . import config            # live access to the mutable config.RUN_NAME
 from .config import *
-from .utils import _to_jsonable
+from .utils import _to_jsonable, sha256_file, sha256_lines
 
 
 def run_dir():
@@ -46,10 +46,16 @@ def ensure_run_layout():
         os.makedirs(plots_dir(v), exist_ok=True)
 
 
-def save_run_config_snapshot():
-    """One-time JSON dump of the config used for this run, written to
-    runs/<RUN_NAME>/run_config.json. Helpful provenance for any reviewer
-    who later inspects the output folder."""
+def run_config_dict():
+    """The run_config.json payload (every knob config.py reads, plus data /
+    numerics provenance). Shared by save_run_config_snapshot and the H4
+    constants sidecar so the two can never disagree."""
+    # H2: which files lose their T_avg label (digests of the sorted key lists).
+    from .data import get_tavg_mask_sets, get_relabel_sets
+    tr_m, va_m = get_tavg_mask_sets()
+    rl_tr, rl_va = get_relabel_sets()          # A4
+    from .data import load_split_spec
+    frozen_spec = load_split_spec() if VAL_SPLIT == 'stratified' else {}
     cfg = {
         'run_name': config.RUN_NAME,
         'started_or_resumed_at': time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -65,6 +71,25 @@ def save_run_config_snapshot():
         'touter_ema_form': TOUTER_EMA_FORM,
         'anchor_lead': ANCHOR_LEAD,
         'loss_weights': LOSS_WEIGHTS,
+        'loss_w0_mode': LOSS_W0_MODE,
+        'enc_widths': ENC_WIDTHS,
+        'h0_mode': H0_MODE,
+        'init_encoder': INIT_ENCODER,
+        'feat_cols': FEAT_COLS,
+        'early_step_weight': EARLY_STEP_WEIGHT,
+        'ratio_channels': RATIO_CHANNELS,
+        'ratio_ref': RATIO_REF,
+        'phys_mode': PHYS_MODE,
+        'physics_cache_dir': PHYSICS_CACHE_DIR or None,
+        'physics_cache_index_sha256': (sha256_file(os.path.join(PHYSICS_CACHE_DIR, '..', 'index.csv'))
+                                        if PHYSICS_CACHE_DIR and os.path.isfile(os.path.join(PHYSICS_CACHE_DIR, '..', 'index.csv')) else None),
+        'init_burnin_steps': INIT_BURNIN_STEPS,
+        'synthetic_rest_files': SYNTHETIC_REST_FILES,
+        'synthetic_rest_manifest': ({'T0': np.linspace(50, 600, SYNTHETIC_REST_FILES).tolist(),
+                                     'split': 'train_only', 'rows': 'same as first training frame',
+                                     'constants': 'fit before synthetic augmentation', 'source': 'PLAN/round10_arms_full.json G7(d)'} if SYNTHETIC_REST_FILES else None),
+        'constants_from': CONSTANTS_FROM or None,
+        'constants_from_sha256': sha256_file(CONSTANTS_FROM) if CONSTANTS_FROM else None,
         'physics_bound_weight': PHYSICS_BOUND_WEIGHT,
         'other_ch_mode': OTHER_CH_MODE,
         'input_lookahead': INPUT_LOOKAHEAD,
@@ -88,8 +113,28 @@ def save_run_config_snapshot():
         'variants': VARIANTS,
         'input_dims': INPUT_DIMS,
         'latest_params': LATEST_PARAMS,
+        # H9: numerics provenance (TF32 knob + the versions / GPU behind it).
+        'tf32': TF32,                     # "0" | "1" | "legacy"
+        'tavg_mask': TAVG_MASK,           # H2: "" | split | valonly | random:<seed>
+        'tavg_mask_n_train': len(tr_m),
+        'tavg_mask_n_val': len(va_m),
+        'tavg_mask_train_sha256': sha256_lines(tr_m) if tr_m else None,
+        'tavg_mask_val_sha256': sha256_lines(va_m) if va_m else None,
+        'sealed': bool(SEAL_TEST),        # H3: True = validation-scored, test set never read
+        # A4: algebraic T_avg relabel -- the table (as given, re-resolvable by
+        # eval_checkpoint), its digest and how many files it touched.
+        'relabel_csv': RELABEL_CSV or None,
+        'relabel_path': RELABEL_CSV_PATH,
+        'relabel_sha256': sha256_file(RELABEL_CSV_PATH) if RELABEL_CSV_PATH else None,
+        'relabel_n_train': len(rl_tr),
+        'relabel_n_val': len(rl_va),
+        'runtime': runtime_env_info(),
         'data': {
             'train_subdir': TRAIN_SUBDIR,
+            'data_root': DATA_ROOT or None,
+            'frozen_constants_split': frozen_spec.get('frozen_constants_split'),
+            'frozen_train_sha256': (sha256_lines(frozen_spec.get('frozen_train')) if frozen_spec.get('frozen_train') else None),
+            'frozen_train_n': len(frozen_spec.get('frozen_train') or []),
             'test_subdir': TEST_SUBDIR,
             'manual_split_enabled': MANUAL_SPLIT_ENABLED,
             'val_split': VAL_SPLIT,
@@ -98,6 +143,11 @@ def save_run_config_snapshot():
             'outer_test_frac': OUTER_TEST_FRAC,
             'inner_val_frac': INNER_VAL_FRAC,
             'split_seed': SPLIT_SEED,
+            # Round 10 / H1: which json, and its digest.
+            'split_name': split_file_name() if VAL_SPLIT == "stratified" else None,
+            'split_tag': SPLIT_TAG if VAL_SPLIT == "stratified" else None,
+            'split_sha256': (sha256_file(split_file_path())
+                             if VAL_SPLIT == "stratified" and os.path.isfile(split_file_path()) else None),
         },
         'persistence': {
             'resume_enabled': RESUME_ENABLED,
@@ -105,6 +155,14 @@ def save_run_config_snapshot():
             'checkpoint_every_n_epochs': CHECKPOINT_EVERY_N_EPOCHS,
         },
     }
+    return cfg
+
+
+def save_run_config_snapshot():
+    """One-time JSON dump of the config used for this run, written to
+    runs/<RUN_NAME>/run_config.json. Helpful provenance for any reviewer
+    who later inspects the output folder."""
+    cfg = run_config_dict()
     path = os.path.join(run_dir(), "run_config.json")
     # A finished run's provenance is frozen: once every variant carries a
     # done.flag the snapshot is not rewritten, so a later launch (with
@@ -199,14 +257,21 @@ def load_train_history(variant):
         return json.load(f)
 
 
-def save_predictions_npz(variant, raw_predictions):
-    """raw_predictions: list of dicts with keys 'case_id', 'inv_actual', 'inv_pred'."""
-    if not SAVE_PREDICTIONS:
-        return
-    var_dir = variant_dir(variant)
-    os.makedirs(var_dir, exist_ok=True)
+def save_predictions_npz(variant, raw_predictions, path=None):
+    """raw_predictions: list of dicts with keys 'case_id', 'inv_actual', 'inv_pred'.
+    path: explicit destination (H3: predictions_val.npz, or eval_checkpoint's
+    --out-dir); None = the legacy variants/<v>/predictions.npz, gated on
+    SAVE_PREDICTIONS."""
+    if path is None:
+        if not SAVE_PREDICTIONS:
+            return
+        var_dir = variant_dir(variant)
+        os.makedirs(var_dir, exist_ok=True)
+        path = os.path.join(var_dir, "predictions.npz")
+    else:
+        os.makedirs(os.path.dirname(os.path.abspath(path)) or ".", exist_ok=True)
     np.savez_compressed(
-        os.path.join(var_dir, "predictions.npz"),
+        path,
         case_ids=np.array([p['case_id'] for p in raw_predictions], dtype=object),
         inv_actuals=np.array([p['inv_actual'] for p in raw_predictions],
                              dtype=object),
@@ -236,5 +301,126 @@ def mark_variant_done(variant):
         f.write(f"completed at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
     # Resume state no longer needed once the variant is fully done.
     remove_resume_state(variant)
+
+
+# ============================================================
+# Round 10 / H4: constants sidecar
+# ============================================================
+# Everything a checkpoint needs besides its weights, written next to it as
+# checkpoints/best_gru_variant_<v>.constants.json: the MinMax scaler (so the
+# training CSVs never have to be re-read), the data-derived constants
+# train.fit_model_constants attaches to the model, the loss weights, the
+# knobs, the split / drop / mask digests, git HEAD and the numerics. RULE:
+# the constants belong to the checkpoint's OWN split -- a sidecar is never
+# combined with another run's data, and eval_checkpoint prefers it over a
+# refit for that reason.
+SIDECAR_FORMAT = "tes_gru.constants/1"
+SIDECAR_KEYS = ("format", "written_at", "variant", "checkpoint", "scaler", "constants",
+                "loss_weights", "loss_weights_realised", "physics_bound_weight", "knobs",
+                "split", "git_head", "runtime", "tf32", "seed")
+# Model attributes fit_model_constants sets (None when a mode does not use one).
+MODEL_CONSTANT_ATTRS = ("tinner_anchor", "touter_anchor", "touter_ref_affine", "raw_affine",
+                        "step_anchor", "other_anchor", "pos_head", "pos_mid",
+                        "pos_time_prior", "pos_time_affine", "ratio_head", "initial_head", "phys_residual")
+_GIT_HEAD = {}
+
+
+def constants_sidecar_path(ckpt_path):
+    """checkpoints/best_gru_variant_<v>.pth -> .../best_gru_variant_<v>.constants.json"""
+    base = ckpt_path[:-4] if ckpt_path.endswith(".pth") else ckpt_path
+    return base + ".constants.json"
+
+
+def model_constants_dict(model):
+    return {k: getattr(model, k, None) for k in MODEL_CONSTANT_ATTRS}
+
+
+def git_head():
+    """HEAD of the checkout that contains this package, or None (tolerated:
+    the lab server may run from an export without .git)."""
+    if "head" not in _GIT_HEAD:
+        head = None
+        try:
+            import subprocess
+            r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=BASE_DIR,
+                               capture_output=True, text=True, timeout=15)
+            if r.returncode == 0 and r.stdout.strip():
+                head = r.stdout.strip()
+        except Exception:
+            head = None
+        _GIT_HEAD["head"] = head
+    return _GIT_HEAD["head"]
+
+
+def write_constants_sidecar(path, model, scaler, extra=None):
+    """Write the constants sidecar for `model` / `scaler` to `path` (atomic).
+    extra: free-form provenance merged under "extra" (variant, checkpoint,
+    best_epoch, ...); an extra 'loss_weights_realised' overrides the recorded
+    realised weights (H8: channel-0 weight / kc)."""
+    from .data import ThermalDataset, load_split_spec, get_tavg_mask_sets
+    extra = dict(extra or {})
+    cols = list(ThermalDataset.BASE_COLS)
+    assert len(scaler.scale_) == len(cols), (len(scaler.scale_), cols)
+    tr_m, va_m = get_tavg_mask_sets()
+    split = {'val_split': VAL_SPLIT, 'split_name': None, 'split_tag': None, 'split_sha256': None,
+             'n_train': None, 'n_val': None, 'n_drop': 0, 'drop_sha256': None,
+             'train_exclude_type': TRAIN_EXCLUDE_TYPE,
+             'tavg_mask': TAVG_MASK, 'tavg_mask_n_train': len(tr_m), 'tavg_mask_n_val': len(va_m),
+             'tavg_mask_train_sha256': sha256_lines(tr_m) if tr_m else None,
+             'tavg_mask_val_sha256': sha256_lines(va_m) if va_m else None}
+    if VAL_SPLIT == "stratified" and os.path.isfile(split_file_path()):
+        spec = load_split_spec(split_file_path())
+        drop = list(spec.get("drop") or [])
+        split.update(split_name=split_file_name(), split_tag=SPLIT_TAG,
+                     split_sha256=sha256_file(split_file_path()),
+                     n_train=len(spec["train"]), n_val=len(spec["val"]),
+                     n_drop=len(drop), drop_sha256=sha256_lines(drop) if drop else None)
+    knobs = run_config_dict()
+    for k in ("run_name", "started_or_resumed_at", "runtime", "persistence"):
+        knobs.pop(k, None)
+    d = {
+        'format': SIDECAR_FORMAT,
+        'written_at': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'variant': extra.get('variant'),
+        'checkpoint': extra.get('checkpoint'),
+        'scaler': {
+            'columns': cols,
+            'feature_range': list(scaler.feature_range),
+            'data_min_': scaler.data_min_, 'data_max_': scaler.data_max_,
+            'data_range_': scaler.data_range_,
+            'scale_': scaler.scale_, 'min_': scaler.min_,
+            'n_samples_seen_': int(getattr(scaler, 'n_samples_seen_', 0)),
+        },
+        'constants': model_constants_dict(model),
+        'loss_weights': list(LOSS_WEIGHTS),
+        'loss_weights_realised': list(extra.pop('loss_weights_realised', LOSS_WEIGHTS)),
+        'physics_bound_weight': PHYSICS_BOUND_WEIGHT,
+        'knobs': knobs,
+        'split': split,
+        'git_head': git_head(),
+        'runtime': runtime_env_info(),
+        'tf32': TF32,
+        'seed': config.SEED,
+        'extra': extra,
+    }
+    os.makedirs(os.path.dirname(os.path.abspath(path)) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(_to_jsonable(d), f, indent=2)
+    os.replace(tmp, path)
+    return path
+
+
+def load_constants_sidecar(path):
+    """Read a sidecar written by write_constants_sidecar; validates the format
+    and the documented top-level keys."""
+    with open(path) as f:
+        d = json.load(f)
+    if d.get('format') != SIDECAR_FORMAT:
+        raise RuntimeError("%s: not a constants sidecar (format %r)" % (path, d.get('format')))
+    missing = [k for k in SIDECAR_KEYS if k not in d]
+    if missing:
+        raise RuntimeError("%s: sidecar lacks keys %s" % (path, missing))
+    return d
 
 

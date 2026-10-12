@@ -1,0 +1,11 @@
+family,n_seeds,LOTO_ToTa,ID_ToTa,ratio_LOTO_ID,within2x,channels,reference
+Case 1 (linear charging),1,226.4935501538545,204.58267848319957,1.1071003265433064,True,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 10 (Discharging + Constant),1,271.65317974387744,280.1994649942469,0.9694992806265889,True,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 2 (Nonlinear Charging),1,229.01556031508406,282.41372573432295,0.8109222018852139,True,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 3 (Charging with noise),1,248.8200480930381,221.98912307866266,1.1208659444312856,True,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 4 (Linear Charging+Discharging),1,268.23955373069714,255.0590477840577,1.051676292455222,True,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 5 (Linear charging + constant),1,251.8750335957955,182.12128680911943,1.3830071048190247,True,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 6 (Non-linear charging+Discharging),1,234.54006089846902,70.05486186669634,3.347948374300741,False,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 7 (Linear charging+discharging with noise),1,230.1169586826303,227.5532020283336,1.011266625261452,True,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 8 (linear discharging),1,341.1084296079092,377.9121451506013,0.9026130384668493,True,"T_avg,T_outer",paired in-distribution validation files; Case9 T_avg masked
+Case 9 (non-linear discharging),1,376.67060235240723,431.8640259385109,0.8721972188673058,True,T_outer,paired in-distribution validation files; Case9 T_avg masked

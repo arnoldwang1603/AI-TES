@@ -1,0 +1,10 @@
+{
+  "test_csv_attempts": 0,
+  "blocked_test_csv": [],
+  "allowed_csv_unique": 3,
+  "allowed_csv_paths": [
+    "runs/_round10_analysis_checks/real_ep2/f1_envelope/f1_channel_ratios.csv",
+    "runs/_round10_analysis_checks/real_ep2/f1_envelope/f1_envelope.csv",
+    "runs/_round10_analysis_checks/real_ep2/f1_envelope/f1_per_file.csv"
+  ]
+}

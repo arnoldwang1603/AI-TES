@@ -1,0 +1,14 @@
+NOTE: NUM_LAYERS=1 -> GRU dropout is a no-op; DROPOUT 0.3 normalised to 0.0 (run name dp0.0)
+Using device: cuda
+  GPU : NVIDIA GeForce RTX 4090
+  VRAM: 25.8 GB
+PASS unleased real EC test API refuses access
+PASS F11 physics path missing preload rejected before data load
+PASS incomplete70 reference map rejected
+PASS mismatched physics horizon rejected
+PASS residual passes exact preloaded references into70 datasets
+PASS input_residual passes exact preloaded references into70 datasets
+PASS input passes exact preloaded references into70 datasets
+PASS validation path unchanged and ignores optional map
+PASS physics test API refuses B6 capability
+check_f11_physics_boundary: 9/9 PASS
