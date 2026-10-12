@@ -41,7 +41,8 @@ def main():
                 os.makedirs(dest, exist_ok=True)
                 rows = []
                 for index in range(20):
-                    row = dict(Case="synthetic/val%d.csv" % index, CaseFile="synthetic/val%d.csv" % index,
+                    row = dict(Case="synthetic/family%d/val%d.csv" % (index // 10, index % 10),
+                               CaseFile="val%d.csv" % (index % 10),
                                JumpSteps_gt2C_ToTa=0, JumpSteps_gt1C_ToTa=0)
                     for ch, value in zip(decisions.CH, metrics):
                         row["MAE_%s (C)" % ch] = value

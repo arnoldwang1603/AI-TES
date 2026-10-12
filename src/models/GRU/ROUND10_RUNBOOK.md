@@ -120,6 +120,25 @@ python round10_pipeline.py --all --parallel 3
 
 报错时记录终端最后的完整错误及程序指出的日志。环境或磁盘问题处理后重跑同一命令；遇到哈希、封存、checkpoint、测试访问或统计输入不一致，交给负责人处理。保留状态文件、锁文件、失败 run 和访问记录。
 
+### 特定故障恢复：S1 后出现 `Index contains duplicate entries, cannot reshape`
+
+这是验证结果汇总把同名、不同目录的文件当成同一个 case 的程序错误。负责人发布的 2026-10-12 case-ID 修复同时更新三个读取入口、回归检查和包封存，并提供专用恢复脚本。不要自行改哈希或删除状态；已完成的训练可以保留。
+
+仅当 S0/S1 完成、S1b 因上述错误失败且尚未进入 B6 时，更新后执行：
+
+```bash
+cd ~/AI-TES
+git pull --ff-only
+cd src/models/GRU
+python round10_case_id_hotfix.py --apply
+python round10_pipeline.py --preflight
+python round10_pipeline.py --all --parallel 3
+```
+
+每条成功后再运行下一条。恢复脚本核对旧/新封存、原协议、数据、阶段状态及已完成 S1 产物，备份原状态后只迁移包身份；拒绝不符合这次故障条件的状态。随后 S0/S1 显示 `already complete`，从失败的 S1b 汇总继续。不要运行 `--restart-v4`，也不必为这个汇总修复重训或重新做全臂冒烟。若脚本拒绝恢复，保留输出交给负责人，不手改状态绕过。
+
+这次修复不改变模型、权重、验证划分、训练参数、种子、统计阈值或测试访问规则。修复说明和审核范围见 `ROUND10_CASE_ID_HOTFIX_2026-10-12.md`。专用脚本不带 `--apply` 时仅检查，不迁移状态。
+
 ## 6. 完成后交回
 
 以 S9 完成、`pipeline_state.json` 中包括 S7b 在内的全部阶段均为完成状态为准。交回这些完整目录：

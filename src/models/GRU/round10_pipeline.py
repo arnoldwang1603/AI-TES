@@ -371,10 +371,12 @@ def comparison(records, arms, pairs, family, out):
         rows = pd.read_csv(path)
         for _, row in rows[rows.Case.astype(str) != "AVERAGE"].iterrows():
             for ch in CH:
-                frames.append(dict(arm=record["arm"], seed=record["seed"], file=row["CaseFile"],
+                # Case is the full relative path; CaseFile is display-only
+                # and can repeat across different thermal-profile folders.
+                frames.append(dict(arm=record["arm"], seed=record["seed"], file=row["Case"],
                                    channel=ch, MAE=row["MAE_%s (C)" % ch]))
             for ch in stats.JUMP_COLS:
-                frames.append(dict(arm=record["arm"], seed=record["seed"], file=row["CaseFile"], channel=ch, MAE=row[ch]))
+                frames.append(dict(arm=record["arm"], seed=record["seed"], file=row["Case"], channel=ch, MAE=row[ch]))
     long = pd.DataFrame(frames)
     os.makedirs(out, exist_ok=True)
     long.to_csv(os.path.join(out, family + "_long.csv"), index=False)

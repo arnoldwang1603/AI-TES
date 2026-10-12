@@ -55,9 +55,9 @@ def long_for(records, names):
         rows = rows_for(records, name)
         for _, r in rows.iterrows():
             for c in CH:
-                output.append(dict(arm=name, seed=int(r["seed"]), file=r["CaseFile"], channel=c, MAE=r["MAE_%s (C)" % c]))
+                output.append(dict(arm=name, seed=int(r["seed"]), file=r["Case"], channel=c, MAE=r["MAE_%s (C)" % c]))
             for c in ps.JUMP_COLS:
-                output.append(dict(arm=name, seed=int(r["seed"]), file=r["CaseFile"], channel=c, MAE=r[c]))
+                output.append(dict(arm=name, seed=int(r["seed"]), file=r["Case"], channel=c, MAE=r[c]))
     return pd.DataFrame(output)
 
 

@@ -221,6 +221,13 @@ def normalise_long(df):
     out = pd.DataFrame({"arm": d[cols["arm"]].astype(str), "seed": d[cols["seed"]].astype(int),
                         "file": d[fcol].astype(str), "channel": d[cols["channel"]].astype(str),
                         "value": pd.to_numeric(d[vcol], errors="coerce").astype(float)})
+    keys = ["arm", "seed", "file", "channel"]
+    duplicate = out.duplicated(keys, keep=False)
+    if duplicate.any():
+        example = out.loc[duplicate, keys].iloc[0].to_dict()
+        raise ValueError("Duplicate (arm, seed, file, channel) keys: %s. "
+                         "Use the full Case path, not the CaseFile basename; "
+                         "do not average or drop duplicate records." % example)
     return out
 
 
@@ -498,10 +505,11 @@ def long_table_from_runs(arm_dirs, runs_root, seeds, variant="forward_direct",
                 missing.append(p)
                 continue
             df = pd.read_csv(p)
-            if "Case" in df.columns:
-                df = df[df["Case"] != "AVERAGE"]
+            if "Case" not in df.columns:
+                raise ValueError("Validation summary requires full Case paths: " + p)
+            df = df[df["Case"] != "AVERAGE"]
             for _, r in df.iterrows():
-                f = str(r["CaseFile"])
+                f = str(r["Case"])
                 for ch in CHANNELS:
                     col = "MAE_%s (C)" % ch
                     if col in df.columns:
