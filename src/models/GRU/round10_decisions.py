@@ -13,6 +13,7 @@ from paper_report import atomic_json, read_json
 HERE = os.path.dirname(os.path.abspath(__file__))
 CH = ("T_inner", "T_outer", "T_avg")
 VARIANT = "forward_direct"
+T0_SWEEP = "50:600:10"
 
 
 def rows_for(records, name):
@@ -96,6 +97,28 @@ def encoder_params(records, name):
     return values[0]
 
 
+def t0_sweep_issue(sweep, seed):
+    """Validate every registered initial-temperature/channel observation."""
+    required = {"seed", "T0", "channel", "MaxOffset_60"}
+    if not required.issubset(sweep.columns):
+        return "missing columns: " + ", ".join(sorted(required - set(sweep.columns)))
+    start, stop, step = map(float, T0_SWEEP.split(":"))
+    expected = {(float(t0), channel) for t0 in np.arange(start, stop + step * .5, step) for channel in CH}
+    temperatures = pd.to_numeric(sweep["T0"], errors="coerce").to_numpy(float)
+    seed_ids = pd.to_numeric(sweep["seed"], errors="coerce").to_numpy(float)
+    offsets = pd.to_numeric(sweep["MaxOffset_60"], errors="coerce").to_numpy(float)
+    if not (np.isfinite(temperatures).all() and np.isfinite(seed_ids).all() and np.isfinite(offsets).all()):
+        return "nonfinite temperature, seed or 60-step offset"
+    keys = list(zip(temperatures, sweep["channel"].astype(str)))
+    if len(keys) != len(expected) or len(set(keys)) != len(keys) or set(keys) != expected:
+        return "incomplete or duplicate registered temperature/channel grid"
+    if not (seed_ids == int(seed)).all():
+        return "sweep seed differs from checkpoint record"
+    if (offsets < 0).any():
+        return "negative absolute 60-step offset"
+    return None
+
+
 def p4_adoption(records, name, p, out, baseline=None):
     source = name[4:] if name.startswith("C17_") else name
     baseline = baseline or ("B1_mask" if name.startswith("C17_") else "B2_mask")
@@ -133,7 +156,7 @@ def p4_adoption(records, name, p, out, baseline=None):
         import eval_checkpoint
         sweep_dir = os.path.join(out, "t0_sweeps", name)
         os.makedirs(sweep_dir, exist_ok=True)
-        sweeps = []
+        sweeps, issues = [], []
         for record in records:
             if record["arm"] != name:
                 continue
@@ -141,12 +164,18 @@ def p4_adoption(records, name, p, out, baseline=None):
             if os.path.isfile(path):
                 sweep = pd.read_csv(path)
             else:
-                sweep = eval_checkpoint.t0_sweep(record["run_dir"], sweep="50:600:10", which="best", out_dir=sweep_dir)
+                sweep = eval_checkpoint.t0_sweep(record["run_dir"], sweep=T0_SWEEP, which="best", out_dir=sweep_dir)
                 sweep.to_csv(path, index=False)
             sweeps.append(sweep)
-        joined = pd.concat(sweeps, ignore_index=True)
-        detail["max_t0_offset"] = float(joined["MaxOffset_60"].max())
-        detail["startup_pass"] = bool(detail["max_t0_offset"] <= float(threshold.group(1)))
+            issue = t0_sweep_issue(sweep, record["seed"])
+            if issue:
+                issues.append(dict(seed=int(record["seed"]), reason=issue))
+        complete = bool(sweeps) and not issues
+        detail["t0_sweep_complete"] = complete
+        detail["t0_sweep_issues"] = issues
+        detail["max_t0_offset"] = (float(pd.to_numeric(pd.concat(sweeps, ignore_index=True)["MaxOffset_60"]).max())
+                                   if complete else None)
+        detail["startup_pass"] = bool(complete and detail["max_t0_offset"] <= float(threshold.group(1)))
     if source.startswith("G7"):
         return bool(detail["startup_pass"]), detail
     return bool(encoder_pass), detail

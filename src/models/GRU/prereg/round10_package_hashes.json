@@ -1,7 +1,7 @@
 {
   "format": "round10.package/1",
   "files": {
-    "a7_bridge.py": "d2e343de89cbbf9e6812a5fd34617aa3baf4051b19b2e2999bf2a58c61e6ca9a",
+    "a7_bridge.py": "bb811099824ac57d09ea7420e39e0d45842b788237022c1dc6356bffae4ef3c5",
     "analysis_common.py": "bd565822b4597115ea6316d4fe2dc7fbc3f68b0596e7cf06b153aa25b6cac96f",
     "analyze_anchor_candidates.py": "34eca663c0a7feb18d643d4c2941c24c00f7fd842f075026e7cc8eabd8574973",
     "analyze_round9.py": "f0885eedb3abc5e2ce7ab3466a1c0c7e91f5f5fcbd7d9ba7e16e571927bfe9dd",
@@ -24,7 +24,7 @@
     "physics_reference.py": "7d014692b439e5c6c8395b30bdab9053cee7fe1bda7695089c2db6558fa98bce",
     "prepare_frozen_constants.py": "b8614506145dfc26be5c3c8816296657ccdec1d4f0cba2704ab5c379b373744b",
     "radial1d_reference.py": "bc800d697e1998fa8d8b57514c4ae47bcd0ffc8f55e4d78f34a8a90a212bff8d",
-    "round10_decisions.py": "753faf56ba697d39b2cd22865d5f4b34115ebd79ed7bedcb7022a89efc09381a",
+    "round10_decisions.py": "f289d3d580881137f658f5413c089acb83fa2ee5a3af31fc88a6e66bdd5d0bb1",
     "round10_f11.py": "ccddf9269fb1b037da9f5e0a5203e53abf1b75714d0ede6d8cfc3edaf9e7a1e2",
     "round10_integrity.py": "c3ac33538672b73937e2e23ec673db4121fec72a31c4b407f20250ffcbfe4f39",
     "round10_migration.py": "533dcae3be195d3c4c358eee2f83ea101779c84d7ecfe8e11a92e3b9858e419a",
@@ -760,7 +760,12 @@
     "round10_checks/check_case_identity.py": "c29bb894a3c9c6266e03b1d62d3ad06de51487efb0b509ba04b2677c8d6dfc35",
     "round10_checks/check_case_id_hotfix.py": "79940dceafec5b5865b9ff17cb27e0feb441998f98f3a88b5c8341f763238a00",
     "round10_case_id_hotfix.py": "2cee6195c156d60308794855937eccbdc22d9524eb6512adc4dc0d2aa3d208cc",
-    "prereg/round10_package_hashes_v4_before_case_id_fix.json": "e0690b779a5033a26dd90fc3aa11eebccd4349888e861366fcfe13d236ae2b3c"
+    "prereg/round10_package_hashes_v4_before_case_id_fix.json": "e0690b779a5033a26dd90fc3aa11eebccd4349888e861366fcfe13d236ae2b3c",
+    "prereg/round10_package_hashes_v4_before_a7_scaler_fix.json": "0bdad6d0b77239bf2ac22105ee92315a81bb6ac3217ea572ebf12f8ec81acddf",
+    "round10_a7_scaler_hotfix.py": "ac33eb3112bd0713cd3a341166deefdc3277401e0c1951bd9369853eba9ddffd",
+    "round10_checks/check_a7_scaler.py": "cb5d96422bd4aa3e58f956af9f602f2b861fba3f0e48a3905100a0b614b2814f",
+    "round10_checks/check_a7_scaler_hotfix.py": "67b42df567e3483017cb2d90ab4882fdc3c540f340c5899ccb4a4756a2015cb4",
+    "round10_checks/check_p4_t0_contract.py": "59730571519183c08122b140fa7beed480b3564fbcdb54b6c6a37825ee7cdaae"
   },
   "scope": "immutable code, versioned protocols and splits, historical constants, train/val physics cache and archived R9 resources; strict F1 fits per-fold constants"
 }

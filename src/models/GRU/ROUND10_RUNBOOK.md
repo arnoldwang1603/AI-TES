@@ -141,6 +141,25 @@ python round10_pipeline.py --all --parallel 3
 
 如果先前版本的恢复脚本报 `S1b validation paths differ from the frozen validation split`，它可能是把带训练目录前缀的导出路径与不带前缀的 split 键直接比较。负责人已修正为训练程序实际导出的路径格式；更新完整补丁后重新执行上述恢复命令即可。该拒绝发生在状态迁移和备份写入前，勿为此删除状态或重训。更新后若仍不匹配，错误会列出具体 run 以及缺失/多出的路径，交给负责人核对。
 
+### 特定故障恢复：A7 报 scaler 缺少 `feature_names_in_`
+
+如果 S1 已完成，且 `a7_bridge.py.log` 的异常为 `AttributeError: 'MinMaxScaler' object has no attribute 'feature_names_in_'`，使用负责人发布的 A7 修复。该属性是可选列名信息；修复按训练/推断已固定的五列顺序读取 scale，不改训练、模型、统计阈值或验证数据。
+
+这次故障发生在 B6 完成之后，使用下面的 A7 专用恢复命令，不使用前面的 case-ID 恢复命令：
+
+```bash
+cd ~/AI-TES
+git pull --ff-only
+cd src/models/GRU
+python round10_a7_scaler_hotfix.py --apply
+python round10_pipeline.py --preflight
+python round10_pipeline.py --all --parallel 3
+```
+
+每条成功再执行下一条。恢复脚本核对原包、170 个 S1 run、40 个 B6 checkpoint 指纹、已完成 B6 报告及访问记录，备份原状态和 A7 失败日志，只迁移包身份。B6 报告内容只作哈希验证；不重新读取测试数据。继续运行时 S0/S1 显示 `already complete`，B6 也应显示 `already complete`，然后继续 G1/A7。保留原 run、结果和访问账本，无需重训或重新跑全臂冒烟。若恢复脚本拒绝，保留具体报错交给负责人。
+
+本次合并更新还修正后续 P4 的 T0 稳定性判定：扫描出现无效值或缺失采样行时不能被判为通过；种子数、0.5°C 阈值和训练配置不变。适用于服务器仍停在上述原始 A7 故障、尚未应用第一版 A7 修复的情况。说明和验证范围见 `ROUND10_A7_SCALER_HOTFIX_2026-10-12.md`。
+
 ## 6. 完成后交回
 
 以 S9 完成、`pipeline_state.json` 中包括 S7b 在内的全部阶段均为完成状态为准。交回这些完整目录：

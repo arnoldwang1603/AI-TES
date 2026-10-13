@@ -7,7 +7,7 @@ test CSVs are opened. Legacy constants come from each checkpoint's own split.
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from analysis_common import (CHANNELS, COLS, cache_for_keys, normalized_key, load_manifest,
+from analysis_common import (BASE_COLS, CHANNELS, COLS, cache_for_keys, normalized_key, load_manifest,
                              parser, predict_frame, read_frames, read_json,
                              setup_run, split_spec, write_table, manifest_context)
 
@@ -75,8 +75,20 @@ def legacy_validation_scalar(session, frames):
     """Reproduce the archived, unmasked weighted scaled validation MAE."""
     config = session["run_config"]
     weights = np.asarray(config["loss_weights"], dtype=float)
-    scales = np.asarray([session["scaler"].scale_[list(session["scaler"].feature_names_in_).index(column)]
-                         for column in COLS], dtype=float)
+    scaler = session["scaler"]
+    # Both own-split fitting and sidecar restoration use BASE_COLS. Older
+    # sklearn scalers may omit feature_names_in_; this optional metadata
+    # must not block replay or change the frozen scaler/model constants.
+    scales = np.asarray(scaler.scale_, dtype=float)
+    if (scales.shape != (len(BASE_COLS),)
+            or not np.isfinite(scales).all() or np.any(scales <= 0)
+            or getattr(scaler, "n_features_in_", len(BASE_COLS)) != len(BASE_COLS)):
+        raise ValueError("A7 scaler must have five finite positive scales in frozen BASE_COLS order")
+    if hasattr(scaler, "feature_names_in_"):
+        names = np.asarray(scaler.feature_names_in_, dtype=object)
+        if names.shape != (len(BASE_COLS),) or names.tolist() != list(BASE_COLS):
+            raise ValueError("A7 scaler feature names differ from frozen BASE_COLS order")
+    scales = scales[[BASE_COLS.index(column) for column in COLS]]
     errors = []
     for key, frame in frames.items():
         prediction = predict_frame(session, frame, key)
