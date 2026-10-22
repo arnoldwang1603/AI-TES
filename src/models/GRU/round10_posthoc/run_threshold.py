@@ -56,7 +56,9 @@ def main(argv=None):
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--cache-root", default=os.path.join(HERE, "runs", "_threshold_caches"))
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--threads", type=int, default=1, help="CPU threads per training run (0 = PyTorch default)")
     args = ap.parse_args(argv)
+    p.set_cpu_threads(args.threads)
 
     pr = p.protocol()
     s10, s20 = list(pr["seeds"]["S10"]), list(pr["seeds"]["S20"])

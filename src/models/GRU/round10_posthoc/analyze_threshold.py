@@ -1,6 +1,7 @@
 """Analyse the reference-threshold study (PREREG_reference_threshold.md).
 
-Reads validation results (summary_errors_val.csv) of every level, of the Round 10
+Reads the post-hoc test results (summary_errors_test_posthoc.csv from plot_test_posthoc.py,
+the primary readout since Addendum 3; --set val reads summary_errors_val.csv) of every level, of the Round 10
 baselines B2_mask (C1, direct), C11 (nominal reference) and C2 (initial value),
 pairs them by seed with C1, bootstraps 95% CIs over seeds, joins the training
 residual shares from level_stats.csv, and writes:
@@ -33,12 +34,15 @@ CH = ("T_inner", "T_outer", "T_avg")
 ENDPOINTS = {"C11": (0.62, 0.44), "C2": (49.0, 66.0)}
 
 
+CSV_NAME = "summary_errors_test_posthoc.csv"     # --set val switches to summary_errors_val.csv
+
+
 def seed_table(root, base):
     """seed -> dict(channel -> file-mean MAE); T_avg excludes NaN (masked) files."""
     out = {}
     for d in glob.glob(os.path.join(root, base + "_seed*")):
         m = re.search(r"_seed(\d+)$", d.rstrip("/\\"))
-        f = os.path.join(d, "variants", "forward_direct", "summary_errors_val.csv")
+        f = os.path.join(d, "variants", "forward_direct", CSV_NAME)
         if not m or not os.path.isfile(os.path.join(d, "variants", "forward_direct", "done.flag")) or not os.path.isfile(f):
             continue
         t = pd.read_csv(f)
@@ -103,8 +107,14 @@ def main(argv=None):
     ap.add_argument("--baseline-root", default=os.path.join(HERE, "runs"))
     ap.add_argument("--cache-root", default=os.path.join(HERE, "runs", "_threshold_caches"))
     ap.add_argument("--out", default=os.path.join(HERE, "runs", "_threshold_results"))
+    ap.add_argument("--set", default="test", choices=("val", "test"),
+                    help="test (primary readout, Addendum 3) or val (secondary)")
     args = ap.parse_args(argv)
     os.makedirs(args.out, exist_ok=True)
+    global CSV_NAME
+    CSV_NAME = "summary_errors_test_posthoc.csv" if args.set == "test" else "summary_errors_val.csv"
+    sfx = "_test" if args.set == "test" else ""       # validation outputs keep their original names
+    set_word = "test (70 files, post-hoc)" if args.set == "test" else "validation"
     rng = np.random.default_rng(20261021)
 
     c1 = seed_table(args.baseline_root, TAGS["C1"])
@@ -132,7 +142,7 @@ def main(argv=None):
                          share_Ta=s["train_share_T_avg_pct"], ref_val_mae_To=s["val_mae_T_outer"],
                          ref_val_mae_Ta=s["val_mae_T_avg"], **paired(t, c1, rng)))
     tab = pd.DataFrame(rows)
-    tab.to_csv(os.path.join(args.out, "threshold_table.csv"), index=False)
+    tab.to_csv(os.path.join(args.out, "threshold_table%s.csv" % sfx), index=False)
 
     def fmt(r, ch):
         if pd.isna(r.get(ch + "_diff", np.nan)):
@@ -146,9 +156,11 @@ def main(argv=None):
             r["level"], r["family"], r["share_To"], r["share_Ta"], int(r.get("n_seeds", 0) or 0),
             fmt(r, "T_inner"), fmt(r, "T_outer"), fmt(r, "T_avg"), fmt(r, "ToTa"), own))
     lines.append("")
-    lines.append("Differences are level minus C1 (B2_mask, direct), seed-paired, validation MAE in C; negative = the reference helps. "
-                 "Bands for wording: T_inner 0.02, T_outer 0.05, T_avg 0.08 C. Direct model's own validation MAE: "
-                 "T_outer %.3f, T_avg %.3f." % (np.mean([r["T_outer"] for r in c1.values()]), np.mean([r["T_avg"] for r in c1.values()])))
+    lines.append("Differences are level minus C1 (B2_mask, direct), seed-paired, %s MAE in C; negative = the reference helps. "
+                 "[..] = seed-bootstrap 95%% CI. "
+                 "Bands for wording: T_inner 0.02, T_outer 0.05, T_avg 0.08 C. Direct model's own %s MAE: "
+                 "T_outer %.3f, T_avg %.3f." % (set_word, set_word, np.mean([r["T_outer"] for r in c1.values()]),
+                                                np.mean([r["T_avg"] for r in c1.values()])))
 
     # boundary per family and channel. C11 is the left end of both families. The blend family's right
     # end is b100 (initial value through the same residual pipeline) when it exists, else C2.
@@ -169,7 +181,7 @@ def main(argv=None):
                             boot_median=bc[0] if bc else None, boot_ci_lo=bc[1] if bc else None,
                             boot_ci_hi=bc[2] if bc else None, boot_frac_no_crossing=bc[3] if bc else None,
                             first_share_with_CI_upper_ge_0=first_ci, levels_used=",".join(s.level)))
-    pd.DataFrame(bnd).to_csv(os.path.join(args.out, "threshold_boundary.csv"), index=False)
+    pd.DataFrame(bnd).to_csv(os.path.join(args.out, "threshold_boundary%s.csv" % sfx), index=False)
     lines.append("")
     lines.append("Boundary (share of target spread, %; seed-bootstrap 95% CI of the crossing, and the share of draws with no crossing):")
     for b in bnd:
@@ -194,12 +206,12 @@ def main(argv=None):
             yb = float(np.interp(math.log(x), np.log(bb[sc].values), bb[ch + "_diff"].values))
             col.append(dict(channel=ch, level=r["level"], share=x, diffusivity_diff=r[ch + "_diff"], blend_interp=yb,
                             gap=r[ch + "_diff"] - yb, band=BANDS[ch], within_band=abs(r[ch + "_diff"] - yb) <= BANDS[ch]))
-    pd.DataFrame(col).to_csv(os.path.join(args.out, "threshold_collapse.csv"), index=False)
+    pd.DataFrame(col).to_csv(os.path.join(args.out, "threshold_collapse%s.csv" % sfx), index=False)
     if col:
         lines.append("")
         lines.append("Collapse test (diffusivity level vs blend curve at the same share): " + "; ".join(
             "%s %s gap %+.3f (%s)" % (c["channel"], c["level"], c["gap"], "within band" if c["within_band"] else "OUTSIDE band") for c in col))
-    with open(os.path.join(args.out, "threshold_table.md"), "w", encoding="utf-8") as f:
+    with open(os.path.join(args.out, "threshold_table%s.md" % sfx), "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     print("\n".join(lines))
 
@@ -220,12 +232,12 @@ def main(argv=None):
             ax.axhspan(-BANDS[ch], BANDS[ch], color="0.9", zorder=0)
             ax.set_xscale("log")
             ax.set_xlabel("training residual share of target spread (%)" + (" (T_outer axis)" if ch == "ToTa" else ""))
-            ax.set_ylabel("validation MAE minus direct (C)")
+            ax.set_ylabel("%s MAE minus direct (C)" % ("test" if args.set == "test" else "validation"))
             ax.set_title(ch)
         axes[0].legend(fontsize=8)
         fig.tight_layout()
-        fig.savefig(os.path.join(args.out, "threshold_curve.png"), dpi=150)
-        print("wrote", os.path.join(args.out, "threshold_curve.png"))
+        fig.savefig(os.path.join(args.out, "threshold_curve%s.png" % sfx), dpi=150)
+        print("wrote", os.path.join(args.out, "threshold_curve%s.png" % sfx))
     except Exception as e:  # plotting must never block the tables
         print("plot skipped:", e)
 

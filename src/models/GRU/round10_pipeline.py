@@ -133,6 +133,22 @@ def resolved_resource_paths(env=None):
     return {key: os.path.abspath(env.get(key) or default) for key, default in defaults.items()}
 
 
+def set_cpu_threads(n):
+    """Cap the CPU thread pools of every child run (isolated_env inherits os.environ).
+
+    n <= 0 keeps the PyTorch default (one pool thread per core). 2026-10-22,
+    round10_posthoc/bench_threads.py: the pool threads mostly spin while the GRU's
+    sequential GPU steps pace each epoch; with 1 thread per run the loss history is
+    unchanged, a run is ~20% faster at 3 workers, and 6 workers give ~40% more total
+    epochs per second (local 4090; confirm the worker count on the server).
+    """
+    for var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
+        if n > 0:
+            os.environ[var] = str(n)
+        else:
+            os.environ.pop(var, None)
+
+
 def isolated_env(overrides):
     env = dict(os.environ)
     # A pipeline started from a research shell must not inherit experimental
@@ -785,7 +801,9 @@ def main():
     ap.add_argument("--parallel", type=int, default=3)
     ap.add_argument("--keep-smoke", action="store_true")
     ap.add_argument("--only")
+    ap.add_argument("--threads", type=int, default=1, help="CPU threads per training run (0 = PyTorch default)")
     args = ap.parse_args()
+    set_cpu_threads(args.threads)
     if args.only and not args.smoke:
         ap.error("--only is for smoke diagnostics; registered production uses the complete stage graph")
     if args.parallel < 1:

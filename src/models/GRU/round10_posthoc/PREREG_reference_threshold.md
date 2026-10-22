@@ -76,3 +76,27 @@ Same protocol as above: C11 environment, only the cache and the run prefix chang
 - E2: if s006 (49.2%) still helps while b100 (49.4%) hurts, the boundary coincides with "the reference carries nothing beyond the start value"; the paper then states the boundary in those words and gives the share as a number.
 - E3: the T_avg crossing, if any, lies above 56%; no crossing below 50%.
 - E4: b100 reproduces C2 within the band (T_outer 0.05, T_avg 0.08 C), confirming the two implementations agree.
+
+## Addendum 2, 2026-10-22: post-hoc test-set readout (written before any test scoring of threshold levels)
+
+**Why.** The study above is validation-only. On 2026-10-22 single-seed post-hoc test scores showed that validation and test can disagree (unmasked C12 and C11: validation T_avg 0.35 and 0.38, test 1.46 and 1.17). The validation set has no scored hot pure-discharge T_avg files; the test set does. A boundary measured on validation only is therefore not enough.
+
+**Status of the test set.** Development rounds 1 to 9 looked at test results throughout, so the 70 test cases were never pristine; Round 10 sealed them only for its own decisions, and F11 is complete and the recipe frozen. This study selects nothing: all levels and their order were fixed before the test is read, and test results cannot change any level, analysis rule or the Round 10 recipe. The test readout is secondary; validation stays the primary readout.
+
+**What is scored.** Every threshold checkpoint (15 levels x 20 seeds) and the baselines C1 (B2_mask), C11 and C2 (20 seeds each), best checkpoint, constants from the sidecar, all 70 test files, with `plot_test_posthoc.py`. Each threshold level is scored against its own degraded reference recomputed on the test frames with the cache formulas (checked equal to the training caches to 0 C). Complete test plots (70 per run) are written. Every read is logged in `posthoc_test_access.log`.
+
+**Analysis.** `analyze_threshold.py --set test`, identical rules: seed-paired difference to C1 per level and channel with 95% CI, crossing share with joint seed-bootstrap CI per family, collapse test. T_avg on all 70 test files (67 line average, 3 borderline). The residual-share axis stays the training share from `level_stats.csv`.
+
+**Predictions (before scoring).**
+- T1: the direction holds on test: gains shrink monotonically with the residual share in both families.
+- T2: test gains are smaller than validation gains (Round 10 C12: test gain about one third to one half of validation).
+- T3: the test crossing lies at a lower share than the validation crossing.
+- T4: the two families still collapse within the band on test.
+
+## Addendum 3, 2026-10-22: the test set is the primary readout (owner decision, before any test scoring of threshold levels)
+
+**Decision.** The owner rules that conclusions of this study come from the 70 test files; validation is reported next to it as secondary. This replaces "The test readout is secondary; validation stays the primary readout" in Addendum 2.
+
+**Why.** Every earlier round reached its conclusions on the test set, so sealing it for one round adds no independence. The validation set (20 files, 17 for T_avg) has no scored hot pure-discharge T_avg files, and validation and test already disagree in sign for unmasked C12 and C11 on T_avg. Choosing validation as the decision set was a design error of this study.
+
+**What changes.** Only the readout. Levels, seeds, training, the residual-share axis and the analysis rules (seed-paired difference to C1 with seed-bootstrap 95% CI) stay as registered; `analyze_threshold.py` now defaults to `--set test`. Predictions T1 to T4 stand.
