@@ -138,9 +138,9 @@ def set_cpu_threads(n):
 
     n <= 0 keeps the PyTorch default (one pool thread per core). 2026-10-22,
     round10_posthoc/bench_threads.py: the pool threads mostly spin while the GRU's
-    sequential GPU steps pace each epoch; with 1 thread per run the loss history is
-    unchanged, a run is ~20% faster at 3 workers, and 6 workers give ~40% more total
-    epochs per second (local 4090; confirm the worker count on the server).
+    sequential GPU steps pace each epoch. On the lab server (48 threads, RTX 4090)
+    3 workers x unlimited gave 7.0 epochs/s in total, 3 x 1 thread 15.6, 8 x 1 18.0,
+    10 x 1 18.2 (GPU-bound beyond ~8); the loss history was identical in every setting.
     """
     for var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
         if n > 0:
@@ -798,7 +798,7 @@ def main():
     modes.add_argument("--stage", choices=STAGES)
     ap.add_argument("--until", choices=STAGES)
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--parallel", type=int, default=3)
+    ap.add_argument("--parallel", type=int, default=8)
     ap.add_argument("--keep-smoke", action="store_true")
     ap.add_argument("--only")
     ap.add_argument("--threads", type=int, default=1, help="CPU threads per training run (0 = PyTorch default)")

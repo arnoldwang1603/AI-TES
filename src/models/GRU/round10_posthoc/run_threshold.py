@@ -10,7 +10,7 @@ partial run already covers all levels.
 
 Usage (from src/models/GRU):
   python round10_posthoc/run_threshold.py --dry-run
-  python round10_posthoc/run_threshold.py --workers 3 [--levels s080,b010] [--seeds S10|S20]
+  python round10_posthoc/run_threshold.py --workers 8 [--levels s080,b010] [--seeds S10|S20]
   [--cache-root runs/_threshold_caches]
 """
 import argparse
@@ -53,7 +53,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--levels", default=",".join(LEVELS))
     ap.add_argument("--seeds", default="S20", choices=("S10", "S20"))
-    ap.add_argument("--workers", type=int, default=3)
+    ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--cache-root", default=os.path.join(HERE, "runs", "_threshold_caches"))
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--threads", type=int, default=1, help="CPU threads per training run (0 = PyTorch default)")

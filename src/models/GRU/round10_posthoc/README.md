@@ -25,7 +25,7 @@ cat runs/_threshold_caches/level_stats.csv
 python round10_posthoc/run_threshold.py --dry-run
 
 # 3. train (pass 1 = S10 seeds of every level, pass 2 = the other ten; resume-safe, rerun the same command after an interruption)
-nohup python round10_posthoc/run_threshold.py --workers 3 > threshold_run.log 2>&1 &
+nohup python round10_posthoc/run_threshold.py --workers 8 > threshold_run.log 2>&1 &
 
 # 4. analysis (point --baseline-root at the directory that holds the r10v4_ runs of B2_mask, C11 and C2).
 #    Default is the test set, so run the test readout section below first; --set val gives the validation tables.
@@ -39,7 +39,7 @@ Unmasked supplement (already running on the owner's PC; the same script works on
 
 ```bash
 python round10_posthoc/run_nomask_supplement.py --dry-run
-python round10_posthoc/run_nomask_supplement.py --workers 3
+python round10_posthoc/run_nomask_supplement.py --workers 8
 ```
 
 ## What to hand back
@@ -51,13 +51,13 @@ python round10_posthoc/run_nomask_supplement.py --workers 3
 Run after the threshold training is complete. The analysis of step 4 above then defaults to the test set; run it with `--set val` for the secondary validation tables. It scores every threshold checkpoint against its own degraded reference and the three baselines on all 70 test files, writes 70 test plots per run into each run's `variants/forward_direct/plots/`, plus `summary_errors_test_posthoc.csv`, `predictions_test_posthoc.npz`, `test_posthoc_aggregate.json` and `POSTHOC_TEST_NOTE.md`; every read is logged in `round10_posthoc/posthoc_test_access.log`. Files are only added, nothing is overwritten. Resume-safe: rerun the same command after an interruption.
 
 ```bash
-nohup python round10_posthoc/plot_test_posthoc.py --reason "threshold study test readout (Addendum 2)" --runs-root runs --glob "r10th_*_seed*" --workers 3 > test_threshold.log 2>&1 &
+nohup python round10_posthoc/plot_test_posthoc.py --reason "threshold study test readout (Addendum 2)" --runs-root runs --glob "r10th_*_seed*" --workers 8 > test_threshold.log 2>&1 &
 ```
 
 ```bash
-python round10_posthoc/plot_test_posthoc.py --reason "threshold baselines test readout (Addendum 2)" --runs-root runs --glob "r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_ep2000_vs3_mk_seed*" --workers 3
-python round10_posthoc/plot_test_posthoc.py --reason "threshold baselines test readout (Addendum 2)" --runs-root runs --glob "r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_phr_ep2000_vs3_mk_seed*" --workers 3
-python round10_posthoc/plot_test_posthoc.py --reason "threshold baselines test readout (Addendum 2)" --runs-root runs --glob "r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-anchor_initial_h128x1dp0.0_init_ep2000_vs3_mk_seed*" --workers 3
+python round10_posthoc/plot_test_posthoc.py --reason "threshold baselines test readout (Addendum 2)" --runs-root runs --glob "r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_ep2000_vs3_mk_seed*" --workers 8
+python round10_posthoc/plot_test_posthoc.py --reason "threshold baselines test readout (Addendum 2)" --runs-root runs --glob "r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_phr_ep2000_vs3_mk_seed*" --workers 8
+python round10_posthoc/plot_test_posthoc.py --reason "threshold baselines test readout (Addendum 2)" --runs-root runs --glob "r10v4_forward_direct_Tin-anchor_l1_w1-6-3_oth-anchor_initial_h128x1dp0.0_init_ep2000_vs3_mk_seed*" --workers 8
 ```
 
 ```bash
@@ -70,10 +70,19 @@ The test outputs carry a `_test` suffix next to the validation ones in `runs/_th
 
 Every training or scoring process used to open PyTorch thread pools as wide as the machine; on the 48-thread server three training runs kept about 45 cores busy while the GPU sat at 37%. The pool threads mostly spin: an epoch is paced by the GRU's sequential GPU steps. `round10_pipeline.py`, `run_threshold.py`, `run_nomask_supplement.py` and `plot_test_posthoc.py` now take `--threads` (default 1, `0` = old behaviour) and pass it to every child process.
 
-Local benchmark (RTX 4090, 32 threads, C11, 40 epochs; `bench_threads.py`): 3 workers unlimited 8.6 epochs/s in total, 3 x 1 thread 10.4, 6 x 1 12.0, 9 x 1 12.4, 12 x 1 12.6, 3 x 4 10.2. The loss history of the shared seed was identical in every setting. Confirm the worker count on the server when nothing else is training:
+Benchmarks with `bench_threads.py` (C11; total epochs per second over all concurrent runs; the loss history of the shared seed was identical in every setting on both machines):
+
+| Setting (workers x threads) | Lab server (48 threads, RTX 4090, 60 epochs) | Owner's PC (32 threads, RTX 4090, 40 epochs) |
+|---|---|---|
+| 3 x unlimited (old default) | 7.0 | 8.6 |
+| 3 x 1 | 15.6 | 10.4 |
+| 6 x 1 | 17.4 | 12.0 |
+| 8 x 1 | 18.0 | 12.4 (9 x 1) |
+| 10 x 1 | 18.2 | 12.6 (12 x 1) |
+| 6 x 2 | 17.4 | 10.2 (3 x 4) |
+
+Beyond about 8 workers the GPU is the limit. Defaults are therefore 1 thread and 8 workers (`--workers` in the post-hoc launchers, `--parallel` in `round10_pipeline.py`); on the server this is about 2.6 times the old throughput. Rerun the benchmark after a hardware or model-size change:
 
 ```bash
 python round10_posthoc/bench_threads.py --grid 3x0,3x1,6x1,8x1,10x1,6x2 --epochs 60
 ```
-
-It prints epochs per second for each setting and writes `runs/_bench_threads/bench_threads.csv`; then pass the best worker count as `--workers` (or `--parallel` for `round10_pipeline.py`).

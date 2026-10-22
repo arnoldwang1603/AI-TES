@@ -7,7 +7,7 @@ R3 (Yimin's whole-output ratio, PI interest) and C11 use S10. Resume-safe.
 
 Usage (from src/models/GRU):
   python round10_posthoc/run_nomask_supplement.py --dry-run
-  python round10_posthoc/run_nomask_supplement.py [--workers 3] [--only C12_nomask,R3_nomask]
+  python round10_posthoc/run_nomask_supplement.py [--workers 8] [--only C12_nomask,R3_nomask]
 """
 import argparse
 import copy
@@ -39,7 +39,7 @@ def build_arms():
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--workers", type=int, default=3)
+    ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--only", default="")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--threads", type=int, default=1, help="CPU threads per training run (0 = PyTorch default)")

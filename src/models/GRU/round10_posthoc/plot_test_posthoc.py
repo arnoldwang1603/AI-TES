@@ -27,7 +27,7 @@ Any other physics run uses the nominal reference. --physics-level overrides.
 
 Usage (from src/models/GRU; point it at COPIES if originals must stay untouched):
   python round10_posthoc/plot_test_posthoc.py --reason "..." RUN_DIR [RUN_DIR ...]
-  python round10_posthoc/plot_test_posthoc.py --reason "..." --runs-root runs --glob "r10th_*_seed*" --workers 3
+  python round10_posthoc/plot_test_posthoc.py --reason "..." --runs-root runs --glob "r10th_*_seed*" --workers 8
 Resume-safe: a run that already has summary_errors_test_posthoc.csv and 70 test plots is skipped.
 """
 import argparse
