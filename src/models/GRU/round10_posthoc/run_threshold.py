@@ -24,7 +24,8 @@ os.chdir(HERE)
 
 import round10_pipeline as p  # noqa: E402
 
-LEVELS = ["s080", "s060", "s040", "s025", "b005", "b010", "b020", "b035", "b050"]
+LEVELS = ["s080", "s060", "s040", "s025", "b005", "b010", "b020", "b035", "b050",
+          "s015", "s010", "s006", "b075", "b085", "b100"]   # last six = 2026-10-21 extension
 
 
 def build_arms(levels, seeds, cache_root):

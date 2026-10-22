@@ -51,3 +51,28 @@ Seeds: the registered S20 set (1, 2, 3, 5, 7, 11, 13, 21, 42, 123, 17, 19, 23, 2
 ## What will and will not be claimed
 
 Whatever the outcome, every level is reported. No result here changes the Round 10 recipe, which stays C12. Statements are about this geometry, data and GRU at h128; the diffusivity family speaks to "a physics reference with wrong properties", not to a new material's FE data.
+
+## Addendum 2026-10-21: extension to locate the boundary (written after the first nine levels, before any extension run)
+
+**Disclosure.** This addendum was written after the results of the nine levels above were known: every level helped (all CIs below 0), the gain shrank monotonically, the two families collapsed within the band, and prediction P2 (boundary between 5% and 30%) failed. T_outer still helped at 39.5% (s025); the registered C2 (initial value, 49%) hurt.
+
+**Why these levels.** Both families converge to the initial-value reference: as k goes to 0 the outer wall never changes, so the diffusivity family saturates at about 49% on T_outer, the same share as blend alpha = 1. The boundary for T_outer therefore lies between 39.5% and about 49%. C2 reaches that end through a different implementation (anchor_initial head), so the blend family gets its own alpha = 1 end point (b100) through the same residual pipeline as every other level.
+
+| Level | Family | Reference | Training residual share T_outer / T_avg (all 284 training files) |
+|---|---|---|---|
+| s015 | diffusivity | k(T) x 0.15 | 45.7% / 38.3% |
+| s010 | diffusivity | k(T) x 0.10 | 48.1% / 42.8% |
+| s006 | diffusivity | k(T) x 0.06 | 49.2% / 47.4% |
+| b075 | blend | alpha = 0.75 | 37.0% / 49.8% |
+| b085 | blend | alpha = 0.85 | 41.9% / 56.4% |
+| b100 | blend | alpha = 1.00 (initial value only) | 49.4% / 66.4% |
+
+Same protocol as above: C11 environment, only the cache and the run prefix change, S20 seeds, validation only, 6 x 20 = 120 runs.
+
+**Added analysis.** For each family and channel, the crossing share where the seed-mean gain first reaches 0 (linear interpolation on log share), with a 95% CI from 2,000 joint seed bootstraps (the same resampled seed labels for every level and for C1), and the fraction of bootstrap draws with no crossing. b100 replaces C2 as the blend family's right end point; C2 stays in the table for comparison.
+
+**Predictions (written before running the extension).**
+- E1: the T_outer crossing lies between 42% and 49% in both families.
+- E2: if s006 (49.2%) still helps while b100 (49.4%) hurts, the boundary coincides with "the reference carries nothing beyond the start value"; the paper then states the boundary in those words and gives the share as a number.
+- E3: the T_avg crossing, if any, lies above 56%; no crossing below 50%.
+- E4: b100 reproduces C2 within the band (T_outer 0.05, T_avg 0.08 C), confirming the two implementations agree.

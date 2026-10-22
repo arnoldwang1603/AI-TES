@@ -7,6 +7,7 @@ and 20 validation files of round10_vs3_s42 are written; the test set is never re
 Levels (see PREREG_reference_threshold.md):
   s080 s060 s040 s025 : 1-D model with k(T) multiplied by 0.80 / 0.60 / 0.40 / 0.25
   b005 b010 b020 b035 b050 : (1 - a) * nominal + a * T0, a = 0.05 ... 0.50
+  extension: s015 s010 s006 (k x 0.15 / 0.10 / 0.06), b075 b085 b100 (a = 0.75 / 0.85 / 1.00; b100 = initial value only)
 
 Also writes level_stats.csv: training residual share and reference MAE per level
 (T_outer over all training files, T_avg over the line-average training files),
@@ -34,6 +35,9 @@ LEVELS = [
     ("s040", "diffusivity", 0.40), ("s025", "diffusivity", 0.25),
     ("b005", "blend", 0.05), ("b010", "blend", 0.10), ("b020", "blend", 0.20),
     ("b035", "blend", 0.35), ("b050", "blend", 0.50),
+    # extension (2026-10-21, see the addendum in PREREG_reference_threshold.md)
+    ("s015", "diffusivity", 0.15), ("s010", "diffusivity", 0.10), ("s006", "diffusivity", 0.06),
+    ("b075", "blend", 0.75), ("b085", "blend", 0.85), ("b100", "blend", 1.00),
 ]
 COLS = ("Time (s)", "T_outer (C)", "T_avg (C)", "Input Temperature (C)")
 
