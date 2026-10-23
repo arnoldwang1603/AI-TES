@@ -16,6 +16,8 @@ the first setting's.
 
 Usage (from src/models/GRU; run while nothing else is training):
   python round10_posthoc/bench_threads.py --grid 3x0,3x1,6x1,9x1,12x1,6x2 --epochs 60
+  python round10_posthoc/bench_threads.py --arm B2_mask --variant abs_sliding --grid 1x0,1x8,4x8,6x6,8x4 --epochs 3
+    (the second line times the old autoregressive sliding-window model; a few epochs suffice)
 Writes runs/_bench_threads/bench_threads.csv and deletes its own run directories
 (prefix r10bench_) unless --keep. Python 3.8+.
 """
@@ -71,7 +73,8 @@ def run_setting(arm, workers, threads, epochs, seeds, out):
     for seed, log, pr in procs:
         log.close()
         dirs = glob.glob(os.path.join(HERE, "runs", prefix + "*_seed%d" % seed))
-        meta = os.path.join(dirs[0], "variants", "forward_direct", "meta.json") if len(dirs) == 1 else ""
+        metas = glob.glob(os.path.join(dirs[0], "variants", "*", "meta.json")) if len(dirs) == 1 else []
+        meta = metas[0] if len(metas) == 1 else ""
         if not os.path.isfile(meta):
             raise SystemExit("%s seed %d left no meta.json (exit %s); see %s" % (prefix, seed, pr.returncode, log.name))
         m = json.load(open(meta, encoding="utf-8"))
@@ -87,10 +90,14 @@ def main(argv=None):
     ap.add_argument("--grid", default="3x0,3x1,6x1,9x1,12x1,6x2")
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--keep", action="store_true")
+    ap.add_argument("--variant", default=None,
+                    help="override VARIANTS, e.g. abs_sliding for the old autoregressive model (use with --arm B2_mask)")
     args = ap.parse_args(argv)
     pr = p.protocol()
     table = dict((a["arm"], a) for a in p.full_arm_table(pr))
     arm = copy.deepcopy(table[args.arm])
+    if args.variant:
+        arm["env"]["VARIANTS"] = args.variant
     seeds = [int(s) for s in pr["seeds"]["S20"]]
     grid = [tuple(int(x) for x in g.split("x")) for g in args.grid.split(",")]
     if max(w for w, _ in grid) > len(seeds):
