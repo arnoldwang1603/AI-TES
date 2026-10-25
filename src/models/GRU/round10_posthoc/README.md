@@ -48,7 +48,7 @@ python round10_posthoc/run_nomask_supplement.py --workers 8
 
 ## Test-set readout of the threshold study (primary readout, Addendums 2 and 3 in the pre-registration)
 
-Run after the threshold training is complete. The analysis of step 4 above then defaults to the test set; run it with `--set val` for the secondary validation tables. It scores every threshold checkpoint against its own degraded reference and the three baselines on all 70 test files, writes 70 test plots per run into each run's `variants/forward_direct/plots/`, plus `summary_errors_test_posthoc.csv`, `predictions_test_posthoc.npz`, `test_posthoc_aggregate.json` and `POSTHOC_TEST_NOTE.md`; every read is logged in `round10_posthoc/posthoc_test_access.log`. Files are only added, nothing is overwritten. Resume-safe: rerun the same command after an interruption.
+Run after the threshold training is complete. The analysis of step 4 above then defaults to the test set; run it with `--set val` for the secondary validation tables. It scores every threshold checkpoint against its own degraded reference and the three baselines on all 70 test files, writes 70 test plots per run into each run's `variants/forward_direct/plots/`, plus `summary_errors_test_posthoc.csv`, `predictions_test_posthoc.npz`, `test_posthoc_aggregate.json` and `POSTHOC_TEST_NOTE.md`; every read is logged. Since 2026-10-25 each machine appends to its own `round10_posthoc/posthoc_test_access_<hostname>.log` (one shared tracked file made every `git pull` conflict), with a `status=start` line before the test files are read and a `status=done` line after scoring. The history up to 2026-10-22 is in `posthoc_test_access.log` (660 reads, both machines merged) and `posthoc_test_access_localpc_2026-10-22.log` (10 reads, owner's PC). Files are only added, nothing is overwritten. Resume-safe: rerun the same command after an interruption.
 
 ```bash
 nohup python round10_posthoc/plot_test_posthoc.py --reason "threshold study test readout (Addendum 2)" --runs-root runs --glob "r10th_*_seed*" --workers 8 > test_threshold.log 2>&1 &
@@ -85,4 +85,21 @@ Beyond about 8 workers the GPU is the limit. Defaults are therefore 1 thread and
 
 ```bash
 python round10_posthoc/bench_threads.py --grid 3x0,3x1,6x1,8x1,10x1,6x2 --epochs 60
+```
+
+## Autoregressive supplement (2026-10-25)
+
+`run_ar_supplement.py` trains the old autoregressive sliding-window GRU (`VARIANTS=abs_sliding`) under the current protocol. The arm is the registered direct arm B2_mask with exactly one change, the variant (plus the run prefix `r10ar`), so the comparison with B2_mask is autoregressive vs direct with everything else equal. One knob changes meaning: `TAVG_MASK=split` removes the masked files' T_avg labels from the loss in both arms, but during abs_sliding's teacher-forcing epochs (0 to 99, probability 0.5 falling to 0) those labels are still fed back as window inputs; forward_direct never sees them. This is left as is so the AR recipe stays the one Round 8 compared. Pass 1 runs the S10 seeds, pass 2 the other ten; stop after pass 1 for a 10-seed answer. Resume-safe.
+
+Lab-server benchmark (`bench_threads.py --arm B2_mask --variant abs_sliding`): one AR run takes about 17.5 s per epoch whatever the thread count; total throughput is about 0.18 to 0.19 epochs/s from 4 to 8 workers. The launcher defaults to 5 workers x 8 threads (5 workers was not benchmarked directly) so each 10-seed pass runs as two full waves. At about 700 epochs per run, S10 takes about 11 h and S20 about 22 h. Inference is about 1 s per test file (direct: about 2 ms).
+
+```bash
+python round10_posthoc/run_ar_supplement.py --dry-run
+nohup python round10_posthoc/run_ar_supplement.py > ar_run.log 2>&1 &
+```
+
+Progress: `grep -c complete ar_run.log` (20 when done). Then score the test set (70 test plots per run) and hand back the run directories `runs/r10ar_abs_sliding_*`:
+
+```bash
+python round10_posthoc/plot_test_posthoc.py --reason "AR supplement test readout" --runs-root runs --glob "r10ar_abs_sliding_*_seed*" --workers 8
 ```

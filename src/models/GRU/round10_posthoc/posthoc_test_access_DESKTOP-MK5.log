@@ -1,0 +1,1 @@
+2026-10-25 02:19:46	r10arsmoke_abs_sliding_W10_Tin-anchor_l1_w1-6-3_oth-abs_h128x1dp0.0_ep2_vs3_mk_seed7	seed=7	ckpt_sha256=b80309d244051547e7712ef1ff65da3bf96dc0f12384e5f8f4b69535c60007f3	n_test=70	physics=none	reason=AR pipeline smoke test (2 epochs, seed 7), not a result

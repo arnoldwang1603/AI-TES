@@ -6,9 +6,12 @@ closed and the recipe is frozen. The owner requires complete test plots for
 delivered runs. This script therefore reads Test_70_cases DIRECTLY, outside the
 package's access gate (paper_report.assert_test_access) and outside the server
 ledger, and it is a disclosed deviation from the Round 10 pre-registration. It
-cannot change any Round 10 decision. Every call appends one line per run to
-round10_posthoc/posthoc_test_access.log and writes POSTHOC_TEST_NOTE.md into
-the run directory.
+cannot change any Round 10 decision. Every scored run appends a status=start line
+before the test files are read and a status=done line after scoring to
+round10_posthoc/posthoc_test_access_<hostname>.log (one file per machine since
+2026-10-25; the history up to 2026-10-22 is in posthoc_test_access.log, 660 reads,
+and posthoc_test_access_localpc_2026-10-22.log, 10 reads), and writes
+POSTHOC_TEST_NOTE.md into the run directory.
 
 What it does per run directory (best checkpoint, constants from the sidecar,
 never refit): rebuilds the model under the run's own knobs, scores all 70 test
@@ -28,7 +31,8 @@ Any other physics run uses the nominal reference. --physics-level overrides.
 Usage (from src/models/GRU; point it at COPIES if originals must stay untouched):
   python round10_posthoc/plot_test_posthoc.py --reason "..." RUN_DIR [RUN_DIR ...]
   python round10_posthoc/plot_test_posthoc.py --reason "..." --runs-root runs --glob "r10th_*_seed*" --workers 8
-Resume-safe: a run that already has summary_errors_test_posthoc.csv and 70 test plots is skipped.
+Resume-safe: a run that already has summary_errors_test_posthoc.csv, 70 test plots and
+test_posthoc_aggregate.json (written last) is skipped.
 """
 import argparse
 import datetime
@@ -39,11 +43,16 @@ import glob
 import hashlib
 import json
 import os
+import socket
 import sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, HERE)
-LOG = os.path.join(HERE, "round10_posthoc", "posthoc_test_access.log")
+# One log per machine (2026-10-25): two machines appending to one tracked file made every
+# git pull conflict. History up to 2026-10-22: posthoc_test_access.log (660 reads, both
+# machines merged) and posthoc_test_access_localpc_2026-10-22.log (10 reads).
+LOG = os.path.join(HERE, "round10_posthoc",
+                   "posthoc_test_access_%s.log" % re.sub(r"[^A-Za-z0-9_.-]", "_", socket.gethostname()))
 
 
 def sha256(path):
@@ -88,10 +97,15 @@ def physics_for(df, params, level):
     return out
 
 
+def variant_dirs(run_dir):
+    """variants/<v> of a run: forward_direct for Round 10 arms, abs_sliding for the AR supplement."""
+    return [d for d in glob.glob(os.path.join(run_dir, "variants", "*")) if os.path.isdir(d)]
+
+
 def done_already(run_dir):
-    v = os.path.join(run_dir, "variants", "forward_direct")
-    return (os.path.isfile(os.path.join(v, "summary_errors_test_posthoc.csv")) and
-            len(glob.glob(os.path.join(v, "plots", "*.png"))) >= 70)
+    return any(os.path.isfile(os.path.join(v, "summary_errors_test_posthoc.csv")) and
+               os.path.isfile(os.path.join(v, "test_posthoc_aggregate.json")) and
+               len(glob.glob(os.path.join(v, "plots", "*.png"))) >= 70 for v in variant_dirs(run_dir))
 
 
 def score_one(run_dir, reason, which="best", physics_level="auto"):
@@ -130,6 +144,10 @@ def score_one(run_dir, reason, which="best", physics_level="auto"):
     paths = sorted(glob.glob(os.path.join(test_dir, "**", "*.csv"), recursive=True))
     if len(paths) != 70:
         raise RuntimeError("expected 70 test files under %s, found %d" % (test_dir, len(paths)))
+    run_name = os.path.basename(run_dir.rstrip("/\\"))
+    with open(LOG, "a", encoding="utf-8") as f:          # logged before the read, so an interrupted read is still on record
+        f.write("%s\t%s\tseed=%s\tstatus=start\treason=%s\n"
+                % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), run_name, c["seed"], reason))
     frames = [(pd.read_csv(p), os.path.relpath(p, root).replace(os.sep, "/")) for p in paths]
     physics = None
     level = level_of(run_dir, physics_level) if config.PHYS_MODE else "none"
@@ -149,23 +167,24 @@ def score_one(run_dir, reason, which="best", physics_level="auto"):
                                npz_path=os.path.join(dest, "predictions_test_posthoc.npz"),
                                plots_dir=os.path.join(dest, "plots"))
     rows = summary_df[summary_df["Case"] != "AVERAGE"]
-    res = dict(run=os.path.basename(run_dir.rstrip("/\\")), seed=c["seed"],
+    res = dict(run=run_name, seed=c["seed"],
                T_inner=float(rows["MAE_T_inner (C)"].mean()), T_outer=float(rows["MAE_T_outer (C)"].mean()),
                T_avg=float(rows["MAE_T_avg (C)"].mean()), n_files=int(len(rows)),
                n_plots=len(glob.glob(os.path.join(dest, "plots", "*.png"))), physics_level=level)
-    with open(os.path.join(dest, "test_posthoc_aggregate.json"), "w", encoding="utf-8") as f:
-        json.dump(res, f, indent=1)
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(LOG, "a", encoding="utf-8") as f:
-        f.write("%s\t%s\tseed=%s\tckpt_sha256=%s\tn_test=%d\tphysics=%s\treason=%s\n"
+        f.write("%s\t%s\tseed=%s\tckpt_sha256=%s\tn_test=%d\tphysics=%s\tstatus=done\treason=%s\n"
                 % (stamp, res["run"], c["seed"], sha256(ckpt), len(frames), level, reason))
     with open(os.path.join(run_dir, "POSTHOC_TEST_NOTE.md"), "w", encoding="utf-8") as f:
         f.write("# Post-hoc test scoring (not part of the Round 10 registered test reads)\n\n"
                 "Scored %s on the 70 test files with `round10_posthoc/plot_test_posthoc.py`, after the Round 10 "
-                "recipe was frozen and F11 was completed. Reason: %s. This run was not used for any decision; the "
-                "numbers are descriptive. Test MAE T_inner / T_outer / T_avg = %.3f / %.3f / %.3f C. Plots: "
-                "variants/%s/plots/ (%d files).\n" % (stamp, reason, res["T_inner"], res["T_outer"], res["T_avg"],
-                                                      variant, res["n_plots"]))
+                "recipe was frozen and F11 was completed. Reason: %s. Not used for any Round 10 decision; for the "
+                "post-hoc studies (threshold, AR supplement) the test set is the primary readout by owner decision "
+                "(Addendum 3 of PREREG_reference_threshold.md). Test MAE T_inner / T_outer / T_avg = %.3f / %.3f / "
+                "%.3f C. Plots: variants/%s/plots/ (%d files).\n" % (stamp, reason, res["T_inner"], res["T_outer"],
+                                                                     res["T_avg"], variant, res["n_plots"]))
+    with open(os.path.join(dest, "test_posthoc_aggregate.json"), "w", encoding="utf-8") as f:   # last: marks completion
+        json.dump(res, f, indent=1)
     return res
 
 
@@ -192,7 +211,7 @@ def main(argv=None):
     if args.glob:
         root = os.path.abspath(args.runs_root or os.path.join(HERE, "runs"))
         runs += sorted(d for d in glob.glob(os.path.join(root, args.glob))
-                       if os.path.isfile(os.path.join(d, "variants", "forward_direct", "done.flag")))
+                       if any(os.path.isfile(os.path.join(v, "done.flag")) for v in variant_dirs(d)))
     todo = [r for r in runs if not done_already(r)]
     print("POST-HOC TEST ACCESS: %d run(s) matched, %d already done, %d to score; logged to %s"
           % (len(runs), len(runs) - len(todo), len(todo), LOG), flush=True)
