@@ -51,8 +51,9 @@ def run_config_dict():
     numerics provenance). Shared by save_run_config_snapshot and the H4
     constants sidecar so the two can never disagree."""
     # H2: which files lose their T_avg label (digests of the sorted key lists).
-    from .data import get_tavg_mask_sets, get_relabel_sets
+    from .data import get_tavg_mask_sets, get_relabel_sets, get_tinner_mask_sets
     tr_m, va_m = get_tavg_mask_sets()
+    ti_tr, ti_va = get_tinner_mask_sets()      # TINNER_MASK (2026-11-18)
     rl_tr, rl_va = get_relabel_sets()          # A4
     from .data import load_split_spec
     frozen_spec = load_split_spec() if VAL_SPLIT == 'stratified' else {}
@@ -120,6 +121,11 @@ def run_config_dict():
         'tavg_mask_n_val': len(va_m),
         'tavg_mask_train_sha256': sha256_lines(tr_m) if tr_m else None,
         'tavg_mask_val_sha256': sha256_lines(va_m) if va_m else None,
+        'tinner_mask': TINNER_MASK,       # 2026-11-18: "" | split
+        'tinner_mask_n_train': len(ti_tr),
+        'tinner_mask_n_val': len(ti_va),
+        'tinner_mask_train_sha256': sha256_lines(ti_tr) if ti_tr else None,
+        'tinner_mask_val_sha256': sha256_lines(ti_va) if ti_va else None,
         'sealed': bool(SEAL_TEST),        # H3: True = validation-scored, test set never read
         # A4: algebraic T_avg relabel -- the table (as given, re-resolvable by
         # eval_checkpoint), its digest and how many files it touched.
@@ -357,17 +363,21 @@ def write_constants_sidecar(path, model, scaler, extra=None):
     extra: free-form provenance merged under "extra" (variant, checkpoint,
     best_epoch, ...); an extra 'loss_weights_realised' overrides the recorded
     realised weights (H8: channel-0 weight / kc)."""
-    from .data import ThermalDataset, load_split_spec, get_tavg_mask_sets
+    from .data import ThermalDataset, load_split_spec, get_tavg_mask_sets, get_tinner_mask_sets
     extra = dict(extra or {})
     cols = list(ThermalDataset.BASE_COLS)
     assert len(scaler.scale_) == len(cols), (len(scaler.scale_), cols)
     tr_m, va_m = get_tavg_mask_sets()
+    ti_tr, ti_va = get_tinner_mask_sets()
     split = {'val_split': VAL_SPLIT, 'split_name': None, 'split_tag': None, 'split_sha256': None,
              'n_train': None, 'n_val': None, 'n_drop': 0, 'drop_sha256': None,
              'train_exclude_type': TRAIN_EXCLUDE_TYPE,
              'tavg_mask': TAVG_MASK, 'tavg_mask_n_train': len(tr_m), 'tavg_mask_n_val': len(va_m),
              'tavg_mask_train_sha256': sha256_lines(tr_m) if tr_m else None,
-             'tavg_mask_val_sha256': sha256_lines(va_m) if va_m else None}
+             'tavg_mask_val_sha256': sha256_lines(va_m) if va_m else None,
+             'tinner_mask': TINNER_MASK, 'tinner_mask_n_train': len(ti_tr), 'tinner_mask_n_val': len(ti_va),
+             'tinner_mask_train_sha256': sha256_lines(ti_tr) if ti_tr else None,
+             'tinner_mask_val_sha256': sha256_lines(ti_va) if ti_va else None}
     if VAL_SPLIT == "stratified" and os.path.isfile(split_file_path()):
         spec = load_split_spec(split_file_path())
         drop = list(spec.get("drop") or [])

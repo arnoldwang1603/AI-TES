@@ -66,6 +66,7 @@ KEYS = {
     "model_split": "MODEL_SPLIT", "pos_time_prior": "POS_TIME_PRIOR",
     "tf32": "TF32",                                     # H9 (Round 10)
     "tavg_mask": "TAVG_MASK",                           # H2 (Round 10)
+    "tinner_mask": "TINNER_MASK",                       # new-data rerun (2026-11-18)
     "relabel_csv": "RELABEL_CSV",                       # A4 (Round 10)
     "loss_w0_mode": "LOSS_W0_MODE",
     "enc_widths": "ENC_WIDTHS", "h0_mode": "H0_MODE", "init_encoder": "INIT_ENCODER",
@@ -257,7 +258,8 @@ def evaluate_one(run_dir, which, which_set="val", out_dir=None, physics_override
     sys.path.insert(0, HERE)
     import torch
     from tes_gru import config
-    from tes_gru.data import load_all_data, load_holdout_data, ThermalDataset, get_tavg_mask_sets, is_tavg_masked
+    from tes_gru.data import (load_all_data, load_holdout_data, ThermalDataset, get_tavg_mask_sets, is_tavg_masked,
+                              get_tinner_mask_sets, is_tinner_masked)
     from tes_gru.models import build_model
     from tes_gru.rollout import variant_to_encoder
     from tes_gru.evaluate import test_model
@@ -307,8 +309,10 @@ def evaluate_one(run_dir, which, which_set="val", out_dir=None, physics_override
         # H3: the run's own validation files; masked ones (H2) are built with
         # tavg_masked so test_model leaves their T_avg metrics NaN.
         _tr_m, va_m = get_tavg_mask_sets()
+        _ti_tr, ti_va = get_tinner_mask_sets()
         sets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn,
-                               tavg_masked=is_tavg_masked(fn, va_m)) for df, fn in val_dfs]
+                               tavg_masked=is_tavg_masked(fn, va_m),
+                               tinner_masked=is_tinner_masked(fn, ti_va)) for df, fn in val_dfs]
         suffix = "_val"
         dest = out_dir or os.path.join(run_dir, "variants", variant)
     else:

@@ -124,7 +124,7 @@ class ThermalDataset(Dataset):
 
     def __init__(self, csv_or_df, variant, scaler=None, file_name=None,
                  window_size=WINDOW_SIZE, tavg_masked=False,
-                 physics_override=None, physics_cache_dir=None):
+                 physics_override=None, physics_cache_dir=None, tinner_masked=False):
         if isinstance(csv_or_df, str):
             self.file_name = os.path.basename(csv_or_df)
             df = pd.read_csv(csv_or_df)
@@ -135,6 +135,7 @@ class ThermalDataset(Dataset):
         self.variant = variant
         self.window_size = window_size
         self.tavg_masked = bool(tavg_masked)
+        self.tinner_masked = bool(tinner_masked)      # TINNER_MASK (2026-11-18)
 
         df.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
         if "Input Temperature (C)" not in df.columns:
@@ -329,7 +330,9 @@ class ThermalDataset(Dataset):
         # H2: per-file loss mask over the 3 output channels (T_inner, T_outer,
         # T_avg). Channel 2 is T_avg for the forward variants; the inverse
         # variants have no T_avg output and are never masked.
-        mask_row = [1.0, 1.0, 0.0 if (self.tavg_masked and not is_inverse(variant)) else 1.0]
+        # TINNER_MASK (2026-11-18): channel 0 (T_inner) the same way.
+        mask_row = [0.0 if (self.tinner_masked and not is_inverse(variant)) else 1.0, 1.0,
+                    0.0 if (self.tavg_masked and not is_inverse(variant)) else 1.0]
         self.loss_mask = torch.tensor([mask_row] * len(self.X), dtype=torch.float32)
         self.physics_targets = (torch.tensor(np.array(self.physics_targets), dtype=torch.float32)
                                 if PHYS_MODE else None)
@@ -368,6 +371,7 @@ def load_split_spec(path=None):
     holdout = set(spec.get("holdout") or [])
     drop = set(spec.get("drop") or [])
     mask = set(spec.get("tavg_mask") or [])
+    tmask = set(spec.get("tinner_mask") or [])
     if val & train:
         raise RuntimeError("split file {}: {} files in both val and train, e.g. {}".format(
             path, len(val & train), sorted(val & train)[:3]))
@@ -397,6 +401,9 @@ def load_split_spec(path=None):
     if mask - (val | train | holdout):
         raise RuntimeError("split file {}: tavg_mask names {} file(s) in neither list, e.g. {}".format(
             path, len(mask - (val | train | holdout)), sorted(mask - (val | train | holdout))[:3]))
+    if tmask - (val | train | holdout):
+        raise RuntimeError("split file {}: tinner_mask names {} file(s) in neither list, e.g. {}".format(
+            path, len(tmask - (val | train | holdout)), sorted(tmask - (val | train | holdout))[:3]))
     return spec
 
 
@@ -566,6 +573,31 @@ def scaler_from_sidecar(d):
 def is_tavg_masked(case_id, masked_keys):
     """True if a dataset case_id (relative to the data root) is in a key set
     returned by get_tavg_mask_sets."""
+    return split_key(case_id) in masked_keys
+
+
+def get_tinner_mask_sets(split=None):
+    """(train_masked_keys, val_masked_keys) under TINNER_MASK (2026-11-18):
+    the json's `tinner_mask` list intersected with its train / val lists.
+    ""  -> (set(), set());  "split" -> (tinner_mask & train, tinner_mask & val).
+    `split` is resolved as in get_tavg_mask_sets."""
+    if not TINNER_MASK:
+        return set(), set()
+    if isinstance(split, dict):
+        spec = split
+    else:
+        path = split or split_file_path()
+        if not os.path.isfile(path) and os.path.basename(path) == path:
+            path = os.path.join(BASE_DIR, "splits", path)
+        spec = load_split_spec(path)
+    mask = set(spec.get("tinner_mask") or [])
+    if not mask:
+        raise RuntimeError("TINNER_MASK=%r but the split json carries no tinner_mask list" % TINNER_MASK)
+    return mask & set(spec["train"]), mask & set(spec["val"])
+
+
+def is_tinner_masked(case_id, masked_keys):
+    """True if a dataset case_id is in a key set returned by get_tinner_mask_sets."""
     return split_key(case_id) in masked_keys
 
 

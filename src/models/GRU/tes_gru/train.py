@@ -263,8 +263,16 @@ def fit_model_constants(model, variant, train_dfs, scaler):
     # the anchor, so its T_inner (2.33) measured the missing anchor, not the
     # formulation.
     if variant in ('abs_sliding', 'forward_direct') and TINNER_MODE == 'anchor':
+        # TINNER_MASK (2026-11-18): files whose T_inner label is masked do not
+        # enter the anchor constants either (empty set under the legacy "").
+        ti_masked, _ = get_tinner_mask_sets(getattr(scaler, '_round10_frozen_split', None))
+        if ti_masked:
+            print(f"[{variant}] TINNER_MASK: {sum(is_tinner_masked(fid, ti_masked) for _, fid in train_dfs)} "
+                  f"training files left out of the T_inner anchor constants")
         deltas = []
-        for df, _ in train_dfs:
+        for df, fid in train_dfs:
+            if is_tinner_masked(fid, ti_masked):
+                continue
             d = df.copy()
             d.rename(columns={"T_ave (C)": "T_avg (C)"}, inplace=True)
             if "Input Temperature (C)" not in d.columns:
@@ -359,6 +367,7 @@ def fit_model_constants(model, variant, train_dfs, scaler):
     model.phys_residual = None
     if OTHER_CH_MODE in ('ratio_input', 'anchor_initial'):
         tr_masked, _ = get_tavg_mask_sets(getattr(scaler, '_round10_frozen_split', None))
+        ti_masked, _ = get_tinner_mask_sets(getattr(scaler, '_round10_frozen_split', None))
         values = {j: [] for j in (RATIO_INDICES if OTHER_CH_MODE == 'ratio_input' else (1, 2))}
         columns = ('T_inner (C)', 'T_outer (C)', 'T_avg (C)')
         for df, fid in train_dfs:
@@ -367,6 +376,8 @@ def fit_model_constants(model, variant, train_dfs, scaler):
             ref = inp[1:] + 273.15 if RATIO_REF == 'kelvin' else np.maximum(inp[1:], 20.0)
             for j in values:
                 if j == 2 and is_tavg_masked(fid, tr_masked):
+                    continue
+                if j == 0 and is_tinner_masked(fid, ti_masked):
                     continue
                 raw = d[columns[j]].to_numpy(dtype=float)
                 values[j].append(raw[1:] / ref if OTHER_CH_MODE == 'ratio_input' else raw[1:] - raw[0])
@@ -454,11 +465,14 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
     print(f"\n--- Building datasets for variant '{variant}' ---")
     # H2: per-file T_avg loss mask. Empty sets under the legacy TAVG_MASK="".
     tr_masked, va_masked = get_tavg_mask_sets()
+    ti_tr_masked, ti_va_masked = get_tinner_mask_sets()          # TINNER_MASK (2026-11-18)
     train_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn,
-                                     tavg_masked=is_tavg_masked(fn, tr_masked))
+                                     tavg_masked=is_tavg_masked(fn, tr_masked),
+                                     tinner_masked=is_tinner_masked(fn, ti_tr_masked))
                       for df, fn in train_dfs]
     val_datasets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn,
-                                   tavg_masked=is_tavg_masked(fn, va_masked))
+                                   tavg_masked=is_tavg_masked(fn, va_masked),
+                                   tinner_masked=is_tinner_masked(fn, ti_va_masked))
                     for df, fn in val_dfs]
     if TAVG_MASK:
         n_tr = sum(ds.tavg_masked for ds in train_datasets)
@@ -466,6 +480,12 @@ def train_model(variant, train_dfs, val_dfs, test_dfs, scaler, params):
         print(f"[{variant}] TAVG_MASK={TAVG_MASK}: T_avg label masked on {n_tr}/{len(train_datasets)} "
               f"training files and {n_va}/{len(val_datasets)} validation files "
               f"(validation T_avg scored on {len(val_datasets) - n_va})")
+    if TINNER_MASK:
+        n_tr = sum(ds.tinner_masked for ds in train_datasets)
+        n_va = sum(ds.tinner_masked for ds in val_datasets)
+        print(f"[{variant}] TINNER_MASK={TINNER_MASK}: T_inner label masked on {n_tr}/{len(train_datasets)} "
+              f"training files and {n_va}/{len(val_datasets)} validation files "
+              f"(validation T_inner scored on {len(val_datasets) - n_va})")
     # H3: under SEAL_TEST the test files are never turned into datasets --
     # the run scores its validation files instead (main.py).
     test_datasets = ([] if SEAL_TEST else

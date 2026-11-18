@@ -196,8 +196,10 @@ def main():
                 # summary_errors_val.csv / predictions_val.npz, and every
                 # metric key below carries the Val_ prefix instead of Test_.
                 _tr_m, _va_m = get_tavg_mask_sets()
+                _ti_tr, _ti_va = get_tinner_mask_sets()
                 score_sets = [ThermalDataset(df, variant, scaler=scaler, file_name=fn,
-                                             tavg_masked=is_tavg_masked(fn, _va_m))
+                                             tavg_masked=is_tavg_masked(fn, _va_m),
+                                             tinner_masked=is_tinner_masked(fn, _ti_va))
                               for df, fn in val_dfs]
                 score_label, score_suffix = "validation (sealed)", "_val"
             else:

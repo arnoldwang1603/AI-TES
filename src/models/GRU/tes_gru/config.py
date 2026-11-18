@@ -989,6 +989,31 @@ if TAVG_MASK:
 
 
 # ------------------------------------------------------------
+# Per-file T_inner loss mask (2026-11-18, new-data rerun)
+# ------------------------------------------------------------
+# TINNER_MASK = ""       legacy: every file's T_inner label is trained on
+#             | "split"  the json's `tinner_mask` list: those training files
+#                        lose their T_inner term in the loss and are left out
+#                        of the T_inner constants (anchor KA/KB/KC, ratio /
+#                        initial heads); those validation files are not
+#                        scored on T_inner (tag mi)
+# Data audit 2026-11-15: a few training files still carry T_inner from the
+# HX face (T_inner = Input) while every other file and the whole test set
+# have the concrete inner surface, which lags Input by about 0.6-0.75 C.
+# Only for output modes whose constants do not use T_inner as a reference
+# for another channel.
+TINNER_MASK = os.environ.get("TINNER_MASK", "").strip()
+TINNER_MASK_TAG = ""
+if TINNER_MASK:
+    assert VAL_SPLIT == "stratified", "TINNER_MASK needs VAL_SPLIT=stratified (the mask lives in the split json)"
+    assert TINNER_MASK == "split", "TINNER_MASK must be '' or split, got %r" % TINNER_MASK
+    assert OTHER_CH_MODE in ("abs", "ratio_input", "anchor_initial"), \
+        "TINNER_MASK: OTHER_CH_MODE=%s fits T_avg constants on T_inner" % OTHER_CH_MODE
+    assert PHYSICS_BOUND_WEIGHT == 0.0, "TINNER_MASK and PHYSICS_BOUND_WEIGHT > 0 are exclusive"
+    TINNER_MASK_TAG = "mi"
+
+
+# ------------------------------------------------------------
 # Algebraic T_avg relabel (2026-10-11, Round 10 / A4)
 # ------------------------------------------------------------
 # RELABEL_CSV = ""  (default) labels as given
@@ -1159,6 +1184,8 @@ if VAL_SPLIT == "stratified":
     _parts.append(SPLIT_TAG)                 # vs<N>, or the json's tag (vs3) under SPLIT_NAME (H1)
     if TAVG_MASK_TAG:
         _parts.append(TAVG_MASK_TAG)         # mk / mkr<seed> / mkv (H2)
+    if TINNER_MASK_TAG:
+        _parts.append(TINNER_MASK_TAG)       # mi: per-file T_inner mask (2026-11-18)
 if RELABEL_TAG:
     _parts.append(RELABEL_TAG)               # rl: algebraically relabelled T_avg (A4)
 if TRAIN_EXCLUDE_TYPE:

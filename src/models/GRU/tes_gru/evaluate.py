@@ -392,7 +392,11 @@ def test_model(variant, model, test_datasets, output_dir, set_name,
         # H3: a file whose T_avg label is masked (H2, validation side) is not
         # scored on T_avg -- the label is a different convention there.
         masked = bool(getattr(ds, 'tavg_masked', False)) and not is_inverse(variant)
-        scored_channels = [c for c in channel_names if not (masked and c == 'T_avg')]
+        # TINNER_MASK (2026-11-18): likewise T_inner on a file whose T_inner
+        # label is masked (exported on the HX face).
+        tin_masked = bool(getattr(ds, 'tinner_masked', False)) and not is_inverse(variant)
+        scored_channels = [c for c in channel_names
+                           if not ((masked and c == 'T_avg') or (tin_masked and c == 'T_inner'))]
 
         # ---- Metrics (in deg C; per channel; NaN for non-predicted) ----
         win = max(10, n // 10)
