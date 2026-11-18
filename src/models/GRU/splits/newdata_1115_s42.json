@@ -358,7 +358,7 @@
   "Case 10 (Discharging + Constant)/Case 17.csv": "Case 10 (Discharging + Constant)/Case 23.csv"
  },
  "data_source": "2026-11-15 download of the Drive folder 'Temperature model_ most-recent-data (auto-updated)' (AI-TES/data_2026-11-15)",
- "data_manifest_sha256": "c1418b9d60a39b443bc472a7d134252b1904ba5e95d60d83da4678045cacfbd2",
+ "data_manifest_sha256": "7e39ac147299c67c2c75c241f8c0feb4f51f6a6b375aaaede8e742b04249fc4b",
  "n_train": 288,
  "n_val": 20,
  "n_drop": 4,

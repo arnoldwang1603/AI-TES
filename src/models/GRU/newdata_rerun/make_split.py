@@ -55,11 +55,15 @@ def train_keys(train_dir):
     return sorted(keys)
 
 
+def content_md5(path):
+    """md5 of the file with CRLF turned into LF: git (core.autocrlf) stores the CSVs with LF
+    and a Windows checkout shows CRLF, so raw bytes differ between machines; the numbers do not."""
+    with open(path, "rb") as f:
+        return hashlib.md5(f.read().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def manifest_sha256(train_dir, keys):
-    lines = []
-    for k in keys:
-        with open(os.path.join(train_dir, *k.split("/")), "rb") as f:
-            lines.append("%s\t%s" % (k, hashlib.md5(f.read()).hexdigest()))
+    lines = ["%s\t%s" % (k, content_md5(os.path.join(train_dir, *k.split("/")))) for k in keys]
     return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
 
 

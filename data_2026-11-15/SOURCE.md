@@ -1,6 +1,6 @@
 # Temperature database, 2026-11-15 download
 
-Copy of the data group's Drive folder `Model development database/Temperature model_ most-recent-data (auto-updated)` as downloaded on 2026-11-15 (latest file time on Drive 2026-11-12 15:11). Same flat layout as `../data/`: `Latest Database (Use this for training)/` (312 files) and `Test_70_cases/` (70 files). `MANIFEST_md5.csv` lists every file with its md5 and its path in the download.
+Copy of the data group's Drive folder `Model development database/Temperature model_ most-recent-data (auto-updated)` as downloaded on 2026-11-15 (latest file time on Drive 2026-11-12 15:11). Same flat layout as `../data/`: `Latest Database (Use this for training)/` (312 files) and `Test_70_cases/` (70 files). `MANIFEST_md5.csv` lists every file with its md5 and its path in the download. The md5 is taken after turning CRLF into LF: git stores these CSVs with LF line endings and a Windows checkout (core.autocrlf) shows CRLF, so raw-byte checksums differ between machines while the numbers are the same.
 
 One change from the download: `Case 8 (linear discharging)/ Discharge 14- Erick WKCp.csv` (leading space in the Drive name) is stored as `Discharge 14- Erick WKCp.csv`, the name it had in `../data/`. Its content is byte-identical to the old file.
 
